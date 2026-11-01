@@ -45,6 +45,8 @@ android {
 
     androidResources {
         generateLocaleConfig = true
+        // The OCR models are read as they are; compressing them only slows loading.
+        noCompress += "onnx"
     }
 }
 
@@ -68,6 +70,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.2")
     implementation("androidx.exifinterface:exifinterface:1.4.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+
+    // Text on photos: PP-OCRv5 models (in assets/ocr) run with ONNX Runtime (MIT), as in Pysanka
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
 
     // Video playback (Apache 2.0); no network module
     implementation("androidx.media3:media3-exoplayer:1.5.1")

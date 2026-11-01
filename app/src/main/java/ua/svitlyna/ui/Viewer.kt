@@ -1,6 +1,23 @@
 package ua.svitlyna.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Intent
 import android.graphics.Bitmap
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import ua.svitlyna.ocr.PhotoText
+import ua.svitlyna.ocr.PhotoTextReader
+import ua.svitlyna.ocr.TextRecognizer
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -88,12 +105,60 @@ fun Viewer(
     var zoomed by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<MediaItem?>(null) }
 
+    // Text on the photo: read on request, for the photo on screen only.
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var textFor by remember { mutableStateOf<Long?>(null) }
+    var reading by remember { mutableStateOf<Job?>(null) }
+    var photoText by remember { mutableStateOf<PhotoText?>(null) }
+    var chosen by remember { mutableStateOf(emptySet<Int>()) }
+    var notice by remember { mutableStateOf<Int?>(null) }
+    val textMode = textFor != null
+    DisposableEffect(Unit) {
+        val recognizer = TextRecognizer.get(context)
+        recognizer.hold()
+        // The models' memory (about 60 MB) is freed when the viewer closes.
+        onDispose { CoroutineScope(Dispatchers.Default).launch { recognizer.letGo() } }
+    }
+
+    fun closeText() {
+        reading?.cancel()
+        reading = null
+        textFor = null
+        photoText = null
+        chosen = emptySet()
+    }
+
+    fun readText(item: MediaItem) {
+        closeText()
+        notice = null
+        textFor = item.id
+        reading = scope.launch {
+            val read = PhotoTextReader.read(context, item)
+            reading = null
+            if (read == null || read.words.isEmpty()) {
+                notice = R.string.no_text_found
+                textFor = null
+            } else {
+                photoText = read
+                // Everything is chosen at first: the most common wish is "all of it".
+                chosen = read.words.indices.toSet()
+            }
+        }
+    }
+    // Another photo swiped in: its text is not the one shown.
+    LaunchedEffect(pager.currentPage) {
+        if (textFor != null && items.getOrNull(pager.currentPage)?.id != textFor) closeText()
+        notice = null
+    }
+    BackHandler(enabled = textMode) { closeText() }
+
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         HorizontalPager(
             state = pager,
             key = { items[it].id },
             beyondViewportPageCount = 1,
-            userScrollEnabled = !zoomed,
+            userScrollEnabled = !zoomed && !textMode,
             modifier = Modifier.fillMaxSize(),
         ) { page ->
             val item = items[page]
@@ -105,11 +170,23 @@ fun Viewer(
                     item = item,
                     onTap = { chrome = !chrome },
                     onZoomChanged = { if (current) zoomed = it },
+                    text = photoText.takeIf { textFor == item.id },
+                    chosen = chosen,
+                    onChosen = { chosen = it },
                 )
             }
         }
         val item = items.getOrNull(pager.currentPage)
-        if (chrome && item != null) {
+        if (item != null && textMode) {
+            TextBar(
+                reading = reading != null,
+                text = photoText,
+                chosen = chosen,
+                onChosen = { chosen = it },
+                onClose = ::closeText,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        } else if (chrome && item != null) {
             Column(
                 Modifier
                     .fillMaxWidth()
@@ -141,6 +218,11 @@ fun Viewer(
                     IconButton(onClick = { onShare(item) }) {
                         Icon(Icons.Filled.Share, stringResource(R.string.share), tint = Color.White)
                     }
+                    if (!item.isVideo) {
+                        TextButton(onClick = { readText(item) }) {
+                            Text(stringResource(R.string.text_on_photo), color = Color.White)
+                        }
+                    }
                     IconButton(onClick = { info = item }) {
                         Icon(Icons.Filled.Info, stringResource(R.string.details), tint = Color.White)
                     }
@@ -151,11 +233,153 @@ fun Viewer(
             }
         }
     }
+    notice?.let { res ->
+        LaunchedEffect(res) {
+            kotlinx.coroutines.delay(2500)
+            notice = null
+        }
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                stringResource(res),
+                color = Color.White,
+                modifier = Modifier.background(Color(0xCC000000), RoundedCornerShape(12.dp)).padding(16.dp),
+            )
+        }
+    }
     info?.let { InfoDialog(it) { info = null } }
 }
 
+/** The bar while choosing text: what is chosen, all or none, copy, share, done. */
 @Composable
-private fun ZoomableImage(item: MediaItem, onTap: () -> Unit, onZoomChanged: (Boolean) -> Unit) {
+private fun TextBar(
+    reading: Boolean,
+    text: PhotoText?,
+    chosen: Set<Int>,
+    onChosen: (Set<Int>) -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier,
+) {
+    val context = LocalContext.current
+    Column(
+        modifier
+            .fillMaxWidth()
+            .background(Color(0xCC000000))
+            .navigationBarsPadding()
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+    ) {
+        if (reading || text == null) {
+            androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                Text(
+                    stringResource(R.string.reading_text),
+                    color = Color.White,
+                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+                )
+                TextButton(onClick = onClose) { Text(stringResource(R.string.stop), color = Color.White) }
+            }
+            return@Column
+        }
+        Text(
+            stringResource(R.string.text_chosen, chosen.size, text.words.size) + " · " + stringResource(R.string.text_hint),
+            color = Color.White,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(horizontal = 8.dp),
+        )
+        androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = { onChosen(text.words.indices.toSet()) }) { Text(stringResource(R.string.choose_all), color = Color.White) }
+            TextButton(onClick = { onChosen(emptySet()) }) { Text(stringResource(R.string.choose_none), color = Color.White) }
+            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+            TextButton(enabled = chosen.isNotEmpty(), onClick = {
+                val cm = context.getSystemService(ClipboardManager::class.java)
+                cm?.setPrimaryClip(ClipData.newPlainText(context.getString(R.string.text_on_photo), text.text(chosen)))
+            }) {
+                Text(stringResource(R.string.copy), color = Color.White)
+            }
+            IconButton(enabled = chosen.isNotEmpty(), onClick = {
+                val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text.text(chosen))
+                context.startActivity(Intent.createChooser(send, null))
+            }) {
+                Icon(Icons.Filled.Share, stringResource(R.string.share), tint = Color.White)
+            }
+            IconButton(onClick = onClose) { Icon(Icons.Filled.Close, stringResource(R.string.close), tint = Color.White) }
+        }
+    }
+}
+
+/**
+ * The recognised words drawn over the photo: chosen ones filled, others outlined. Tap a word to
+ * choose it or not; drag over words to choose (or un-choose) them all the way.
+ */
+@Composable
+private fun TextOverlay(text: PhotoText, chosen: Set<Int>, onChosen: (Set<Int>) -> Unit, modifier: Modifier) {
+    val current by rememberUpdatedState(chosen)
+    val choose by rememberUpdatedState(onChosen)
+    val accent = MaterialTheme.colorScheme.primary
+    var size by remember { mutableStateOf(IntSize.Zero) }
+
+    // The photo is drawn "fit": scaled to the screen and centred. Words are placed the same way.
+    fun mapping(): Triple<Float, Float, Float> {
+        val s = minOf(size.width / text.width.toFloat(), size.height / text.height.toFloat())
+        return Triple(s, (size.width - text.width * s) / 2f, (size.height - text.height * s) / 2f)
+    }
+
+    fun hit(p: Offset): Int? {
+        val (s, dx, dy) = mapping()
+        val x = (p.x - dx) / s
+        val y = (p.y - dy) / s
+        // A little slack around each word: words are small targets for a finger.
+        val pad = 6 / s
+        return text.words.indices.firstOrNull { i ->
+            val r = text.words[i].second.box
+            x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad
+        }
+    }
+
+    Canvas(
+        modifier
+            .onSizeChanged { size = it }
+            .pointerInput(text) {
+                detectTapGestures { p ->
+                    hit(p)?.let { i -> choose(if (i in current) current - i else current + i) }
+                }
+            }
+            .pointerInput(text) {
+                var adding = true
+                detectDragGestures(
+                    onDragStart = { p ->
+                        hit(p)?.let { i ->
+                            adding = i !in current
+                            choose(if (adding) current + i else current - i)
+                        }
+                    },
+                ) { change, _ ->
+                    change.consume()
+                    hit(change.position)?.let { i -> choose(if (adding) current + i else current - i) }
+                }
+            },
+    ) {
+        val (s, dx, dy) = mapping()
+        text.words.forEachIndexed { i, (_, word) ->
+            val r = word.box
+            val topLeft = Offset(dx + r.left * s - 2, dy + r.top * s - 2)
+            val box = androidx.compose.ui.geometry.Size(r.width() * s + 4, r.height() * s + 4)
+            if (i in chosen) {
+                drawRect(accent.copy(alpha = 0.35f), topLeft, box)
+            }
+            drawRect(accent.copy(alpha = 0.9f), topLeft, box, style = Stroke(width = 1.5f))
+        }
+    }
+}
+
+@Composable
+private fun ZoomableImage(
+    item: MediaItem,
+    onTap: () -> Unit,
+    onZoomChanged: (Boolean) -> Unit,
+    text: PhotoText?,
+    chosen: Set<Int>,
+    onChosen: (Set<Int>) -> Unit,
+) {
     val resolver = LocalContext.current.contentResolver
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val density = LocalDensity.current
@@ -208,7 +432,9 @@ private fun ZoomableImage(item: MediaItem, onTap: () -> Unit, onZoomChanged: (Bo
                     awaitFirstDown(requireUnconsumed = false)
                     do {
                         val event = awaitPointerEvent()
-                        if (event.changes.size > 1 || scale > 1.01f) {
+                        // A finger choosing words (already taken by the text layer) doesn't move the photo.
+                        val taken = event.changes.size == 1 && event.changes.any { it.isConsumed }
+                        if (!taken && (event.changes.size > 1 || scale > 1.01f)) {
                             val z = event.calculateZoom()
                             val p = event.calculatePan()
                             setScale((scale * z).coerceIn(1f, 8f), offset + p)
@@ -225,11 +451,16 @@ private fun ZoomableImage(item: MediaItem, onTap: () -> Unit, onZoomChanged: (Bo
             }
 
         val shown = full
-        if (shown != null) {
-            Image(shown.asImageBitmap(), item.name, content, contentScale = ContentScale.Fit)
-        } else {
-            // The grid thumbnail while the full photo loads.
-            Thumbnail(item, 512, content)
+        Box(content) {
+            if (shown != null) {
+                Image(shown.asImageBitmap(), item.name, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+            } else {
+                // The grid thumbnail while the full photo loads.
+                Thumbnail(item, 512, Modifier.fillMaxSize())
+            }
+            if (text != null && shown != null) {
+                TextOverlay(text, chosen, onChosen, Modifier.fillMaxSize())
+            }
         }
     }
 }
