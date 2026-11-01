@@ -254,6 +254,7 @@ class RestartReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED || intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
             Screenshots.schedule(context)
+            ua.svitlyna.search.IndexJob.schedule(context)
         }
     }
 }

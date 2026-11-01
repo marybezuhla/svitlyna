@@ -70,6 +70,11 @@ class Prefs(context: Context) {
         get() = p.getInt("start_tab", 0)
         set(v) = p.edit().putInt("start_tab", v).apply()
 
+    /** Text on photos is read for search (in the background while charging). */
+    var searchText: Boolean
+        get() = p.getBoolean("search_text", true)
+        set(v) = p.edit().putBoolean("search_text", v).apply()
+
     /** Ask for the fingerprint or the phone's PIN to open the app. */
     var appLock: Boolean
         get() = p.getBoolean("app_lock", false)

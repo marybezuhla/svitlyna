@@ -47,6 +47,7 @@ open class MainActivity : FragmentActivity() {
         // Copies made for sharing are removed an hour later.
         Thread { Share.cleanup(applicationContext) }.start()
         Screenshots.schedule(this)
+        ua.svitlyna.search.IndexJob.schedule(this)
         // Reopened from the recent apps after the process was gone: the old request is not repeated.
         if (savedInstanceState == null && intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY == 0) takeRequest(intent)
         measureBars()
