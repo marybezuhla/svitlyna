@@ -628,13 +628,47 @@ private fun VideoPlayer(item: MediaItem, uri: Uri = item.uri, onEnded: (() -> Un
             playWhenReady = true
         }
     }
-    DisposableEffect(player) { onDispose { player.release() } }
+    // A video (not a live photo) continues where it was stopped last time.
+    val isVideo = item.isVideo && uri == item.uri
+    val prefs = remember { Prefs(context) }
+    LaunchedEffect(player) {
+        if (isVideo) prefs.videoPosition(item.id).takeIf { it > 0 }?.let { player.seekTo(it) }
+    }
+    DisposableEffect(player) {
+        onDispose {
+            if (isVideo) {
+                val pos = player.currentPosition
+                val end = player.duration
+                // Near the start or the end: next time from the beginning.
+                prefs.setVideoPosition(item.id, if (pos > 3_000 && (end <= 0 || pos < end - 3_000)) pos else 0)
+            }
+            player.release()
+        }
+    }
     // Home button or another app: no sound in the background.
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { player.pause() }
-    AndroidView(
-        factory = { PlayerView(it).apply { this.player = player } },
-        modifier = Modifier.fillMaxSize(),
-    )
+    var speed by remember(player) { mutableFloatStateOf(1f) }
+    var muted by remember(player) { mutableStateOf(false) }
+    Box(Modifier.fillMaxSize()) {
+        AndroidView(
+            factory = { PlayerView(it).apply { this.player = player } },
+            modifier = Modifier.fillMaxSize(),
+        )
+        if (isVideo) {
+            androidx.compose.foundation.layout.Row(
+                Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 56.dp, end = 8.dp),
+            ) {
+                TextButton(onClick = {
+                    speed = when (speed) { 1f -> 1.5f; 1.5f -> 2f; 2f -> 0.5f; else -> 1f }
+                    player.setPlaybackSpeed(speed)
+                }) { Text("${if (speed % 1f == 0f) speed.toInt() else speed}×", color = Color.White) }
+                TextButton(onClick = {
+                    muted = !muted
+                    player.volume = if (muted) 0f else 1f
+                }) { Text(if (muted) "🔇" else "🔊", color = Color.White) }
+            }
+        }
+    }
 }
 
 @Composable
