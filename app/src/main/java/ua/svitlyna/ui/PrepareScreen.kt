@@ -202,7 +202,8 @@ fun PrepareScreen(item: MediaItem, onClose: () -> Unit, onSendAsIs: () -> Unit) 
                 }
                 androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
                 // Sent when ready, but not over the lock screen: then right after unlocking.
-                val locked = LocalLocked.current
+                // (While locked, this screen is not shown at all: the lock replaces the whole app.)
+                val locked = false
                 LaunchedEffect(ready, locked) {
                     val i = ready
                     if (i != null && !locked) {
