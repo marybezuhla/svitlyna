@@ -15,6 +15,7 @@ ALLOWED=" android.permission.READ_MEDIA_IMAGES android.permission.READ_MEDIA_VID
 android.permission.READ_MEDIA_VISUAL_USER_SELECTED android.permission.READ_EXTERNAL_STORAGE \
 android.permission.MANAGE_MEDIA android.permission.ACCESS_MEDIA_LOCATION \
 android.permission.POST_NOTIFICATIONS android.permission.RECEIVE_BOOT_COMPLETED \
+android.permission.USE_BIOMETRIC android.permission.USE_FINGERPRINT \
 ua.svitlyna.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION "
 for p in $(grep -oE "name='[^']+'" permissions.txt | sed "s/name='//;s/'//"); do
   case "$ALLOWED" in

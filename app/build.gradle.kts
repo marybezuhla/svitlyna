@@ -69,6 +69,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.2")
     implementation("androidx.exifinterface:exifinterface:1.4.1")
+    // App lock with the fingerprint or the phone's PIN (as in Tarilka)
+    implementation("androidx.biometric:biometric:1.1.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
     // Text on photos: PP-OCRv5 models (in assets/ocr) run with ONNX Runtime (MIT), as in Pysanka

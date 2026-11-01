@@ -62,6 +62,7 @@ import ua.svitlyna.media.Folder
 import ua.svitlyna.media.MediaItem
 import ua.svitlyna.media.Share
 import ua.svitlyna.edit.FixDates
+import ua.svitlyna.media.FileOps
 import ua.svitlyna.edit.StitchMaker
 import ua.svitlyna.media.Filter
 import ua.svitlyna.media.Timeline
@@ -75,6 +76,7 @@ private sealed interface Page {
     data object Trash : Page
     data object Settings : Page
     data object FixDates : Page
+    data object Duplicates : Page
 }
 
 private enum class RequestKind { TRASH, RESTORE, DELETE }
@@ -100,8 +102,8 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
 
     var access by remember { mutableStateOf(Access.level(context)) }
     var canManageMedia by remember { mutableStateOf(Access.canManageMedia(context)) }
-    var page by remember { mutableStateOf<Page>(Page.Photos) }
-    var lastTab by remember { mutableStateOf<Page>(Page.Photos) }
+    var page by remember { mutableStateOf<Page>(if (prefs.startTab == 1) Page.Folders else Page.Photos) }
+    var lastTab by remember { mutableStateOf(page) }
     var selected by remember { mutableStateOf(emptySet<Long>()) }
     var viewer by remember { mutableStateOf<ViewerAt?>(null) }
     var columns by remember { mutableIntStateOf(prefs.columns) }
@@ -123,6 +125,21 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                 Shown(list, Timeline.byDay(list))
             }
         }
+    }
+    var pinned by remember { mutableStateOf(prefs.pinnedFolders) }
+    var folderSort by remember { mutableIntStateOf(prefs.folderSort) }
+    val sortedFolders = remember(state.folders, pinned, folderSort) {
+        val byChoice = when (folderSort) {
+            1 -> state.folders.sortedBy { it.name.lowercase() }
+            2 -> state.folders.sortedByDescending { it.count }
+            else -> state.folders
+        }
+        byChoice.sortedByDescending { it.id in pinned }
+    }
+    var folderMenu by remember { mutableStateOf<Folder?>(null) }
+    fun togglePinned(folder: Folder) {
+        pinned = if (folder.id in pinned) pinned - folder.id else pinned + folder.id
+        prefs.pinnedFolders = pinned
     }
     fun toggleHidden(folder: Folder) {
         hidden = if (folder.id in hidden) hidden - folder.id else hidden + folder.id
@@ -248,6 +265,65 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
         if (items.isNotEmpty()) confirmDelete = items
     }
 
+    // Changes to the person's files (move, rename, favourite) go through Android's own permission
+    // window first; the action runs only after a "yes".
+    var afterWrite by remember { mutableStateOf<(suspend () -> Unit)?>(null) }
+    val writeThenLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        val action = afterWrite
+        afterWrite = null
+        if (result.resultCode == android.app.Activity.RESULT_OK && action != null) scope.launch { action() }
+    }
+    fun askToWrite(pi: android.app.PendingIntent, action: suspend () -> Unit) {
+        afterWrite = action
+        try {
+            writeThenLauncher.launch(IntentSenderRequest.Builder(pi.intentSender).build())
+        } catch (e: Exception) {
+            afterWrite = null
+            scope.launch { snackbar.showSnackbar(context.getString(R.string.request_failed)) }
+        }
+    }
+    fun favorite(items: List<MediaItem>, on: Boolean) {
+        if (items.isEmpty()) return
+        runCatching { MediaStore.createFavoriteRequest(resolver, items.take(REQUEST_CHUNK).map { it.uri }, on) }
+            .onSuccess { askToWrite(it) { selected = emptySet() } }
+    }
+    var moveItems by remember { mutableStateOf<List<MediaItem>?>(null) }
+    fun moveOrCopy(items: List<MediaItem>, path: String, copy: Boolean) {
+        val todo = items.take(REQUEST_CHUNK)
+        if (copy) {
+            scope.launch {
+                val n = FileOps.copy(context, todo, path)
+                selected = emptySet()
+                snackbar.showSnackbar(context.resources.getQuantityString(R.plurals.copied_n, n, n))
+            }
+        } else {
+            runCatching { MediaStore.createWriteRequest(resolver, todo.map { it.uri }) }.onSuccess { pi ->
+                askToWrite(pi) {
+                    val n = FileOps.move(context, todo, path)
+                    selected = emptySet()
+                    snackbar.showSnackbar(context.resources.getQuantityString(R.plurals.moved_n, n, n))
+                }
+            }
+        }
+    }
+    var renaming by remember { mutableStateOf<MediaItem?>(null) }
+
+    // Duplicates: found on request, in the background, with Stop.
+    var dupGroups by remember { mutableStateOf<List<ua.svitlyna.media.Duplicates.Group>?>(null) }
+    var dupProgress by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    var dupJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    fun findDuplicates() {
+        dupProgress = 0 to 0
+        dupJob = scope.launch {
+            val found = ua.svitlyna.media.Duplicates.find(context, state.items) { d, t ->
+                scope.launch { dupProgress = d to t }
+            }
+            dupGroups = found
+            dupProgress = null
+        }
+        dupJob?.invokeOnCompletion { dupProgress = null }
+    }
+
     // Fix date taken: candidates, the chosen ones, Android's write permission, then the writing.
     val fixes = remember(state.items) { FixDates.candidates(state.items) }
     var fixChosen by remember(fixes) { mutableStateOf(fixes.map { it.item.id }.toSet()) }
@@ -360,7 +436,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
             selected.isNotEmpty() -> selected = emptySet()
             page is Page.InFolder -> goTo(Page.Folders)
             page == Page.Trash || page == Page.Settings -> goTo(lastTab)
-            page == Page.FixDates -> goTo(Page.Settings)
+            page == Page.FixDates || page == Page.Duplicates -> goTo(Page.Settings)
             else -> goTo(Page.Photos)
         }
     }
@@ -385,6 +461,10 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                                 Icon(Icons.Filled.Delete, stringResource(R.string.delete_for_good))
                             }
                         } else {
+                            TextButton(onClick = { moveItems = selectedItems }) { Text(stringResource(R.string.to_folder)) }
+                            TextButton(onClick = { favorite(selectedItems, !selectedItems.all { it.isFavorite }) }) {
+                                Text(if (selectedItems.all { it.isFavorite }) "♡" else "♥")
+                            }
                             if (canStitch(selectedItems)) {
                                 TextButton(enabled = stitching == null, onClick = { stitch(selectedItems, stack = false) }) {
                                     Text(stringResource(R.string.stitch))
@@ -405,16 +485,17 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                     Page.Trash -> stringResource(R.string.trash)
                     Page.Settings -> stringResource(R.string.settings)
                     Page.FixDates -> stringResource(R.string.fix_dates)
+                    Page.Duplicates -> stringResource(R.string.dupes)
                 }
                 TopAppBar(
                     title = { Text(title) },
                     navigationIcon = {
-                        if (page is Page.InFolder || page == Page.Trash || page == Page.Settings || page == Page.FixDates) {
+                        if (page is Page.InFolder || page == Page.Trash || page == Page.Settings || page == Page.FixDates || page == Page.Duplicates) {
                             IconButton(onClick = {
                                 goTo(
                                     when (page) {
                                         is Page.InFolder -> Page.Folders
-                                        Page.FixDates -> Page.Settings
+                                        Page.FixDates, Page.Duplicates -> Page.Settings
                                         else -> lastTab
                                     },
                                 )
@@ -488,12 +569,21 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                     onFilter = { filter = it },
                     shownTimeline = shown?.timeline ?: state.timeline,
                     hidden = hidden,
-                    onHideFolder = { f ->
-                        toggleHidden(f)
-                        scope.launch {
-                            snackbar.showSnackbar(context.getString(if (f.id in hidden) R.string.folder_hidden else R.string.folder_shown, f.name))
-                        }
+                    onHideFolder = { f -> folderMenu = f },
+                    sortedFolders = sortedFolders,
+                    dupGroups = dupGroups,
+                    dupProgress = dupProgress,
+                    onFindDupes = ::findDuplicates,
+                    onStopDupes = { dupJob?.cancel() },
+                    onTrashDupes = {
+                        val extra = dupGroups.orEmpty().flatMap { it.extra }
+                        dupGroups = null
+                        trash(extra, toTrash = true)
                     },
+                    onOpenDupes = { goTo(Page.Duplicates) },
+                    pinned = pinned,
+                    folderSort = folderSort,
+                    onFolderSort = { folderSort = it; prefs.folderSort = it },
                     screenshotSettings = ScreenshotSettings(
                         hints = hints,
                         cropNavigation = cropNavigation,
@@ -576,6 +666,8 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
             onTrash = { trash(listOf(it), toTrash = true) },
             keep = { if (tempOn && it.isScreenshot) it.id in kept else null },
             onEdit = { editing = it },
+            onFavorite = { favorite(listOf(it), !it.isFavorite) },
+            onRename = { renaming = it },
             onKeep = ::toggleKept,
         )
         }
@@ -636,6 +728,60 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                     Text(stringResource(R.string.share_as_is))
                 }
             },
+        )
+    }
+
+    folderMenu?.let { f ->
+        AlertDialog(
+            onDismissRequest = { folderMenu = null },
+            title = { Text(f.name.ifBlank { stringResource(R.string.no_folder_name) }) },
+            text = {
+                Column {
+                    TextButton(onClick = { togglePinned(f); folderMenu = null }) {
+                        Text(stringResource(if (f.id in pinned) R.string.folder_unpin else R.string.folder_pin))
+                    }
+                    TextButton(onClick = {
+                        toggleHidden(f)
+                        folderMenu = null
+                        scope.launch {
+                            snackbar.showSnackbar(context.getString(if (f.id in hidden) R.string.folder_hidden else R.string.folder_shown, f.name))
+                        }
+                    }) {
+                        Text(stringResource(if (f.id in hidden) R.string.folder_show else R.string.folder_hide))
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { folderMenu = null }) { Text(stringResource(R.string.close)) } },
+        )
+    }
+
+    moveItems?.let { items ->
+        FolderPickDialog(
+            folders = state.folders,
+            onDismiss = { moveItems = null },
+            onPick = { path, copy ->
+                moveItems = null
+                moveOrCopy(items, path, copy)
+            },
+        )
+    }
+    renaming?.let { item ->
+        var name by remember(item.id) { mutableStateOf(item.name.substringBeforeLast('.')) }
+        AlertDialog(
+            onDismissRequest = { renaming = null },
+            title = { Text(stringResource(R.string.rename)) },
+            text = { androidx.compose.material3.OutlinedTextField(value = name, onValueChange = { name = it }, singleLine = true) },
+            confirmButton = {
+                TextButton(enabled = name.isNotBlank(), onClick = {
+                    renaming = null
+                    runCatching { MediaStore.createWriteRequest(resolver, listOf(item.uri)) }.onSuccess { pi ->
+                        askToWrite(pi) {
+                            if (!FileOps.rename(context, item, name)) snackbar.showSnackbar(context.getString(R.string.request_failed))
+                        }
+                    }
+                }) { Text(stringResource(R.string.rename)) }
+            },
+            dismissButton = { TextButton(onClick = { renaming = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 
@@ -708,6 +854,16 @@ private fun Content(
     shownTimeline: List<ua.svitlyna.media.TimelineEntry>,
     hidden: Set<Long>,
     onHideFolder: (Folder) -> Unit,
+    sortedFolders: List<Folder>,
+    pinned: Set<Long>,
+    folderSort: Int,
+    onFolderSort: (Int) -> Unit,
+    dupGroups: List<ua.svitlyna.media.Duplicates.Group>?,
+    dupProgress: Pair<Int, Int>?,
+    onFindDupes: () -> Unit,
+    onStopDupes: () -> Unit,
+    onTrashDupes: () -> Unit,
+    onOpenDupes: () -> Unit,
 ) {
     when (page) {
         Page.Photos -> if (state.items.isEmpty()) {
@@ -721,15 +877,16 @@ private fun Content(
                 )
             }
         }
-        Page.Folders -> FoldersScreen(state.folders, hidden, onOpenFolder, onHideFolder, padding)
+        Page.Folders -> FoldersScreen(sortedFolders, hidden, pinned, folderSort, onFolderSort, onOpenFolder, onHideFolder, padding)
         is Page.InFolder -> MediaGrid(
             folderTimeline.orEmpty(), columns, onColumns, selected, onOpen, onToggle, onToggleDay, contentPadding = padding,
         )
         Page.Trash -> TrashScreen(state.trash, selected, onToggle, padding)
         Page.Settings -> SettingsScreen(
-            access, canManageMedia, removeLocation, onRemoveLocation, onPickMore, screenshotSettings, onFixDates, fixDatesCount, padding,
+            access, canManageMedia, removeLocation, onRemoveLocation, onPickMore, screenshotSettings, onFixDates, fixDatesCount, onOpenDupes, padding,
         )
         Page.FixDates -> FixDatesScreen(fixes, fixChosen, onFixChosen, onFix, fixing, padding)
+        Page.Duplicates -> DuplicatesScreen(dupGroups, dupProgress, onFindDupes, onStopDupes, onTrashDupes, padding)
     }
 }
 
@@ -751,6 +908,7 @@ private fun FilterRow(filter: Filter, onFilter: (Filter) -> Unit) {
                         stringResource(
                             when (f) {
                                 Filter.ALL -> R.string.filter_all
+                                Filter.FAVORITES -> R.string.filter_favorites
                                 Filter.PHOTOS -> R.string.filter_photos
                                 Filter.VIDEOS -> R.string.filter_videos
                                 Filter.SCREENSHOTS -> R.string.filter_screenshots

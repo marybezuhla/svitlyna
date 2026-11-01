@@ -64,6 +64,7 @@ class MediaRepository(private val resolver: ContentResolver) {
             expiresMs = getLongOrZero(MediaStore.MediaColumns.DATE_EXPIRES) * 1000L,
             relativePath = getStringOrEmpty(MediaStore.MediaColumns.RELATIVE_PATH),
             takenMs = taken,
+            isFavorite = getLongOrZero(MediaStore.MediaColumns.IS_FAVORITE) == 1L,
         )
     }
 
@@ -94,6 +95,7 @@ class MediaRepository(private val resolver: ContentResolver) {
             MediaStore.MediaColumns.DURATION,
             MediaStore.MediaColumns.DATE_EXPIRES,
             MediaStore.MediaColumns.RELATIVE_PATH,
+            MediaStore.MediaColumns.IS_FAVORITE,
         )
 
         val NEWEST_FIRST: Comparator<MediaItem> =

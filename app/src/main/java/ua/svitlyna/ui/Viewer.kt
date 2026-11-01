@@ -107,6 +107,8 @@ fun Viewer(
     keep: (MediaItem) -> Boolean? = { null },
     onKeep: (MediaItem) -> Unit = {},
     onEdit: (MediaItem) -> Unit = {},
+    onFavorite: (MediaItem) -> Unit = {},
+    onRename: (MediaItem) -> Unit = {},
 ) {
     BackHandler(onBack = onClose)
     if (items.isEmpty()) {
@@ -276,6 +278,9 @@ fun Viewer(
                         .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    TextButton(onClick = { onFavorite(item) }) {
+                        Text(if (item.isFavorite) "♥" else "♡", color = if (item.isFavorite) Color(0xFFE57373) else Color.White)
+                    }
                     IconButton(onClick = { onShare(item) }) {
                         Icon(Icons.Filled.Share, stringResource(R.string.share), tint = Color.White)
                     }
@@ -327,7 +332,7 @@ fun Viewer(
             )
         }
     }
-    info?.let { InfoDialog(it) { info = null } }
+    info?.let { InfoDialog(it, onRename = { r -> info = null; onRename(r) }) { info = null } }
 }
 
 /** The bar while choosing text: what is chosen, all or none, copy, share, done. */
@@ -633,7 +638,7 @@ private fun VideoPlayer(item: MediaItem, uri: Uri = item.uri, onEnded: (() -> Un
 }
 
 @Composable
-private fun InfoDialog(item: MediaItem, onDismiss: () -> Unit) {
+private fun InfoDialog(item: MediaItem, onRename: (MediaItem) -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
     var exif by remember(item.id) { mutableStateOf<PhotoDetails?>(null) }
     LaunchedEffect(item.id) { exif = PhotoDetails.read(context, item) }
@@ -673,6 +678,13 @@ private fun InfoDialog(item: MediaItem, onDismiss: () -> Unit) {
                         Text(stringResource(R.string.details_no_location), style = MaterialTheme.typography.bodySmall)
                     }
                 }
+                TextButton(onClick = { onRename(item) }) { Text(stringResource(R.string.rename)) }
+                TextButton(onClick = {
+                    // Another editor (Snapseed, Image Toolbox…): the phone shows the choice.
+                    val edit = Intent(Intent.ACTION_EDIT).setDataAndType(item.uri, item.mime.ifBlank { "image/*" })
+                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    runCatching { context.startActivity(Intent.createChooser(edit, null)) }
+                }) { Text(stringResource(R.string.edit_elsewhere)) }
                 if (!item.isVideo) {
                     TextButton(onClick = {
                         // Android's own "use as": wallpaper, contact photo… No permission needed.

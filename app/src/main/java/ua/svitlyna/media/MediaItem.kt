@@ -24,6 +24,8 @@ data class MediaItem(
     val relativePath: String = "",
     /** The date taken as the file itself says (0: the file has none, [dateMs] is the file's date). */
     val takenMs: Long = 0,
+    /** Marked with Android's own "favourite" (shared with other gallery apps). */
+    val isFavorite: Boolean = false,
 ) {
     /** Screenshots live in a folder called Screenshots on every phone we know of. */
     val isScreenshot: Boolean
