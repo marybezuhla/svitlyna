@@ -1140,17 +1140,14 @@ internal fun GalleryApp(
                         },
                         dismissButton = {
                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                // Svitlyna: the encrypted vault works without "All files access" too:
+                                // Android just asks before the originals are removed.
                                 TextButton(onClick = {
                                     showAllFilesAccessPromptDialog = false
-                                    if (pending != null) {
-                                        val lockedIds = pending.map { it.id }.toSet()
-                                        viewModel.setLocked(lockedIds, true)
-                                        viewModel.refresh()
-                                        Toast.makeText(context, context.getString(R.string.toast_vault_items_locked_gallery, pending.size), Toast.LENGTH_SHORT).show()
-                                    }
+                                    if (pending != null) executeVaultMove(pending)
                                     pendingVaultItems = null
                                 }) {
-                                    Text(stringResource(R.string.action_hide_in_iris))
+                                    Text(stringResource(R.string.sv_vault_with_confirm))
                                 }
                                 TextButton(onClick = {
                                     showAllFilesAccessPromptDialog = false
