@@ -1,27 +1,31 @@
-**Світлина 0.1.0 — перша тестова версія.** Приватна галерея для Android: без інтернету, акаунтів і реклами. Українська та англійська.
+**Світлина 0.2.0** — приватна галерея для Android: без інтернету, акаунтів і реклами. Українська та англійська. Тестова версія.
 
-- 🖼️ **Шкала за днями** із системного списку медіа: швидко навіть на десятках тисяч фото. Зведення пальців змінює розмір фото, повзунок праворуч прокручує роки.
-- 📁 **Папки** з обкладинками й кількістю.
-- 🔍 **Перегляд:** гортання, масштаб двома пальцями чи подвійним дотиком, відео.
-- 🗑️ **Кошик Android:** у кошик, відновити, видалити назавжди (Світлина перепитує).
-- 📤 **Надсилання без геолокації типово:** фото надсилаються копіями без GPS, оригінали не змінюються; про відео й HEIC питаємо.
-- 🔒 **Доступ лише до фото й відео**, можна дати лише вибрані (Android 14+). «Керування медіафайлами» — за бажанням.
+- 🖼️ **Галерея:** шкала за днями, фільтри (обрані, фото, відео, скріншоти, GIF, RAW, панорами), папки — закріпити, сортувати, сховати зі шкали; перемістити чи скопіювати фото, перейменувати; обрані ♥; кошик Android.
+- 🔍 **Перегляд:** масштаб, відео (швидкість, без звуку, продовжити з місця), живі фото, подробиці (камера, експозиція, місце й «відкрити в картах»), «Використати як…», яскравість для квитків і QR.
+- 🔤 **Текст на фото:** виділити, скопіювати, поділитися — розпізнавання на телефоні.
+- ✏️ **Редактор:** обрізати, повернути, вирівняти, кольори, пензель, стрілки, рамки, текст; **затерти** суцільним чорним, розмити, пікселі. Завжди зберігає **копію поруч з оригіналом** — з тією самою датою й усіма метаданими.
+- 📤 **Перед надсиланням:** знаходить номери карток, телефони, пошту, IBAN, номери авто й адреси та затирає їх; розміри для соцмереж; копія без жодних метаданих.
+- 📸 **Скріншоти:** підказки після скріншота, автоматично без рядка стану, склеювання довгого скріншота, тимчасові скріншоти (за бажанням).
+- 🧹 **Порядок:** дублікати, виправлення дати зйомки фото з месенджерів за назвою файлу.
+- 🔒 **Приватність:** доступ лише до фото й відео, блокування відбитком або PIN-кодом телефона, без інтернету.
 
-Потрібен Android 11 або новіший. Це тестова версія: помилки й побажання — в Issues.
+Частину функцій перенесено з [Iris Gallery](https://github.com/MohamadOday/iris-gallery) (Apache 2.0). Потрібен Android 11 або новіший. Помилки й побажання — в Issues.
 
 📲 Завантажте файл .apk нижче й відкрийте його на телефоні. 🔄 Для оновлень — Obtainium (є в F-Droid): «Додати застосунок» → `github.com/Marybezu/svitlyna`.
 
 ---
 
-**Svitlyna 0.1.0 — first test version.** A private gallery for Android: no internet, no accounts, no ads. Ukrainian and English.
+**Svitlyna 0.2.0** — a private gallery for Android: no internet, no accounts, no ads. Ukrainian and English. Test version.
 
-- 🖼️ **Timeline by day** from the system media list: fast even with tens of thousands of photos. Pinch to change photo size; the handle on the right scrolls through years.
-- 📁 **Folders** with covers and counts.
-- 🔍 **Viewer:** swipe, pinch or double-tap zoom, videos.
-- 🗑️ **Android trash:** move, restore, delete for good (Svitlyna asks first).
-- 📤 **Sharing without location by default:** photos go as copies without GPS, originals untouched; you're asked about videos and HEIC.
-- 🔒 **Access to photos and videos only**, or just the ones you pick (Android 14+). Media management is optional.
+- 🖼️ **Gallery:** timeline by day, filters (favourites, photos, videos, screenshots, GIF, RAW, panoramas), folders — pin, sort, hide from the timeline; move or copy photos, rename; favourites ♥; Android trash.
+- 🔍 **Viewer:** zoom, video (speed, mute, continue where stopped), live photos, details (camera, exposure, location and "open in maps"), "Use as…", brightness for tickets and QR codes.
+- 🔤 **Text in photos:** select, copy, share — recognised on the phone.
+- ✏️ **Editor:** cut, turn, straighten, colours, brush, arrows, boxes, text; **black out** with solid black, blur, pixels. Always saves a **copy next to the original** — with the same date and all its metadata.
+- 📤 **Before sending:** finds card numbers, phones, e-mail, IBAN, car plates and addresses and blacks them out; sizes for social networks; a copy with no metadata at all.
+- 📸 **Screenshots:** hints after a screenshot, automatic status bar removal, long screenshot stitching, temporary screenshots (optional).
+- 🧹 **Tidying:** duplicates, fixing the date taken of messenger photos from their file names.
+- 🔒 **Privacy:** access to photos and videos only, lock with the fingerprint or the phone's PIN, no internet.
 
-Requires Android 11 or newer. This is a test version: bugs and wishes go to Issues.
+Some features come from [Iris Gallery](https://github.com/MohamadOday/iris-gallery) (Apache 2.0). Requires Android 11 or newer. Bugs and wishes: Issues.
 
 📲 Download the .apk below and open it on your phone. 🔄 For updates use Obtainium (in F-Droid): "Add app" → `github.com/Marybezu/svitlyna`.

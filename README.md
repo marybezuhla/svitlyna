@@ -2,7 +2,7 @@
 
 Приватна галерея для Android: усе на телефоні, без інтернету, акаунтів і реклами. Текст на фото, пошук українською, обличчя, місця й локальний ШІ — лише на телефоні. Українська та англійська. Безкоштовно.
 
-> **Статус: розробка, етап 1.** Уже працюють шкала, папки, перегляд, відео, кошик і надсилання без геолокації. Що будуємо — [SPEC.md](SPEC.md), чому саме так — [DECISIONS.md](DECISIONS.md). Ідеї й побажання: [Issues](../../issues).
+> **Статус: тестова версія 0.2.0.** Працюють шкала й папки, перегляд, текст на фото, редактор, «перед надсиланням», скріншоти, дублікати й блокування. Далі — пошук за змістом, обличчя, карти. Завантажити: [Releases](../../releases). Що будуємо — [SPEC.md](SPEC.md), чому саме так — [DECISIONS.md](DECISIONS.md). Ідеї й побажання: [Issues](../../issues).
 
 ## Що буде
 
@@ -21,6 +21,7 @@
 
 - **Підпис:** справжній APK буде підписано сертифікатом із відбитком SHA-256 `53027b1a87085eb9e40a74820ff2aa067dd3350a0e3010a8f6c559e04a628630`.
 - **Збірка:** APK збиратиметься з цього коду в GitHub Actions і підписуватиметься лише після схвалення авторки.
+- **Основа з Iris Gallery:** редактор і частина функцій перенесені з [Iris Gallery](https://github.com/MohamadOday/iris-gallery) (Apache 2.0), див. [NOTICE.md](NOTICE.md).
 - **Як створено:** код пишеться за допомогою ШІ (Claude, Anthropic) під керівництвом і з тестуванням авторки.
 
 Kotlin · Jetpack Compose. Ліцензія GPL-3.0.
@@ -31,7 +32,7 @@ Kotlin · Jetpack Compose. Ліцензія GPL-3.0.
 
 A private gallery for Android: everything on the phone, no internet, no accounts, no ads. Text in photos, search in Ukrainian, faces, places and an on-device AI — all on the phone. Ukrainian and English. Free.
 
-> **Status: in development, stage 1.** Timeline, folders, viewer, video, trash and sharing without location already work. What we are building is in [SPEC.md](SPEC.md) and why in [DECISIONS.md](DECISIONS.md) (both in Ukrainian). Ideas and wishes: [Issues](../../issues).
+> **Status: test version 0.2.0.** Timeline and folders, viewer, text in photos, editor, before-sending check, screenshots, duplicates and lock work. Next: search by meaning, faces, maps. Download: [Releases](../../releases). What we are building is in [SPEC.md](SPEC.md) and why in [DECISIONS.md](DECISIONS.md) (both in Ukrainian). Ideas and wishes: [Issues](../../issues).
 
 ## Planned
 
@@ -50,6 +51,7 @@ A private gallery for Android: everything on the phone, no internet, no accounts
 
 - **Signing:** the genuine APK will be signed with a certificate whose SHA-256 fingerprint is `53027b1a87085eb9e40a74820ff2aa067dd3350a0e3010a8f6c559e04a628630`.
 - **Build:** the APK will be built from this code in GitHub Actions and signed only after the author's approval.
+- **From Iris Gallery:** the editor and some features come from [Iris Gallery](https://github.com/MohamadOday/iris-gallery) (Apache 2.0), see [NOTICE.md](NOTICE.md).
 - **How it is made:** written with AI assistance (Claude, Anthropic), directed and tested by the author.
 
 Kotlin · Jetpack Compose. GPL-3.0 licence.
