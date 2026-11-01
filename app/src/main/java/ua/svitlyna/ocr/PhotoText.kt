@@ -84,8 +84,8 @@ object PhotoTextReader {
     private const val OVERLAP = 96
 
     /**
-     * Reads all the text on [item], or null when there is none or the photo can't be read (deleted,
-     * access taken away, an unusual file, not enough memory): never a crash. Runs off the main thread;
+     * Reads all the text on [item] (no lines when there is none), or null when the photo can't be
+     * read (deleted, access taken away, an unusual file, not enough memory): never a crash. Runs off the main thread;
      * cancelling stops between lines.
      */
     suspend fun read(context: Context, item: MediaItem): PhotoText? = withContext(Dispatchers.IO) {

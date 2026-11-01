@@ -33,7 +33,7 @@ class TextIndex(private val db: SupportSQLiteDatabase) {
          * letter look for nothing (they would match half the words).
          */
         fun match(keys: List<String>, lastIsBeginning: Boolean = true): String? {
-            val safe = keys.map { k -> k.filter { it in 'a'..'z' || it in '0'..'9' } }.filter { it.length >= 2 || it.all(Char::isDigit) && it.isNotEmpty() }.distinct()
+            val safe = keys.map { k -> k.filter { it in 'a'..'z' || it in '0'..'9' } }.filter { it.length >= 2 }.distinct()
             if (safe.isEmpty()) return null
             return safe.mapIndexed { i, k -> if (lastIsBeginning && i == safe.lastIndex) "$k*" else k }.joinToString(" ")
         }

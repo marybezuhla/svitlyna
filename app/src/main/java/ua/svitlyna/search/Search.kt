@@ -3,6 +3,7 @@ package ua.svitlyna.search
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import ua.svitlyna.media.MediaItem
 import java.time.LocalDate
@@ -29,9 +30,12 @@ object Search {
     suspend fun find(context: Context, query: String, items: List<MediaItem>, today: LocalDate = LocalDate.now(), zone: ZoneId = ZoneId.systemDefault()): Result =
         withContext(Dispatchers.Default) {
             val parsed = DateWords.parse(query, today)
-            val keys = parsed.rest.map(Words::key).filter { it.isNotEmpty() }.distinct()
-            // The last word is still being typed unless a space follows it: only it is a beginning.
-            val typing = query.isNotEmpty() && !query.last().isWhitespace()
+            val all = parsed.rest.map(Words::key).filter { it.isNotEmpty() }
+            // One letter or digit looks for nothing (it would match half the gallery).
+            val keys = all.filter { it.length >= 2 }.distinct()
+            // The last word is still being typed unless a space follows it: only it is a beginning,
+            // and only if it is the one that was kept.
+            val typing = query.isNotEmpty() && !query.last().isWhitespace() && all.lastOrNull()?.length?.let { it >= 2 } == true
             val range = parsed.range(zone)
             val inTime = if (range == null) items else items.filter { it.dateMs in range }
             if (keys.isEmpty()) {
@@ -39,7 +43,7 @@ object Search {
             }
             val textIds = if (!ua.svitlyna.ui.Prefs(context).searchText) emptySet() else
                 runCatching { withContext(Dispatchers.IO) { IndexDb.index(context).search(keys, typing) } }.getOrDefault(emptySet())
-            val names = names(items)
+            val names = buildMutex.withLock { names(items) }
             var byText = 0
             var byName = 0
             val found = ArrayList<MediaItem>()
@@ -53,15 +57,22 @@ object Search {
             Result(found, keys, byText, byName, range != null, textIds)
         }
 
-    /** Keys of each item's file and folder names, made once per gallery list. */
+    /** Keys of each item's file and folder names, made once per gallery list (one making at a time). */
     @Volatile
     private var cache: Pair<List<MediaItem>, Map<Long, List<String>>>? = null
+    private val buildMutex = kotlinx.coroutines.sync.Mutex()
 
-    private fun names(items: List<MediaItem>): Map<Long, List<String>> {
+    /** Search closed: the names' keys are let go. */
+    fun forget() {
+        cache = null
+    }
+
+    private suspend fun names(items: List<MediaItem>): Map<Long, List<String>> {
         cache?.let { (list, map) -> if (list === items) return map }
         val folders = HashMap<Long, List<String>>()
         val map = HashMap<Long, List<String>>(items.size * 2)
-        for (item in items) {
+        for ((i, item) in items.withIndex()) {
+            if (i % 2000 == 0) kotlinx.coroutines.currentCoroutineContext().ensureActive()
             val folder = folders.getOrPut(item.bucketId) { Words.keys(item.bucketName) }
             map[item.id] = (Words.keys(item.name.substringBeforeLast('.')) + folder).distinct()
         }

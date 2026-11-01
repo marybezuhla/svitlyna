@@ -59,7 +59,8 @@ object Indexer {
         if (!Prefs(context).searchText) return@withContext
         runCatching {
             val index = IndexDb.index(context)
-            val photos = readable(items)
+            // Photos that couldn't be read in this run are not counted as still to read.
+            val photos = readable(items).filter { it.id !in failed }
             val stamps = index.stamps()
             val done = photos.count { stamps[it.id] == stamp(it) }
             _withText.value = index.withText()
@@ -91,8 +92,9 @@ object Indexer {
                     index.remove(stamps.keys.filter { it !in alive })
                 }
                 val todo = photos.filter { stamps[it.id] != stamp(it) && it.id !in failed }
-                var done = photos.size - todo.size
-                _progress.value = Progress(done, photos.size, true, (todo.size * perPhoto).toInt(), counted = true)
+                var total = photos.count { it.id !in failed }
+                var done = total - todo.size
+                _progress.value = Progress(done, total, true, (todo.size * perPhoto).toInt(), counted = true)
                 var failedInRow = 0
                 for ((i, item) in todo.withIndex()) {
                     currentCoroutineContext().ensureActive()
@@ -103,6 +105,7 @@ object Indexer {
                     val read = PhotoTextReader.read(context, item)
                     if (read == null) {
                         failed += item.id
+                        total--
                         if (++failedInRow >= 5) return@withLock false
                         continue
                     }
@@ -113,7 +116,7 @@ object Indexer {
                     done++
                     val took = (android.os.SystemClock.elapsedRealtime() - started) / 1000.0
                     perPhoto = perPhoto * 0.9 + took * 0.1
-                    _progress.value = Progress(done, photos.size, true, ((todo.size - i - 1) * perPhoto).toInt(), counted = true)
+                    _progress.value = Progress(done, total, true, ((todo.size - i - 1) * perPhoto).toInt(), counted = true)
                     if (i % 25 == 0) _withText.value = index.withText()
                 }
                 _withText.value = index.withText()
@@ -143,6 +146,12 @@ object Indexer {
     fun stop() {
         now?.cancel()
         now = null
+    }
+
+    /** Search off: the text read so far is erased, even if the screen that asked is gone meanwhile. */
+    fun eraseSoon(context: Context) {
+        val app = context.applicationContext
+        scope.launch { runCatching { erase(app) } }
     }
 
     /** Search off: the text read so far is erased. */

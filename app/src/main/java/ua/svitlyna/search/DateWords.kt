@@ -40,6 +40,8 @@ object DateWords {
         return if (i >= 0) i + 1 else null
     }
 
+    private val SEASONS = setOf("літа", "літо", "літі", "зими", "зима", "зимі", "весни", "весна", "навесні", "осені", "осінь", "summer", "winter", "spring", "autumn", "fall")
+
     private val TODAY = setOf("сьогодні", "today")
     private val YESTERDAY = setOf("вчора", "учора", "yesterday")
     private val LAST = setOf("минулого", "минулий", "минулому", "минулої", "last", "previous")
@@ -57,7 +59,8 @@ object DateWords {
             val g = m.groupValues
             val date = runCatching {
                 if (g[1].isNotEmpty()) {
-                    val y = g[3].toInt().let { if (g[3].length == 2) 2000 + it else it }
+                    // Two digits: this century unless that would be in the future («1.5.99» is 1999).
+                    val y = g[3].toInt().let { if (g[3].length == 2) (if (2000 + it > today.year) 1900 + it else 2000 + it) else it }
                     LocalDate.of(y, g[2].toInt(), g[1].toInt())
                 } else {
                     LocalDate.of(g[4].toInt(), g[5].toInt(), g[6].toInt())
@@ -128,9 +131,11 @@ object DateWords {
             }
             y != null -> set(LocalDate.of(y, 1, 1), LocalDate.of(y, 12, 31))
         }
-        // «минулого» or "last" before something that isn't a time («минулого літа») says nothing to
-        // look for on a photo either.
-        val rest = words.filterIndexed { i, w -> !used[i] && w !in LAST && w !in THIS }
+        // «минулого» or "last" before a season or month («минулого літа», "last may") is about time,
+        // not a word to look for; anywhere else ("Last Supper") it stays.
+        val rest = words.filterIndexed { i, w ->
+            !used[i] && !((w in LAST || w in THIS) && words.getOrNull(i + 1)?.let { it in SEASONS || month(it) != null } == true)
+        }
         return Parsed(from, to, rest)
     }
 }
