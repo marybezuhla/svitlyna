@@ -2,7 +2,7 @@
 
 Приватна галерея для Android: усе на телефоні, без інтернету, акаунтів і реклами. Текст на фото, пошук українською, обличчя, місця й локальний ШІ — лише на телефоні. Українська та англійська. Безкоштовно.
 
-> **Статус: план, розробка ще не почалася.** Що будуємо — [SPEC.md](SPEC.md), чому саме так — [DECISIONS.md](DECISIONS.md). Ідеї й побажання: [Issues](../../issues).
+> **Статус: розробка, етап 1.** Уже працюють шкала, папки, перегляд, відео, кошик і надсилання без геолокації. Що будуємо — [SPEC.md](SPEC.md), чому саме так — [DECISIONS.md](DECISIONS.md). Ідеї й побажання: [Issues](../../issues).
 
 ## Що буде
 
@@ -31,7 +31,7 @@ Kotlin · Jetpack Compose. Ліцензія GPL-3.0.
 
 A private gallery for Android: everything on the phone, no internet, no accounts, no ads. Text in photos, search in Ukrainian, faces, places and an on-device AI — all on the phone. Ukrainian and English. Free.
 
-> **Status: planning, development has not started yet.** What we are building is in [SPEC.md](SPEC.md) and why in [DECISIONS.md](DECISIONS.md) (both in Ukrainian). Ideas and wishes: [Issues](../../issues).
+> **Status: in development, stage 1.** Timeline, folders, viewer, video, trash and sharing without location already work. What we are building is in [SPEC.md](SPEC.md) and why in [DECISIONS.md](DECISIONS.md) (both in Ukrainian). Ideas and wishes: [Issues](../../issues).
 
 ## Planned
 
