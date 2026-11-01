@@ -101,6 +101,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
     var askShare by remember { mutableStateOf<List<MediaItem>?>(null) }
     // One photo is sent through "Before sending" (check, black out, size); several go as before.
     var prepare by remember { mutableStateOf<MediaItem?>(null) }
+    var editing by remember { mutableStateOf<MediaItem?>(null) }
     // Temporary screenshots: an offer to move old ones to the trash (Android asks to confirm).
     var tempOn by remember { mutableStateOf(prefs.tempScreenshots) }
     var tempDays by remember { mutableIntStateOf(prefs.tempDays) }
@@ -533,9 +534,32 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
             onShare = { share(listOf(it)) },
             onTrash = { trash(listOf(it), toTrash = true) },
             keep = { if (tempOn && it.isScreenshot) it.id in kept else null },
+            onEdit = { editing = it },
             onKeep = ::toggleKept,
         )
         }
+    }
+
+    editing?.let { item ->
+        EditorScreen(
+            item,
+            onClose = { editing = null },
+            onSaved = { uri ->
+                editing = null
+                scope.launch {
+                    val open = snackbar.showSnackbar(
+                        context.getString(R.string.edit_saved),
+                        actionLabel = context.getString(R.string.open),
+                        duration = androidx.compose.material3.SnackbarDuration.Long,
+                    )
+                    val id = uri.lastPathSegment?.toLongOrNull()
+                    if (open == androidx.compose.material3.SnackbarResult.ActionPerformed && id != null) {
+                        viewer = null
+                        openRequest?.value = OpenRequest(id, readText = false)
+                    }
+                }
+            },
+        )
     }
 
     prepare?.let { item ->
