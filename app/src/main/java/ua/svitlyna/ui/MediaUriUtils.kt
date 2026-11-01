@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import ua.svitlyna.data.MediaImage
-import ua.svitlyna.data.Mp4MetadataStripper
 import ua.svitlyna.data.SecureSharingMode
 import androidx.exifinterface.media.ExifInterface
 import kotlinx.coroutines.Dispatchers
@@ -263,6 +262,8 @@ internal suspend fun prepareShareUris(
                     tagsToRemove.forEach { tag ->
                         exif.setAttribute(tag, null)
                     }
+                    // The location is also written in XMP by many phones and programs: that goes too.
+                    ua.svitlyna.media.Metadata.removeLocation(exif)
                     exif.saveAttributes()
                     true
                 }.getOrDefault(false)
@@ -314,13 +315,11 @@ private fun shareVideo(
             context.contentResolver.openInputStream(item.uri)
         } ?: return@runCatching false
 
+        // Svitlyna's video cleaning: notes boxes emptied in place (cutting them out would shift the
+        // video's tables and spoil it); videos with GPS in every frame are refused.
         source.use { input ->
             tempFile.outputStream().use { output ->
-                Mp4MetadataStripper.strip(
-                    input = input,
-                    output = output,
-                    stripAll = mode == SecureSharingMode.STRIP_ALL
-                )
+                ua.svitlyna.media.VideoClean.clean(input, output)
             }
         }
     }.getOrDefault(false)

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sv_lock_title">Розблокувати Світлину</string>
+    <string name="sv_lock_open">Відкрити</string>
+    <string name="sv_lock_explain">Відбиток або PIN-код, графічний ключ чи пароль телефона. Перевіряє Android; Світлина їх не бачить.</string>
+    <string name="sv_lock_no_screen_lock">Спершу встановіть PIN, графічний ключ чи відбиток для телефона.</string>
+    <string name="sv_lock_turned_off">На телефоні більше немає блокування екрана, тож блокування застосунку вимкнено.</string>
+    <string name="sv_app_lock_desc">Для входу у Світлину та її вибір фото потрібен відбиток або PIN-код телефона. Протягом пів хвилини повторно не питає; у недавніх застосунках вміст сховано.</string>
+</resources>

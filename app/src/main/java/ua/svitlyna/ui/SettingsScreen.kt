@@ -1294,44 +1294,27 @@ fun SettingsScreen(
 
                     SettingsSwitchRow(
                         title = stringResource(R.string.settings_app_lock_title),
-                        subtitle = stringResource(R.string.settings_app_lock_desc),
-                        checked = settings.appLockEnabled && settings.hasPin,
+                        subtitle = stringResource(R.string.sv_app_lock_desc),
+                        checked = settings.appLockEnabled,
                         onCheckedChange = { isChecked ->
-                            if (isChecked) {
-                                if (settings.hasPin) {
-                                    preferences.setAppLockEnabled(true)
+                            // The phone's own lock (Android checks it); turning it on or off is confirmed with it.
+                            val activity = context as? androidx.fragment.app.FragmentActivity
+                            if (activity != null) {
+                                if (isChecked && !ua.svitlyna.core.AppLock.deviceSecure(activity)) {
+                                    Toast.makeText(context, R.string.sv_lock_no_screen_lock, Toast.LENGTH_LONG).show()
                                 } else {
-                                    showSetPinDialog = true
-                                }
-                            } else {
-                                if (settings.hasPin) {
-                                    showDisablePinDialog = true
-                                } else {
-                                    preferences.setAppLockEnabled(false)
+                                    ua.svitlyna.core.AppLock.ask(activity, onNoScreenLock = {
+                                        preferences.setAppLockEnabled(false)
+                                        ua.svitlyna.core.AppLock.applyRecents(activity, false)
+                                    }) {
+                                        if (isChecked) ua.svitlyna.core.AppLock.unlocked = true
+                                        preferences.setAppLockEnabled(isChecked)
+                                        ua.svitlyna.core.AppLock.applyRecents(activity, isChecked)
+                                    }
                                 }
                             }
                         }
                     )
-
-                    if (settings.hasPin) {
-                        OutlinedButton(
-                            onClick = { showChangePinDialog = true },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(stringResource(R.string.settings_change_pin))
-                        }
-
-                        if (isBiometricHardwareAvailable(context)) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                            SettingsSwitchRow(
-                                title = stringResource(R.string.settings_biometric_unlock_title),
-                                subtitle = stringResource(R.string.settings_biometric_unlock_desc),
-                                checked = settings.appLockBiometricsEnabled,
-                                onCheckedChange = { preferences.setAppLockBiometricsEnabled(it) }
-                            )
-                        }
-                    }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 

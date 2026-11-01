@@ -241,13 +241,22 @@ internal fun GalleryApp(
     var lockedAuthorized by remember { mutableStateOf(false) }
     var lastBackgroundTimestamp by remember { mutableStateOf(0L) }
     var isAppUnlocked by remember {
-        mutableStateOf(!settings.appLockEnabled || !settings.hasPin || isSessionAppUnlocked)
+        mutableStateOf(!ua.svitlyna.core.AppLock.shouldLock(settings.appLockEnabled))
     }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) {
                 lastBackgroundTimestamp = System.currentTimeMillis()
+                ua.svitlyna.core.AppLock.leftAt = android.os.SystemClock.elapsedRealtime()
+            } else if (event == Lifecycle.Event.ON_START) {
+                // Away longer than half a minute (or a new process): locked again.
+                if (ua.svitlyna.core.AppLock.shouldLock(settingsPreferences.state.value.appLockEnabled)) {
+                    ua.svitlyna.core.AppLock.unlocked = false
+                    isAppUnlocked = false
+                } else if (isAppUnlocked) {
+                    ua.svitlyna.core.AppLock.leftAt = 0
+                }
             } else if (event == Lifecycle.Event.ON_RESUME) {
                 if (permitted) {
                     viewModel.checkForChanges()
@@ -511,7 +520,7 @@ internal fun GalleryApp(
         }
     } else {
         AnimatedContent(
-            targetState = (!settings.appLockEnabled || !settings.hasPin || isAppUnlocked),
+            targetState = (!settings.appLockEnabled || isAppUnlocked),
             transitionSpec = {
                 (fadeIn(animationSpec = tween(320, easing = FastOutSlowInEasing)) +
                  scaleIn(initialScale = 0.94f, animationSpec = tween(320, easing = FastOutSlowInEasing)))
@@ -523,19 +532,20 @@ internal fun GalleryApp(
             label = "AppLockTransition"
         ) { unlocked ->
             if (!unlocked) {
-                AppLockScreen(
-                    isPicker = onPick != null,
-                    biometricsEnabled = settings.appLockBiometricsEnabled,
-                    onVerifyPin = { pin -> settingsPreferences.verifyPin(pin) },
-                    pinLockoutRemainingMs = { settingsPreferences.pinLockoutRemainingMs() },
-                    onResetLock = {
-                        settingsPreferences.removePin()
-                        Toast.makeText(context, R.string.app_lock_reset_success, Toast.LENGTH_LONG).show()
-                    },
+                DeviceLockScreen(
                     onUnlocked = {
+                        ua.svitlyna.core.AppLock.unlocked = true
+                        ua.svitlyna.core.AppLock.leftAt = 0
                         isSessionAppUnlocked = true
                         isAppUnlocked = true
-                    }
+                    },
+                    onNoScreenLock = {
+                        // The phone's screen lock was removed: the app lock can't work, so it is turned off.
+                        settingsPreferences.setAppLockEnabled(false)
+                        (context as? androidx.fragment.app.FragmentActivity)?.let { ua.svitlyna.core.AppLock.applyRecents(it, false) }
+                        isAppUnlocked = true
+                        Toast.makeText(context, R.string.sv_lock_turned_off, Toast.LENGTH_LONG).show()
+                    },
                 )
             } else {
                 val visibleMedia = remember(state.images, requestedType, libraryState.lockedMedia, libraryState.excludedFolders) {
