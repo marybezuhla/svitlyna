@@ -237,7 +237,7 @@ class TrashRepository(private val context: Context) {
             if (!copied) {
                 runCatching { targetFile.delete() }
                 copied = runCatching {
-                    context.contentResolver.openInputStream(item.uri)?.use { input ->
+                    (runCatching { context.contentResolver.openInputStream(android.provider.MediaStore.setRequireOriginal(item.uri)) }.getOrNull() ?: context.contentResolver.openInputStream(item.uri))?.use { input ->
                         FileOutputStream(targetFile).use { output ->
                             input.copyTo(output)
                         }
@@ -331,7 +331,8 @@ class TrashRepository(private val context: Context) {
         val idsToRemove = trashedItems.map { abs(it.id) }.toSet()
 
         currentItems.removeAll { item ->
-            if (item.id in idsToRemove) {
+            // Svitlyna: undone only while the original is still there (otherwise this is the only copy).
+            if (item.id in idsToRemove && (item.originalPath.isBlank() || runCatching { File(item.originalPath).exists() }.getOrDefault(true))) {
                 val file = File(trashDir, item.trashFileName)
                 runCatching { file.delete() }
                 true
@@ -437,7 +438,7 @@ class TrashRepository(private val context: Context) {
             val effectiveAddedSec = if (item.dateAdded > 0L) item.dateAdded / 1000L else effectiveModSec
 
             if (hasAllFilesAccess()) {
-                val destFile = if (item.originalPath.isNotBlank()) {
+                val wanted = if (item.originalPath.isNotBlank()) {
                     val file = File(item.originalPath)
                     file.parentFile?.mkdirs()
                     file
@@ -447,7 +448,10 @@ class TrashRepository(private val context: Context) {
                     ).resolve("Svitlyna").apply { mkdirs() }
                     File(fallbackDir, item.originalName)
                 }
-                trashFile.copyTo(destFile, overwrite = true)
+                // Svitlyna: never over a file already there (a new photo with the same name).
+                val target = if (wanted.exists()) uniqueDestinationFile(wanted.parentFile!!, wanted.name) else wanted
+                trashFile.copyTo(target, overwrite = false)
+                val destFile = target
                 if (effectiveModMs > 0L) {
                     destFile.setLastModified(effectiveModMs)
                 }

@@ -2493,7 +2493,10 @@ private suspend fun performOverwriteWrite(
     format: ExportFormat,
     tags: Map<String, String>
 ): Boolean = withContext(Dispatchers.IO) {
-    val isFile = image.uri.scheme == "file"
+    // Svitlyna: only the person's own photo in the phone's media list is ever written over (never a
+    // file another app handed over, never the vault).
+    if (image.id <= 0 || image.uri.authority != MediaStore.AUTHORITY) return@withContext false
+    val isFile = false
     if (isFile) {
         val targetFile = File(image.path)
         val parent = targetFile.absoluteFile.parentFile ?: return@withContext false
@@ -2516,26 +2519,39 @@ private suspend fun performOverwriteWrite(
         }
         if (!written) return@withContext false
     } else {
+        // Svitlyna: the original is kept aside first (read as the original, so its place is real);
+        // the new picture gets ALL of its metadata; it is written with "wt" (nothing stale stays at
+        // the end); if writing fails, the original goes back byte for byte.
         val targetUri = canonicalMediaUri(context, image)
-        val written = context.contentResolver.openOutputStream(targetUri)?.use { out ->
-            out.write(bytes)
-            true
-        } ?: false
-
-        if (!written) return@withContext false
-
-        if (tags.isNotEmpty()) {
+        val dir = File(context.cacheDir, "inplace").apply { mkdirs() }
+        val backup = File.createTempFile("orig", ".img", dir)
+        val fresh = File.createTempFile("new", ".img", dir)
+        try {
+            val read = runCatching {
+                (runCatching { context.contentResolver.openInputStream(MediaStore.setRequireOriginal(targetUri)) }.getOrNull()
+                    ?: context.contentResolver.openInputStream(targetUri))!!.use { input -> backup.outputStream().use { input.copyTo(it) } }
+                true
+            }.getOrDefault(false)
+            if (!read) return@withContext false
+            fresh.writeBytes(bytes)
             runCatching {
-                context.contentResolver.openFileDescriptor(targetUri, "rw")?.use { pfd ->
-                    val dstExif = ExifInterface(pfd.fileDescriptor)
-                    applyExifTags(dstExif, tags)
-                    dstExif.saveAttributes()
-                }
+                val dst = ExifInterface(fresh)
+                ua.svitlyna.media.Metadata.copy(ExifInterface(backup), dst, image.dateTaken)
+                dst.saveAttributes()
             }
-        }
-
-        if (image.path.isNotBlank() && File(image.path).exists()) {
-            applyExifToFile(File(image.path), tags)
+            val written = runCatching {
+                context.contentResolver.openOutputStream(targetUri, "wt")!!.use { out -> fresh.inputStream().use { it.copyTo(out) } }
+                true
+            }.getOrDefault(false)
+            if (!written) {
+                runCatching {
+                    context.contentResolver.openOutputStream(targetUri, "wt")!!.use { out -> backup.inputStream().use { it.copyTo(out) } }
+                }
+                return@withContext false
+            }
+        } finally {
+            backup.delete()
+            fresh.delete()
         }
     }
 

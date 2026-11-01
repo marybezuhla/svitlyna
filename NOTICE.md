@@ -9,13 +9,14 @@ Svitlyna's own code is licensed under GPL-3.0 (see `LICENSE`).
 - `app/src/main/java/ua/svitlyna/ocr/TextRecognizer.kt` and `scripts/ocr_models.py` — from Pysanka
   (same author), Apache License 2.0; the recogniser here also stops between lines when cancelled.
 - **The app's interface is based on Iris Gallery** (https://github.com/MohamadOday/iris-gallery,
-  Mohamad Oday), Apache License 2.0: the code in `ua.svitlyna` (root), `ua.svitlyna.ui`,
+  Copyright 2026 Mohamad Oday), Apache License 2.0: the code in `ua.svitlyna` (root), `ua.svitlyna.ui`,
   `ua.svitlyna.data` and `ua.svitlyna.decoder` comes from Iris Gallery (version of November 2026),
   moved to the package `ua.svitlyna` and changed by Svitlyna: the phone's own lock instead of a PIN,
   an encrypted vault (`data/VaultCrypto.kt`, `data/VaultProvider.kt`), copies and metadata following
   Svitlyna's rules, safe video cleaning, text on photos and search, screenshot tools, Ukrainian.
-  Its Ukrainian translation is Svitlyna's. Iris Gallery's licence and copyright notice apply to
-  those parts.
+  Its Ukrainian translation is Svitlyna's. Iris Gallery's licence applies to those parts; its full
+  text is in `LICENSES/Apache-2.0-Iris-Gallery.txt` (Iris Gallery has no NOTICE file of its own).
+  Files from Iris Gallery were modified by Svitlyna (November 2026).
 - `app/src/main/java/ua/svitlyna/edit/EditorCanvasView.kt` — the editor canvas from Iris Gallery
   (https://github.com/MohamadOday/iris-gallery, Mohamad Oday), Apache License 2.0, unchanged except
   for the package. `edit/EditorRender.kt` adapts its rendering of colours, brushes, shapes and text.

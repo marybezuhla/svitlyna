@@ -1399,7 +1399,10 @@ internal fun PhotoViewer(
                         label = stringResource(R.string.action_edit),
                         modifier = Modifier.weight(1f),
                     ) {
-                        if (current.isVideo) {
+                        if (isLocked) {
+                            // Svitlyna: an edited copy of a vault photo would be saved unencrypted.
+                            android.widget.Toast.makeText(context, R.string.sv_vault_edit, android.widget.Toast.LENGTH_LONG).show()
+                        } else if (current.isVideo) {
                             launchExternalEditor(context, current)
                         } else {
                             handleEditClick(current)

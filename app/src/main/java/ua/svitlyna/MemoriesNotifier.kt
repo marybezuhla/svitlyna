@@ -98,13 +98,14 @@ class MemoriesReceiver : BroadcastReceiver() {
                         date.year < today.year && date.month == today.month && date.dayOfMonth == today.dayOfMonth
                     }
                 if (memories.isEmpty()) return@launch
+                // Svitlyna: with the app lock on, no photo goes into a notification.
+                if (ua.svitlyna.data.SettingsPreferences(context).state.value.appLockEnabled) return@launch
                 val manager = context.getSystemService(NotificationManager::class.java)
                 manager.createNotificationChannel(NotificationChannel(MemoriesNotifications.CHANNEL,
                     context.getString(R.string.notification_channel_memories), NotificationManager.IMPORTANCE_DEFAULT).apply {
                     description = context.getString(R.string.notification_channel_desc)
                 })
-                val phrases = listOf("From this day", "A look back", "Remember this day?", "Your story from today")
-                val title = phrases[today.dayOfYear % phrases.size]
+                val title = context.getString(R.string.sv_memories_title)
                 val first = memories.first()
                 val preview = runCatching {
                     if (Build.VERSION.SDK_INT >= 29) {

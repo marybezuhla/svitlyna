@@ -38,6 +38,20 @@ class MainActivity : FragmentActivity() {
         measureBars()
         enableEdgeToEdge()
         val settingsPreferences = SettingsPreferences(this)
+        // Copies made for sending (possibly decrypted from the vault) don't outlive half an hour.
+        Thread {
+            val old = System.currentTimeMillis() - 30 * 60_000L
+            listOf("shared_media", "share").forEach { d ->
+                java.io.File(cacheDir, d).listFiles()?.forEach { if (it.lastModified() < old) it.deleteRecursively() }
+            }
+        }.start()
+        // Svitlyna 0.4 → 0.5: the app lock and "send without location" carry over (once).
+        val old = getSharedPreferences("settings", MODE_PRIVATE)
+        if (!old.getBoolean("migrated_to_iris_base", false)) {
+            if (old.getBoolean("app_lock", false)) settingsPreferences.setAppLockEnabled(true)
+            if (!old.getBoolean("remove_location", true)) settingsPreferences.setSecureSharingMode(ua.svitlyna.data.SecureSharingMode.OFF)
+            old.edit().putBoolean("migrated_to_iris_base", true).apply()
+        }
         val initialSettings = settingsPreferences.state.value
         val isDark = when (initialSettings.themeMode) {
             ua.svitlyna.data.ThemeMode.LIGHT -> false

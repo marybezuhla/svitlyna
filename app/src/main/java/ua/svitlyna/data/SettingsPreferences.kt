@@ -168,11 +168,11 @@ data class SettingsState(
     val editorOverwriteOriginal: Boolean = false,
     val language: String = "",
     val firstLaunchLanguageSetupDone: Boolean = false,
-    val memoriesNotificationEnabled: Boolean = true,
+    val memoriesNotificationEnabled: Boolean = false,
     val memoriesNotificationHour: Int = 10,
     val memoriesNotificationMinute: Int = 0,
     val dismissedMemoriesTip: Boolean = false,
-    val secureSharingMode: SecureSharingMode = SecureSharingMode.OFF,
+    val secureSharingMode: SecureSharingMode = SecureSharingMode.STRIP_LOCATION,
     val dismissedSecureSharingTip: Boolean = false,
 ) {
     val hasPin: Boolean get() = appLockPinHash.isNotEmpty()
@@ -441,11 +441,11 @@ class SettingsPreferences(context: Context) {
             editorOverwriteOriginal = prefs.getBoolean("editor_overwrite_original", false),
             language = prefs.getString("app_language", "").orEmpty(),
             firstLaunchLanguageSetupDone = prefs.getBoolean("first_launch_lang_done", false),
-            memoriesNotificationEnabled = prefs.getBoolean("memories_notification_enabled", true),
+            memoriesNotificationEnabled = prefs.getBoolean("memories_notification_enabled", false),
             memoriesNotificationHour = prefs.getInt("memories_notification_hour", 10),
             memoriesNotificationMinute = prefs.getInt("memories_notification_minute", 0),
             dismissedMemoriesTip = prefs.getBoolean("dismissed_memories_tip", false),
-            secureSharingMode = runCatching { SecureSharingMode.valueOf(prefs.getString("secure_sharing_mode", null).orEmpty()) }.getOrDefault(SecureSharingMode.OFF),
+            secureSharingMode = runCatching { SecureSharingMode.valueOf(prefs.getString("secure_sharing_mode", null).orEmpty()) }.getOrDefault(SecureSharingMode.STRIP_LOCATION),
             dismissedSecureSharingTip = prefs.getBoolean("dismissed_secure_sharing_tip", false),
         )
     }

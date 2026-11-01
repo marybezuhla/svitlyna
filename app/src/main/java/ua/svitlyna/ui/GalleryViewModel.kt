@@ -92,7 +92,9 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
         duplicateJob = viewModelScope.launch {
             _duplicateState.value = DuplicateScanState(scanning = true)
             runCatching {
-                duplicateDetector.scan(_uiState.value.images) { done, total ->
+                // Svitlyna: photos hidden in the app are not offered as duplicates.
+                val hidden = libraryState.value.lockedMedia
+                duplicateDetector.scan(_uiState.value.images.filterNot { it.id in hidden }) { done, total ->
                     _duplicateState.value = _duplicateState.value.copy(done = done, total = total)
                 }
             }.onSuccess { groups ->
@@ -374,7 +376,8 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
 
     private suspend fun refreshTrashOnly() {
         val trashList = withContext(Dispatchers.IO) {
-            (vaultRepository.loadVaultItems() + trashRepository.loadTrashItems()).distinctBy { it.id }
+            // Svitlyna: the vault never shows up in the trash (it has its own, separately unlocked section).
+            trashRepository.loadTrashItems()
         }
         _uiState.update { it.copy(trashed = trashList) }
     }

@@ -45,7 +45,8 @@ object VaultCrypto {
     /** Encrypts all of [input] into [target]; returns how many plain bytes were written. */
     fun encrypt(context: Context, input: InputStream, target: File): Long {
         var count = 0L
-        aead(context).newEncryptingStream(FileOutputStream(target), target.name.toByteArray()).use { out ->
+        val file = FileOutputStream(target)
+        aead(context).newEncryptingStream(file, target.name.toByteArray()).use { out ->
             val buf = ByteArray(64 * 1024)
             while (true) {
                 val n = input.read(buf)
@@ -54,6 +55,8 @@ object VaultCrypto {
                 count += n
             }
         }
+        // On the storage for real (the last segment is written on close) before the original may go.
+        runCatching { java.io.RandomAccessFile(target, "rw").use { it.fd.sync() } }
         return count
     }
 

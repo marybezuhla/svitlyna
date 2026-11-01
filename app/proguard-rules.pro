@@ -19,3 +19,6 @@
     public static int e(...);
     public static int wtf(...);
 }
+
+# Tink's bundled protobuf reads message fields by reflection.
+-keepclassmembers class * extends com.google.crypto.tink.shaded.protobuf.GeneratedMessageLite { <fields>; }

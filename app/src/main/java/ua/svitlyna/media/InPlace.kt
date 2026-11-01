@@ -22,6 +22,8 @@ object InPlace {
     enum class Result { DONE, REFUSED, BROKEN_SAVED }
 
     fun rewrite(context: Context, uri: Uri, changed: Set<String>, change: (ExifInterface) -> Unit): Result {
+        // Only photos of the phone's media list are changed in place.
+        if (uri.authority != MediaStore.AUTHORITY) return Result.REFUSED
         val resolver = context.contentResolver
         val original = MediaStore.setRequireOriginal(uri)
         val dir = File(context.cacheDir, "inplace").apply { mkdirs() }
