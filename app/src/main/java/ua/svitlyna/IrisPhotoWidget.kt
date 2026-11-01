@@ -169,7 +169,7 @@ class IrisPhotoWidget : AppWidgetProvider() {
                     context.contentResolver, memory.id, MediaStore.Images.Thumbnails.MINI_KIND, null
                 )
             }
-        }.getOrNull() ?: return emptyCard(ratio)
+        }.getOrNull() ?: return emptyCard(context, ratio)
         val output = Bitmap.createBitmap(outputWidth, outputHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
         val corner = 54f
