@@ -209,7 +209,7 @@
     <string name="app_lock_explain">Opening Svitlyna asks for your fingerprint or the phone\'s PIN (Android checks it; Svitlyna never sees it). Within half a minute it doesn\'t ask again. The app is hidden in recent apps (on Android 11–12 screenshots of the app are also blocked).</string>
     <string name="app_lock_turned_off">The phone has no screen lock any more, so the app lock was turned off.</string>
     <string name="too_many_selected">At most %d at a time: select fewer.</string>
-    <string name="live_failed">This live photo's video can't be played.</string>
+    <string name="live_failed">This live photo\'s video can\'t be played.</string>
     <string name="app_lock_no_screen_lock">Set a PIN, pattern or fingerprint for the phone first.</string>
     <string name="lock_title">Open Svitlyna</string>
     <string name="lock_open">Unlock</string>
