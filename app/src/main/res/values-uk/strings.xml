@@ -58,7 +58,7 @@
 
     <string name="settings_sharing">Надсилання</string>
     <string name="remove_location">Кілька фото: надсилати без геолокації</string>
-    <string name="remove_location_explain">Фото надсилаються копіями без геолокації, ваші оригінали лишаються як є. Відео MP4 також надсилаються без геолокації. Деякі формати (HEIC, GIF…) поки очистити не вдається: перед надсиланням ми спитаємо.</string>
+    <string name="remove_location_explain">Фото надсилаються копіями без геолокації, ваші оригінали лишаються як є. Відео MP4, MOV і 3GP також надсилаються без геолокації. Деякі формати (HEIC, GIF…) поки очистити не вдається: перед надсиланням ми спитаємо.</string>
 
     <string name="settings_screenshots">Після скріншота</string>
     <string name="screenshot_hints">Підказки після скріншота</string>
@@ -214,6 +214,7 @@
     <string name="app_lock">Блокувати застосунок</string>
     <string name="app_lock_explain">Для входу у Світлину потрібен відбиток або PIN-код телефона (перевіряє Android; Світлина його не бачить). Протягом пів хвилини повторно не питає. У недавніх застосунках вміст сховано (на Android 11–12 також заборонено знімки екрана застосунку).</string>
     <string name="save">Зберегти</string>
+    <string name="share_preparing">Готую відео без геолокації (≈%d с)…</string>
     <string name="widget_name">Цього дня</string>
     <string name="widget_description">Фото, зроблене цього дня в один із минулих років</string>
     <string name="widget_nothing">Цього дня в минулі роки фото немає</string>
@@ -223,7 +224,7 @@
     <string name="meta_place">Місце: широта, довгота</string>
     <string name="meta_place_hint">Як копіює застосунок карт, напр. 50.45010, 30.52340</string>
     <string name="meta_remove_place">Прибрати місце</string>
-    <string name="meta_explain">Записується в саме фото, після запиту Android. Інше у файлі не змінюється.</string>
+    <string name="meta_explain">Записується в саме фото, після запиту Android; спершу робиться й перевіряється копія, інше у файлі не змінюється. Якщо інша програма записала місце ще й в XMP, там воно лишиться.</string>
     <string name="meta_saved">Збережено у фото.</string>
     <string name="meta_failed">Не вдалося змінити фото (може знадобитися доступ до місця у фото).</string>
     <string name="pick_title">Виберіть</string>
@@ -364,9 +365,9 @@
         <item quantity="other">Видалити %d елемента назавжди? Це не можна скасувати.</item>
     </plurals>
     <plurals name="share_skipped">
-        <item quantity="one">%d фото не вдалося очистити, його не надіслано.</item>
-        <item quantity="few">%d фото не вдалося очистити, їх не надіслано.</item>
-        <item quantity="many">%d фото не вдалося очистити, їх не надіслано.</item>
-        <item quantity="other">%d фото не вдалося очистити, їх не надіслано.</item>
+        <item quantity="one">%d файл не вдалося очистити, його не надіслано.</item>
+        <item quantity="few">%d файли не вдалося очистити, їх не надіслано.</item>
+        <item quantity="many">%d файлів не вдалося очистити, їх не надіслано.</item>
+        <item quantity="other">%d файлу не вдалося очистити, їх не надіслано.</item>
     </plurals>
 </resources>

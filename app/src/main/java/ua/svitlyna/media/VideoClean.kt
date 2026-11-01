@@ -11,11 +11,19 @@ import java.io.OutputStream
  * `meta`, an XMP box) are not cut out but turned into empty `free` boxes OF THE SAME SIZE: the
  * video's tables point at its pictures by position in the file, and cutting would shift them and
  * spoil the video. Pictures and sound are copied byte for byte. Idea from Iris Gallery (Apache 2.0).
+ *
+ * Refused (the person is asked instead): a video with a data or subtitle track (action cameras,
+ * drones and dash cams write the place into every frame there), and anything at the top level that
+ * isn't a known MP4 box (a phone maker's own trailer could hold anything).
  */
 object VideoClean {
     private const val MAX_MOOV = 64 * 1024 * 1024
     private val CONTAINERS = setOf("moov", "trak", "mdia", "minf", "stbl", "edts", "mvex")
     private val NOTES = setOf("udta", "meta")
+    private val TOP = setOf("ftyp", "moov", "mdat", "free", "skip", "wide", "uuid", "udta", "meta", "moof", "mfra", "sidx", "styp", "pdin")
+    private val FIRST = setOf("ftyp", "wide", "free", "skip", "mdat", "moov")
+    /** Tracks that carry data instead of pictures or sound (GPS of GoPro, DJI, Sony, dash cams…). */
+    private val DATA_TRACKS = setOf("meta", "text", "sbtl", "subt", "camm", "tmcd")
 
     /** XMP inside a video: uuid BE7ACFCB-97A9-42E8-9C71-999491E3AFAC. */
     private val XMP_UUID = byteArrayOf(
@@ -24,7 +32,7 @@ object VideoClean {
     )
 
     /** False if it isn't a video of this kind or looks damaged (then nothing usable was written). */
-    fun clean(input: InputStream, output: OutputStream): Boolean = runCatching {
+    fun clean(input: InputStream, output: OutputStream, keepGoing: () -> Boolean = { true }): Boolean = runCatching {
         val src = DataInputStream(input.buffered(64 * 1024))
         val out = output.buffered(64 * 1024)
         var first = true
@@ -34,7 +42,8 @@ object VideoClean {
             if (n <= 0) break
             if (n < 8) src.readFully(head, n, 8 - n)
             val type = String(head, 4, 4, Charsets.ISO_8859_1)
-            if (first && type != "ftyp") throw IOException("not an MP4")
+            if (first && type !in FIRST) throw IOException("not an MP4")
+            if (type !in TOP) throw IOException("unknown box at the top")
             first = false
             var size = u32(head, 0)
             var headSize = 8
@@ -72,7 +81,7 @@ object VideoClean {
                 else -> {
                     out.write(head)
                     if (headSize == 16) out.write(big)
-                    copy(src, out, payload)
+                    copy(src, out, payload, keepGoing)
                 }
             }
             if (size == 0L) break
@@ -107,16 +116,19 @@ object VideoClean {
                     "free".toByteArray(Charsets.ISO_8859_1).copyInto(buf, at + 4)
                     buf.fill(0, bodyStart, boxEnd)
                 }
+                type == "hdlr" && boxEnd - bodyStart >= 12 &&
+                    String(buf, bodyStart + 8, 4, Charsets.ISO_8859_1) in DATA_TRACKS -> throw IOException("data track")
                 type in CONTAINERS -> blank(buf, bodyStart, boxEnd)
             }
             at = boxEnd
         }
     }
 
-    private fun copy(src: InputStream, out: OutputStream, size: Long) {
+    private fun copy(src: InputStream, out: OutputStream, size: Long, keepGoing: () -> Boolean) {
         val b = ByteArray(64 * 1024)
         var left = size
         while (left != 0L) {
+            if (!keepGoing()) throw IOException("stopped")
             val want = if (left < 0) b.size else minOf(left, b.size.toLong()).toInt()
             val r = src.read(b, 0, want)
             if (r < 0) {

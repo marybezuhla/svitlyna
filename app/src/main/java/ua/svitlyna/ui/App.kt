@@ -214,13 +214,24 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
         if (access != AccessLevel.NONE) vm.start(accessChanged = changed)
     }
 
+    // Android's request windows (trash in parts, media location) wait while the lock covers the gallery.
+    val locked = LocalLocked.current
+    var afterUnlock by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val lockedNow by androidx.compose.runtime.rememberUpdatedState(locked)
+    fun whenUnlocked(block: () -> Unit) {
+        if (lockedNow) afterUnlock = block else block()
+    }
+    LaunchedEffect(locked) {
+        if (!locked) afterUnlock?.let { afterUnlock = null; it() }
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         access = Access.level(context)
         if (access != AccessLevel.NONE) vm.start(accessChanged = true)
     }
     // Updated from a version without "media location": asked once, so saved copies keep the location.
-    LaunchedEffect(access) {
-        if (access != AccessLevel.NONE &&
+    LaunchedEffect(access, locked) {
+        if (!locked && access != AccessLevel.NONE &&
             context.checkSelfPermission(Manifest.permission.ACCESS_MEDIA_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             !prefs.askedMediaLocation
         ) {
@@ -236,7 +247,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
         selected = emptySet()
         // Cancelled in Android's window: the remaining parts are dropped too.
         if (result.resultCode != android.app.Activity.RESULT_OK) pendingRequests = emptyList()
-        launchNext()
+        whenUnlocked { launchNext() }
         // The media list's own change notice reloads the gallery.
     }
 
@@ -330,6 +341,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
     var dupJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     // Marked for the trash: exact copies come marked, similar photos are the person's choice.
     var dupMarked by remember { mutableStateOf(emptySet<Long>()) }
+    val photoCount = remember(state.items) { state.items.count { !it.isVideo } }
     fun findDuplicates(similar: Boolean) {
         dupProgress = 0 to 0
         dupGroups = null
@@ -408,13 +420,32 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
         }
     }
 
+    // Videos are copied before sending: a time estimate, Stop, and no second copy meanwhile.
+    var sharing by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     fun doShare(items: List<MediaItem>, clean: Boolean) {
-        scope.launch {
+        if (sharing != null) return
+        val seconds = Share.seconds(items, clean)
+        val job = scope.launch {
             val prepared = Share.prepare(context, items, clean)
             if (prepared.skipped > 0) {
                 snackbar.showSnackbar(context.resources.getQuantityString(R.plurals.share_skipped, prepared.skipped, prepared.skipped))
             }
             prepared.intent?.let { context.startActivity(it) }
+        }
+        sharing = job
+        scope.launch {
+            // The "Stop" notice lasts exactly as long as the preparing.
+            val notice = if (seconds > 0) launch {
+                val r = snackbar.showSnackbar(
+                    context.getString(R.string.share_preparing, seconds),
+                    actionLabel = context.getString(R.string.stop),
+                    duration = androidx.compose.material3.SnackbarDuration.Indefinite,
+                )
+                if (r == androidx.compose.material3.SnackbarResult.ActionPerformed) job.cancel()
+            } else null
+            job.join()
+            notice?.cancel()
+            sharing = null
         }
     }
 
@@ -465,7 +496,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
         page = p
     }
 
-    BackHandler(enabled = viewer == null && (selected.isNotEmpty() || page !is Page.Photos)) {
+    GuardedBackHandler(enabled = viewer == null && (selected.isNotEmpty() || page !is Page.Photos)) {
         when {
             selected.isNotEmpty() -> selected = emptySet()
             page is Page.InFolder -> goTo(Page.Folders)
@@ -616,7 +647,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
                     onStopDupes = { dupJob?.cancel() },
                     dupMarked = dupMarked,
                     onMarkDupe = { item -> dupMarked = if (item.id in dupMarked) dupMarked - item.id else dupMarked + item.id },
-                    photoCount = state.items.count { !it.isVideo },
+                    photoCount = photoCount,
                     onTrashDupes = {
                         // Only what is still in the gallery (a photo may have gone meanwhile elsewhere).
                         val ids = state.items.mapTo(HashSet()) { it.id }
@@ -754,7 +785,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
 
     askShare?.let { items ->
         val cannot = items.count { !Share.canClean(it) }
-        AlertDialog(
+        if (!LocalLocked.current) AlertDialog(
             onDismissRequest = { askShare = null },
             title = { Text(stringResource(R.string.share_location_title)) },
             text = { Text(pluralStringResource(R.plurals.share_location_text, cannot, cannot)) },
@@ -778,7 +809,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
     }
 
     folderMenu?.let { f ->
-        AlertDialog(
+        if (!LocalLocked.current) AlertDialog(
             onDismissRequest = { folderMenu = null },
             title = { Text(f.name.ifBlank { stringResource(R.string.no_folder_name) }) },
             text = {
@@ -826,7 +857,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
     }
     renaming?.let { item ->
         var name by remember(item.id) { mutableStateOf(item.name.substringBeforeLast('.')) }
-        AlertDialog(
+        if (!LocalLocked.current) AlertDialog(
             onDismissRequest = { renaming = null },
             title = { Text(stringResource(R.string.rename)) },
             text = { androidx.compose.material3.OutlinedTextField(value = name, onValueChange = { name = it }, singleLine = true) },
@@ -845,7 +876,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
     }
 
     stitching?.let { job ->
-        AlertDialog(
+        if (!LocalLocked.current) AlertDialog(
             onDismissRequest = {},
             title = { Text(stringResource(R.string.stitching)) },
             text = { androidx.compose.material3.LinearProgressIndicator(Modifier.padding(top = 8.dp)) },
@@ -856,7 +887,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
     }
 
     askStack?.let { items ->
-        AlertDialog(
+        if (!LocalLocked.current) AlertDialog(
             onDismissRequest = { askStack = null },
             title = { Text(stringResource(R.string.stitch_no_overlap_title)) },
             text = { Text(stringResource(R.string.stitch_no_overlap)) },
@@ -868,7 +899,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
     }
 
     confirmDelete?.let { items ->
-        AlertDialog(
+        if (!LocalLocked.current) AlertDialog(
             onDismissRequest = { confirmDelete = null },
             title = { Text(stringResource(R.string.delete_for_good)) },
             text = { Text(pluralStringResource(R.plurals.delete_confirm, items.size, items.size)) },

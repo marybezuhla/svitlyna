@@ -114,7 +114,7 @@ fun Viewer(
     /** Changing the date taken or the place written in the photo (given: what the photo says now). */
     onEditMeta: (MediaItem, PhotoDetails?) -> Unit = { _, _ -> },
 ) {
-    BackHandler(onBack = onClose)
+    GuardedBackHandler(onBack = onClose)
     if (items.isEmpty()) {
         LaunchedEffect(Unit) { onClose() }
         return
@@ -204,7 +204,7 @@ fun Viewer(
         if (textFor != null && items.getOrNull(pager.currentPage)?.id != textFor) closeText()
         notice = null
     }
-    BackHandler(enabled = textMode) { closeText() }
+    GuardedBackHandler(enabled = textMode) { closeText() }
     // Opened from "Text" in a screenshot hint: read straight away.
     LaunchedEffect(Unit) {
         if (readTextAtStart) items.getOrNull(pager.currentPage)?.takeIf { !it.isVideo }?.let { readText(it) }
@@ -683,6 +683,7 @@ private fun VideoPlayer(item: MediaItem, uri: Uri = item.uri, onEnded: (() -> Un
 
 @Composable
 private fun InfoDialog(item: MediaItem, canRename: Boolean, onRename: (MediaItem) -> Unit, onEditMeta: (MediaItem, PhotoDetails?) -> Unit, onDismiss: () -> Unit) {
+    if (LocalLocked.current) return
     val context = LocalContext.current
     var exif by remember(item.id) { mutableStateOf<PhotoDetails?>(null) }
     LaunchedEffect(item.id) { exif = PhotoDetails.read(context, item) }
@@ -692,16 +693,17 @@ private fun InfoDialog(item: MediaItem, canRename: Boolean, onRename: (MediaItem
         title = { Text(item.name) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                Text(DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.SHORT).format(Date(item.dateMs)))
+                // (A file from another app may have no date, size or folder: those lines are left out.)
+                if (item.dateMs > 0) Text(DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.SHORT).format(Date(item.dateMs)))
                 if (!item.isVideo && item.takenMs == 0L) {
                     Text(stringResource(R.string.details_no_date), style = MaterialTheme.typography.bodySmall)
                 }
                 if (item.width > 0 && item.height > 0) {
                     Text("${item.width} × ${item.height} · ${"%.1f".format(item.width * item.height / 1_000_000f)} MP")
                 }
-                Text(android.text.format.Formatter.formatShortFileSize(context, item.sizeBytes) + " · " + item.mime)
-                if (item.isVideo) Text(duration(item.durationMs))
-                Text(stringResource(R.string.folder_named, item.relativePath.ifBlank { item.bucketName }))
+                Text((if (item.sizeBytes > 0) android.text.format.Formatter.formatShortFileSize(context, item.sizeBytes) + " · " else "") + item.mime)
+                if (item.isVideo && item.durationMs > 0) Text(duration(item.durationMs))
+                item.relativePath.ifBlank { item.bucketName }.takeIf { it.isNotBlank() }?.let { Text(stringResource(R.string.folder_named, it)) }
                 exif?.let { d ->
                     d.camera?.let { Text(it) }
                     d.lens?.let { Text(it) }

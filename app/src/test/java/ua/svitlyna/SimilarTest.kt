@@ -42,6 +42,15 @@ class SimilarTest {
     }
 
     @Test
+    fun aChainOfLookAlikesDoesNotGrowIntoOneGroup() {
+        val a = Similar.dHash(picture(11))
+        val b = a xor 0b11111L // 5 bits from a
+        val c = b xor (0b11111L shl 20) // 5 bits from b, 10 from a
+        val groups = Similar.group(listOf(a, b, c), listOf(1f, 1f, 1f))
+        assertEquals(listOf(listOf(0, 1)), groups)
+    }
+
+    @Test
     fun sixBitsApartIsNotSimilar() {
         val a = Similar.dHash(picture(9))
         val b = a xor 0b111111L

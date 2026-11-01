@@ -76,7 +76,7 @@ private class Finding(val kind: Sensitive.Kind, val area: RectF)
  */
 @Composable
 fun PrepareScreen(item: MediaItem, onClose: () -> Unit, onSendAsIs: () -> Unit) {
-    BackHandler(onBack = onClose)
+    GuardedBackHandler(onBack = onClose)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var picture by remember(item.id) { mutableStateOf<Bitmap?>(null) }

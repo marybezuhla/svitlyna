@@ -6,6 +6,7 @@ import android.provider.MediaStore
 import androidx.exifinterface.media.ExifInterface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import ua.svitlyna.media.InPlace
 import ua.svitlyna.media.Metadata
 import ua.svitlyna.media.MediaItem
 import java.time.LocalDateTime
@@ -52,16 +53,21 @@ object MetaEdit {
         change.place?.let { (lat, lon) -> exif.setLatLong(lat, lon) }
     }
 
+    /** The tags [write] may change for [change]; everything else must stay. */
+    fun changedTags(change: Change): Set<String> = buildSet {
+        if (change.taken != null) {
+            add(ExifInterface.TAG_DATETIME_ORIGINAL)
+            add(ExifInterface.TAG_OFFSET_TIME_ORIGINAL)
+        }
+        if (change.place != null || change.removePlace) addAll(Metadata.LOCATION_TAGS.filter { it != ExifInterface.TAG_XMP })
+    }
+
     /** After Android's write permission. False if the file couldn't be changed (it stays as it was). */
     suspend fun apply(context: Context, item: MediaItem, change: Change): Boolean = withContext(Dispatchers.IO) {
         runCatching {
-            // Opened as the original: without "media location" access Android would hand over zeros
-            // for the place, and saving would write them in. Then nothing is changed.
-            context.contentResolver.openFileDescriptor(MediaStore.setRequireOriginal(item.uri), "rw")!!.use { pfd ->
-                val exif = ExifInterface(pfd.fileDescriptor)
-                write(exif, change)
-                exif.saveAttributes()
-            }
+            // Checked copy first, then the photo (see InPlace): nothing else in the file may change.
+            val ok = InPlace.rewrite(context, item.uri, changedTags(change)) { write(it, change) }
+            if (!ok) return@runCatching false
             change.taken?.let { at ->
                 val ms = at.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 runCatching {

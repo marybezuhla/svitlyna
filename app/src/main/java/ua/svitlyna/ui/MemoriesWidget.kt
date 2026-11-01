@@ -25,7 +25,8 @@ class MemoriesWidget : AppWidgetProvider() {
         val pending = goAsync()
         Thread {
             try {
-                update(context.applicationContext, manager, ids)
+                // Anything going wrong here must not bring the app down in the background.
+                runCatching { update(context.applicationContext, manager, ids) }
             } finally {
                 pending.finish()
             }
@@ -45,10 +46,23 @@ class MemoriesWidget : AppWidgetProvider() {
             )
         }
 
-        /** Photos of this month and day from earlier years; the same one all day long. */
-        fun pick(items: List<MediaItem>, today: LocalDate, zone: ZoneId): MediaItem? {
+        /** This date in each of the last 50 years, as ranges of time to ask the media list for. */
+        fun ranges(today: LocalDate, zone: ZoneId): List<LongRange> = (1..50).mapNotNull { back ->
+            val day = runCatching { today.minusYears(back.toLong()) }.getOrNull() ?: return@mapNotNull null
+            // 29 February: in other years there is no such day (minusYears gives the 28th).
+            if (day.dayOfMonth != today.dayOfMonth) return@mapNotNull null
+            val start = day.atStartOfDay(zone).toInstant().toEpochMilli()
+            start..(day.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1)
+        }
+
+        /**
+         * Camera photos (DCIM) of this month and day from earlier years, not from folders hidden from
+         * the timeline; the same one all day long.
+         */
+        fun pick(items: List<MediaItem>, today: LocalDate, zone: ZoneId, hidden: Set<Long> = emptySet()): MediaItem? {
             val same = items.filter { item ->
                 if (item.isVideo || item.isScreenshot || item.takenMs <= 0) return@filter false
+                if (item.bucketId in hidden || !item.relativePath.startsWith("DCIM/", ignoreCase = true)) return@filter false
                 val d = Instant.ofEpochMilli(item.takenMs).atZone(zone).toLocalDate()
                 d.monthValue == today.monthValue && d.dayOfMonth == today.dayOfMonth && d.year < today.year
             }
@@ -66,13 +80,16 @@ class MemoriesWidget : AppWidgetProvider() {
             )
             views.setOnClickPendingIntent(R.id.widget_root, open)
             views.setViewVisibility(R.id.widget_photo, View.GONE)
-            if (Prefs(context).appLock) {
+            val prefs = Prefs(context)
+            if (prefs.appLock) {
                 views.setTextViewText(R.id.widget_text, context.getString(R.string.widget_locked))
             } else {
                 val zone = ZoneId.systemDefault()
                 val today = LocalDate.now(zone)
-                val item = runCatching { pick(MediaRepository(context.contentResolver).loadAll(), today, zone) }.getOrNull()
-                val picture = item?.let { runCatching { context.contentResolver.loadThumbnail(it.uri, Size(480, 480), null) }.getOrNull() }
+                val item = runCatching {
+                    pick(MediaRepository(context.contentResolver).loadTaken(ranges(today, zone)), today, zone, prefs.hiddenFolders)
+                }.getOrNull()
+                val picture = item?.let { runCatching { context.contentResolver.loadThumbnail(it.uri, Size(320, 320), null) }.getOrNull() }
                 if (item != null && picture != null) {
                     val years = today.year - Instant.ofEpochMilli(item.takenMs).atZone(zone).year
                     views.setImageViewBitmap(R.id.widget_photo, picture)

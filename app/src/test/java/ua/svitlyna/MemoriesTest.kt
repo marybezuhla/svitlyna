@@ -28,6 +28,20 @@ class MemoriesTest {
         )
         assertEquals(5L, MemoriesWidget.pick(items, today, zone)?.id)
         assertNull(MemoriesWidget.pick(items.take(4), today, zone))
+        // A folder hidden from the timeline, or one outside the camera's: not on the home screen.
+        assertNull(MemoriesWidget.pick(items, today, zone, hidden = setOf(1L)))
+        assertNull(MemoriesWidget.pick(listOf(photo(6, LocalDateTime.of(2021, 11, 1, 9, 0), path = "Pictures/Telegram/")), today, zone))
+    }
+
+    @Test
+    fun rangesCoverWholeDaysAndSkipMissingLeapDays() {
+        val r = MemoriesWidget.ranges(LocalDate.of(2026, 11, 1), zone)
+        assertEquals(50, r.size)
+        val first = r.first()
+        assertEquals(LocalDate.of(2025, 11, 1).atStartOfDay(zone).toInstant().toEpochMilli(), first.first)
+        assertEquals(LocalDate.of(2025, 11, 2).atStartOfDay(zone).toInstant().toEpochMilli() - 1, first.last)
+        // 29 February exists only every 4 years.
+        assertEquals(12, MemoriesWidget.ranges(LocalDate.of(2024, 2, 29), zone).size)
     }
 
     @Test

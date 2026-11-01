@@ -55,7 +55,8 @@ object Duplicates {
 
     suspend fun findSimilar(context: Context, items: List<MediaItem>, progress: (done: Int, total: Int) -> Unit): List<Group> =
         withContext(Dispatchers.IO) {
-            val photos = items.filter { !it.isVideo && it.width > 0 && it.height > 0 }
+            // Screenshots of one chat look alike without being the same: they are left out.
+            val photos = items.filter { !it.isVideo && !it.isScreenshot && it.width > 0 && it.height > 0 }
             val prints = ArrayList<Pair<MediaItem, Long>>(photos.size)
             photos.forEachIndexed { i, item ->
                 coroutineContext.ensureActive()

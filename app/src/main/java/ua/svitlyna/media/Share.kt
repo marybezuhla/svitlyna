@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.io.File
 
@@ -33,18 +34,7 @@ object Share {
      */
     suspend fun prepare(context: Context, items: List<MediaItem>, removeLocation: Boolean): Prepared =
         withContext(Dispatchers.IO) {
-            cleanup(context)
-            // Each share gets its own folder: the app receiving an earlier share may still be reading it.
-            val dir = File(File(context.cacheDir, "share"), System.currentTimeMillis().toString())
-            dir.mkdirs()
-            var skipped = 0
-            val uris = items.mapIndexedNotNull { i, item ->
-                if (removeLocation && canClean(item)) {
-                    cleanCopy(context, item, File(dir, "$i-${safeName(item)}")) ?: run { skipped++; null }
-                } else {
-                    item.uri
-                }
-            }
+            val (uris, skipped) = uris(context, items, removeLocation)
             if (uris.isEmpty()) return@withContext Prepared(null, skipped)
             val intent = if (uris.size == 1) {
                 Intent(Intent.ACTION_SEND).putExtra(Intent.EXTRA_STREAM, uris[0])
@@ -59,12 +49,41 @@ object Share {
             Prepared(Intent.createChooser(intent, null), skipped)
         }
 
-    private fun cleanCopy(context: Context, item: MediaItem, target: File): Uri? = runCatching {
+    /** About how long preparing takes (copying videos), in seconds; 0 when it is quick. */
+    fun seconds(items: List<MediaItem>, removeLocation: Boolean): Int =
+        if (!removeLocation) 0 else (items.filter { it.isVideo && canClean(it) }.sumOf { it.sizeBytes } / (60L * 1024 * 1024)).toInt()
+
+    /**
+     * The addresses to hand over: cleaned copies where [removeLocation] and possible, the rest as
+     * they are; the second number says how many could not be cleaned and were left out. Stopped with
+     * the coroutine (a half-made copy is removed).
+     */
+    suspend fun uris(context: Context, items: List<MediaItem>, removeLocation: Boolean): Pair<List<Uri>, Int> =
+        withContext(Dispatchers.IO) {
+            cleanup(context)
+            // Each share gets its own folder: the app receiving an earlier share may still be reading it.
+            val dir = File(File(context.cacheDir, "share"), System.currentTimeMillis().toString())
+            dir.mkdirs()
+            var skipped = 0
+            val job = coroutineContext[kotlinx.coroutines.Job]
+            val uris = items.mapIndexedNotNull { i, item ->
+                ensureActive()
+                if (removeLocation && canClean(item)) {
+                    cleanCopy(context, item, File(dir, "$i-${safeName(item)}")) { job?.isActive != false } ?: run { skipped++; null }
+                } else {
+                    item.uri
+                }
+            }
+            ensureActive()
+            uris to skipped
+        }
+
+    private fun cleanCopy(context: Context, item: MediaItem, target: File, keepGoing: () -> Boolean = { true }): Uri? = runCatching {
         if (item.isVideo) {
             // Not enough room for a copy of a big video: not sent with its location instead.
             check(context.cacheDir.usableSpace > item.sizeBytes + 50L * 1024 * 1024)
             val ok = context.contentResolver.openInputStream(item.uri)!!.use { input ->
-                target.outputStream().use { VideoClean.clean(input, it) }
+                target.outputStream().use { VideoClean.clean(input, it, keepGoing) }
             }
             check(ok)
             return@runCatching FileProvider.getUriForFile(context, "${context.packageName}.share", target)

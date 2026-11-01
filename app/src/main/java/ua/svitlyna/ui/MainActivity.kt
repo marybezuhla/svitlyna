@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.compose.ui.graphics.Color
@@ -58,12 +59,18 @@ open class MainActivity : FragmentActivity() {
                 // The gallery stays underneath the lock, covered and hidden from screen readers, so
                 // work in progress (copying, finding duplicates…) isn't stopped by the lock.
                 androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) {
+                    val isLocked = locked.value
+                    val focus = androidx.compose.ui.platform.LocalFocusManager.current
+                    androidx.compose.runtime.LaunchedEffect(isLocked) { if (isLocked) focus.clearFocus(force = true) }
                     androidx.compose.foundation.layout.Box(
-                        androidx.compose.ui.Modifier.fillMaxSize().then(
-                            if (locked.value) androidx.compose.ui.Modifier.clearAndSetSemantics {} else androidx.compose.ui.Modifier,
-                        ),
+                        androidx.compose.ui.Modifier.fillMaxSize()
+                            // A keyboard can't press anything of the gallery under the lock either.
+                            .onPreviewKeyEvent { isLocked }
+                            .then(if (isLocked) androidx.compose.ui.Modifier.clearAndSetSemantics {} else androidx.compose.ui.Modifier),
                     ) {
-                        App(openRequest = openRequest, pick = pick)
+                        androidx.compose.runtime.CompositionLocalProvider(LocalLocked provides isLocked) {
+                            App(openRequest = openRequest, pick = pick)
+                        }
                     }
                     if (locked.value) {
                         // An opaque surface that also takes every touch meant for the gallery.

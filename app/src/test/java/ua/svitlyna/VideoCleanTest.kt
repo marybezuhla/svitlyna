@@ -61,5 +61,24 @@ class VideoCleanTest {
         assertFalse(clean(broken).first)
     }
 
+    @Test
+    fun aVideoWithADataTrackIsRefused() {
+        // hdlr: version/flags, pre_defined, then the kind of track: here GoPro-like "meta" data.
+        val gps = box("ftyp", "isom".toByteArray(), ByteArray(4)) +
+            box("moov", box("trak", box("mdia", box("hdlr", ByteArray(8), "meta".toByteArray(), ByteArray(12))))) +
+            box("mdat", pictures)
+        assertFalse(clean(gps).first)
+        // The same with an ordinary video track goes through.
+        val plain = box("ftyp", "isom".toByteArray(), ByteArray(4)) +
+            box("moov", box("trak", box("mdia", box("hdlr", ByteArray(8), "vide".toByteArray(), ByteArray(12))))) +
+            box("mdat", pictures)
+        assertTrue(clean(plain).first)
+    }
+
+    @Test
+    fun anUnknownTrailerIsRefused() {
+        assertFalse(clean(video + box("SEFT", place)).first)
+    }
+
     private fun ByteArray.indexOfMoov(): Int = (0..size - 4).first { String(this, it, 4, Charsets.ISO_8859_1) == "moov" } - 4
 }

@@ -49,12 +49,16 @@ object FixDates {
                 // Opened as the original, so the location is real: without "media location" access
                 // Android would hand over zeros, and saving would write them into the photo. Then this
                 // photo is skipped instead.
-                context.contentResolver.openFileDescriptor(MediaStore.setRequireOriginal(fix.item.uri), "rw")?.use { pfd ->
-                    val exif = ExifInterface(pfd.fileDescriptor)
+                // A checked copy first, then the photo (see InPlace): only the two date tags change.
+                val ok = ua.svitlyna.media.InPlace.rewrite(
+                    context,
+                    fix.item.uri,
+                    setOf(ExifInterface.TAG_DATETIME_ORIGINAL, ExifInterface.TAG_OFFSET_TIME_ORIGINAL),
+                ) { exif ->
                     exif.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, EXIF_DATE.format(zoned))
                     exif.setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, zoned.offset.id.let { if (it == "Z") "+00:00" else it })
-                    exif.saveAttributes()
                 }
+                if (!ok) continue
                 // The system re-reads the file; the date is also set in the media list right away.
                 runCatching {
                     context.contentResolver.update(
