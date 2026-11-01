@@ -22,6 +22,7 @@
     <string name="restore">Restore</string>
     <string name="delete_for_good">Delete for good</string>
     <string name="empty_trash">Empty trash</string>
+    <string name="request_failed">Android couldn\'t do this. Try again with fewer items.</string>
     <string name="trash_empty">The trash is empty.</string>
     <string name="trash_explain">Android keeps items here for about 30 days, then deletes them for good. Tap to select, then restore or delete.</string>
 
@@ -41,14 +42,14 @@
     <string name="pick_more">Pick more photos</string>
     <string name="change_access">Change in Android settings</string>
     <string name="media_management">Media management</string>
-    <string name="media_management_explain">Optional. With it, moving to the trash and future edits happen without Android\'s confirmation window each time. It is still access to photos and videos only.</string>
+    <string name="media_management_explain">Optional. With it, moving to the trash, deleting for good and future edits happen without Android\'s confirmation window each time (Svitlyna still asks before deleting for good). It is still access to photos and videos only.</string>
     <string name="media_management_on">On</string>
     <string name="media_management_off">Off</string>
     <string name="media_management_change">Change</string>
 
     <string name="settings_sharing">Sharing</string>
     <string name="remove_location">Share without location</string>
-    <string name="remove_location_explain">Photos are sent as copies with the location removed; your originals stay as they are. Videos and HEIC can\'t be cleaned yet: you\'ll be asked before sending them.</string>
+    <string name="remove_location_explain">Photos are sent as copies with the location removed; your originals stay as they are. Videos and some formats (HEIC, GIF…) can\'t be cleaned yet: you\'ll be asked before sending them.</string>
 
     <string name="settings_language">Language</string>
     <string name="change_language">Change the app language</string>
@@ -75,6 +76,10 @@
     <plurals name="share_location_text">
         <item quantity="one">%d file (a video, HEIC or GIF) can\'t be cleaned of its location yet. Other photos will be sent without location.</item>
         <item quantity="other">%d files (videos, HEIC or GIF) can\'t be cleaned of their location yet. Other photos will be sent without location.</item>
+    </plurals>
+    <plurals name="delete_confirm">
+        <item quantity="one">Delete %d item for good? This can\'t be undone.</item>
+        <item quantity="other">Delete %d items for good? This can\'t be undone.</item>
     </plurals>
     <plurals name="share_skipped">
         <item quantity="one">%d photo couldn\'t be cleaned and was not sent.</item>

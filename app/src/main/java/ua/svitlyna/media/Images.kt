@@ -8,6 +8,7 @@ import android.util.LruCache
 import android.util.Size
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
@@ -20,6 +21,10 @@ import kotlin.coroutines.resume
 object Images {
     @OptIn(ExperimentalCoroutinesApi::class)
     private val io = Dispatchers.IO.limitedParallelism(4)
+
+    /** At most two full photos decode at once, so a fast swipe through many photos can't run out of memory. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val fullIo = Dispatchers.IO.limitedParallelism(2)
 
     private val cache = object : LruCache<String, Bitmap>(cacheBytes()) {
         override fun sizeOf(key: String, value: Bitmap) = value.allocationByteCount
@@ -49,7 +54,9 @@ object Images {
      * The full photo for the viewer, scaled so its longer side is at most [maxPx]. ImageDecoder turns
      * the photo the right way up by its EXIF orientation.
      */
-    suspend fun full(resolver: ContentResolver, item: MediaItem, maxPx: Int): Bitmap? = withContext(Dispatchers.IO) {
+    suspend fun full(resolver: ContentResolver, item: MediaItem, maxPx: Int): Bitmap? = withContext(fullIo) {
+        // A photo swiped past while waiting for its turn is not decoded at all.
+        ensureActive()
         runCatching {
             val source = ImageDecoder.createSource(resolver, item.uri)
             ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
@@ -60,8 +67,6 @@ object Images {
                     val scale = maxPx.toFloat() / longer
                     decoder.setTargetSize((w * scale).toInt().coerceAtLeast(1), (h * scale).toInt().coerceAtLeast(1))
                 }
-                // Software memory, so very large photos never fail on the GPU's texture limit.
-                decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
             }
         }.getOrNull()
     }

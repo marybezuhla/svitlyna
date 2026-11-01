@@ -52,9 +52,9 @@ object Share {
      */
     suspend fun prepare(context: Context, items: List<MediaItem>, removeLocation: Boolean): Prepared =
         withContext(Dispatchers.IO) {
-            val dir = File(context.cacheDir, "share")
-            // Copies from an earlier share are no longer needed once a new one starts.
-            dir.deleteRecursively()
+            cleanup(context)
+            // Each share gets its own folder: the app receiving an earlier share may still be reading it.
+            val dir = File(File(context.cacheDir, "share"), System.currentTimeMillis().toString())
             dir.mkdirs()
             var skipped = 0
             val uris = items.mapIndexedNotNull { i, item ->
@@ -92,7 +92,14 @@ object Share {
     }
 
     private fun safeName(item: MediaItem): String =
-        item.name.replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "photo" }.take(80)
+        item.name.replace(Regex("[^\\p{L}\\p{N}._-]"), "_").ifBlank { "photo" }.take(80)
+
+    /** Removes shared copies older than an hour (by then the receiving app has long read them). */
+    fun cleanup(context: Context) {
+        val root = File(context.cacheDir, "share")
+        val old = System.currentTimeMillis() - 60 * 60 * 1000L
+        root.listFiles()?.forEach { if (it.lastModified() < old) it.deleteRecursively() }
+    }
 
     private fun commonType(items: List<MediaItem>): String = when {
         items.all { !it.isVideo } -> "image/*"

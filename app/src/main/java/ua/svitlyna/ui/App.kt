@@ -61,6 +61,11 @@ private sealed interface Page {
     data object Settings : Page
 }
 
+private enum class RequestKind { TRASH, RESTORE, DELETE }
+
+/** Android passes the list of photos between apps in one message of limited size. */
+private const val REQUEST_CHUNK = 500
+
 /** Which photos the open viewer swipes through: all of them, or one folder. */
 private data class ViewerAt(val bucketId: Long?, val index: Int)
 
@@ -83,35 +88,67 @@ fun App(vm: GalleryViewModel = viewModel()) {
     var columns by remember { mutableIntStateOf(prefs.columns) }
     var removeLocation by remember { mutableStateOf(prefs.removeLocation) }
     var askShare by remember { mutableStateOf<List<MediaItem>?>(null) }
+    var confirmDelete by remember { mutableStateOf<List<MediaItem>?>(null) }
+    // Big requests go to Android in parts, one confirmation window after another.
+    var pendingRequests by remember { mutableStateOf(emptyList<List<MediaItem>>()) }
+    var pendingKind by remember { mutableStateOf(RequestKind.TRASH) }
 
     // Access can change in Android settings while the app is in the background.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        access = Access.level(context)
+        val level = Access.level(context)
+        val changed = level != access
+        access = level
         canManageMedia = Access.canManageMedia(context)
-        if (access != AccessLevel.NONE) vm.start()
+        if (access != AccessLevel.NONE) vm.start(accessChanged = changed)
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         access = Access.level(context)
-        if (access != AccessLevel.NONE) vm.start()
+        if (access != AccessLevel.NONE) vm.start(accessChanged = true)
     }
     // Moving to the trash, restoring and deleting for good: Android asks the person itself
     // (no window when "Media management" is switched on).
-    val writeLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
+    lateinit var launchNext: () -> Unit
+    val writeLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
         selected = emptySet()
-        vm.reload()
+        // Cancelled in Android's window: the remaining parts are dropped too.
+        if (result.resultCode != android.app.Activity.RESULT_OK) pendingRequests = emptyList()
+        launchNext()
+        // The media list's own change notice reloads the gallery.
     }
 
-    fun trash(items: List<MediaItem>, toTrash: Boolean) {
+    launchNext = {
+        val next = pendingRequests.firstOrNull()
+        if (next != null) {
+            pendingRequests = pendingRequests.drop(1)
+            try {
+                val uris = next.map { it.uri }
+                val pi = when (pendingKind) {
+                    RequestKind.TRASH -> MediaStore.createTrashRequest(resolver, uris, true)
+                    RequestKind.RESTORE -> MediaStore.createTrashRequest(resolver, uris, false)
+                    RequestKind.DELETE -> MediaStore.createDeleteRequest(resolver, uris)
+                }
+                writeLauncher.launch(IntentSenderRequest.Builder(pi.intentSender).build())
+            } catch (e: Exception) {
+                pendingRequests = emptyList()
+                scope.launch { snackbar.showSnackbar(context.getString(R.string.request_failed)) }
+            }
+        }
+    }
+
+    fun request(kind: RequestKind, items: List<MediaItem>) {
         if (items.isEmpty()) return
-        val pi = MediaStore.createTrashRequest(resolver, items.map { it.uri }, toTrash)
-        writeLauncher.launch(IntentSenderRequest.Builder(pi.intentSender).build())
+        pendingKind = kind
+        pendingRequests = items.chunked(REQUEST_CHUNK)
+        launchNext()
     }
 
+    fun trash(items: List<MediaItem>, toTrash: Boolean) =
+        request(if (toTrash) RequestKind.TRASH else RequestKind.RESTORE, items)
+
+    /** Deleting for good can't be undone, so the app asks first (Android may not, with Media management on). */
     fun deleteForGood(items: List<MediaItem>) {
-        if (items.isEmpty()) return
-        val pi = MediaStore.createDeleteRequest(resolver, items.map { it.uri })
-        writeLauncher.launch(IntentSenderRequest.Builder(pi.intentSender).build())
+        if (items.isNotEmpty()) confirmDelete = items
     }
 
     fun doShare(items: List<MediaItem>, clean: Boolean) {
@@ -130,9 +167,9 @@ fun App(vm: GalleryViewModel = viewModel()) {
     }
 
     val folderId = (page as? Page.InFolder)?.folder?.id
-    val folderItems = remember(state.items, folderId) { folderId?.let { id -> state.items.filter { it.bucketId == id } } }
-    val folderTimeline = remember(folderItems) { folderItems?.let { Timeline.byDay(it) } }
-    val visibleItems = folderItems ?: state.items
+    val folderContent = folderId?.let { state.byFolder[it] }
+    val folderTimeline = folderContent?.timeline
+    val visibleItems = folderContent?.items ?: state.items
     val selectedItems = remember(selected, state.items, state.trash, page) {
         (if (page == Page.Trash) state.trash else state.items).filter { it.id in selected }
     }
@@ -266,9 +303,7 @@ fun App(vm: GalleryViewModel = viewModel()) {
     }
 
     viewer?.let { at ->
-        val list = remember(state.items, at.bucketId) {
-            if (at.bucketId == null) state.items else state.items.filter { it.bucketId == at.bucketId }
-        }
+        val list = if (at.bucketId == null) state.items else state.byFolder[at.bucketId]?.items.orEmpty()
         Viewer(
             items = list,
             startIndex = at.index,
@@ -284,24 +319,36 @@ fun App(vm: GalleryViewModel = viewModel()) {
             onDismissRequest = { askShare = null },
             title = { Text(stringResource(R.string.share_location_title)) },
             text = { Text(pluralStringResource(R.plurals.share_location_text, cannot, cannot)) },
+            // The safe choice is the main button: send only what was cleaned.
             confirmButton = {
+                val cleanable = items.filter { Share.canClean(it) }
+                if (cleanable.isNotEmpty()) {
+                    TextButton(onClick = { askShare = null; doShare(cleanable, clean = true) }) {
+                        Text(stringResource(R.string.share_without_them))
+                    }
+                } else {
+                    TextButton(onClick = { askShare = null }) { Text(stringResource(R.string.cancel)) }
+                }
+            },
+            dismissButton = {
                 TextButton(onClick = { askShare = null; doShare(items, clean = true) }) {
                     Text(stringResource(R.string.share_as_is))
                 }
             },
-            dismissButton = {
-                Box {
-                    androidx.compose.foundation.layout.Row {
-                        TextButton(onClick = { askShare = null }) { Text(stringResource(R.string.cancel)) }
-                        val cleanable = items.filter { Share.canClean(it) }
-                        if (cleanable.isNotEmpty()) {
-                            TextButton(onClick = { askShare = null; doShare(cleanable, clean = true) }) {
-                                Text(stringResource(R.string.share_without_them))
-                            }
-                        }
-                    }
+        )
+    }
+
+    confirmDelete?.let { items ->
+        AlertDialog(
+            onDismissRequest = { confirmDelete = null },
+            title = { Text(stringResource(R.string.delete_for_good)) },
+            text = { Text(pluralStringResource(R.plurals.delete_confirm, items.size, items.size)) },
+            confirmButton = {
+                TextButton(onClick = { confirmDelete = null; request(RequestKind.DELETE, items) }) {
+                    Text(stringResource(R.string.delete_for_good))
                 }
             },
+            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }

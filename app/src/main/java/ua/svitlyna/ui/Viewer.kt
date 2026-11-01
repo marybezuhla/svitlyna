@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -39,6 +40,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +58,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.media3.common.AudioAttributes
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import ua.svitlyna.R
@@ -123,9 +128,15 @@ fun Viewer(
                     )
                 }
             }
-            Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Color(0x88000000))) {
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(Color(0x88000000))
+                    .navigationBarsPadding(),
+            ) {
                 androidx.compose.foundation.layout.Row(
-                    Modifier.align(Alignment.Center).padding(bottom = 24.dp, top = 4.dp),
+                    Modifier.align(Alignment.Center).padding(vertical = 4.dp),
                 ) {
                     IconButton(onClick = { onShare(item) }) {
                         Icon(Icons.Filled.Share, stringResource(R.string.share), tint = Color.White)
@@ -149,8 +160,11 @@ private fun ZoomableImage(item: MediaItem, onTap: () -> Unit, onZoomChanged: (Bo
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val density = LocalDensity.current
         val screenPx = with(density) { maxOf(maxWidth.toPx(), maxHeight.toPx()) }.toInt()
-        // Twice the screen, so zooming stays sharp; capped to keep memory in check.
-        val maxPx = (screenPx * 2).coerceIn(1080, 4096)
+        // One and a half screens: sharp enough for zooming, light on memory. Region-by-region
+        // decoding for very large photos comes later.
+        val maxPx = (screenPx * 3 / 2).coerceIn(1080, 4096)
+        val tap by rememberUpdatedState(onTap)
+        val zoomChanged by rememberUpdatedState(onZoomChanged)
         var full by remember(item.id) { mutableStateOf<Bitmap?>(null) }
         LaunchedEffect(item.id) { full = Images.full(resolver, item, maxPx) }
 
@@ -167,7 +181,7 @@ private fun ZoomableImage(item: MediaItem, onTap: () -> Unit, onZoomChanged: (Bo
         fun setScale(s: Float, o: Offset) {
             scale = s
             offset = if (s <= 1f) Offset.Zero else clamp(o, s)
-            onZoomChanged(s > 1.01f)
+            zoomChanged(s > 1.01f)
         }
 
         val content = Modifier
@@ -175,14 +189,14 @@ private fun ZoomableImage(item: MediaItem, onTap: () -> Unit, onZoomChanged: (Bo
             .onSizeChanged { size = it }
             .pointerInput(item.id) {
                 detectTapGestures(
-                    onTap = { onTap() },
-                    onDoubleTap = { tap ->
+                    onTap = { tap() },
+                    onDoubleTap = { at ->
                         if (scale > 1.01f) {
                             setScale(1f, Offset.Zero)
                         } else {
                             val s = 2.5f
                             val center = Offset(size.width / 2f, size.height / 2f)
-                            setScale(s, (center - tap) * (s - 1))
+                            setScale(s, (center - at) * (s - 1))
                         }
                     },
                 )
@@ -254,12 +268,16 @@ private fun VideoPlayer(item: MediaItem) {
     val context = LocalContext.current
     val player = remember(item.id) {
         ExoPlayer.Builder(context).build().apply {
+            // Pauses other players (music) while this video plays, and pauses itself for a call.
+            setAudioAttributes(AudioAttributes.DEFAULT, true)
             setMediaItem(androidx.media3.common.MediaItem.fromUri(item.uri))
             prepare()
             playWhenReady = true
         }
     }
     DisposableEffect(player) { onDispose { player.release() } }
+    // Home button or another app: no sound in the background.
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { player.pause() }
     AndroidView(
         factory = { PlayerView(it).apply { this.player = player } },
         modifier = Modifier.fillMaxSize(),
