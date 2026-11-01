@@ -75,8 +75,9 @@ fun MediaImage.asItem(): MediaItem = MediaItem(
     sizeBytes = sizeBytes,
     durationMs = durationMs,
     takenMs = dateTaken,
-    // Read through the item's own address (a vault photo through the vault, decrypted).
-    external = uri,
+    // A photo of the phone's media list is addressed by its number (copies go next to it); anything
+    // else (a vault photo, decrypted through the vault) through its own address.
+    external = if (uri.authority == android.provider.MediaStore.AUTHORITY && id > 0) null else uri,
 )
 
 /**

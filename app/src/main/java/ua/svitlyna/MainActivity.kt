@@ -28,8 +28,11 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         currentIntentState.value = intent
         IrisPhotoWidget.refreshAll(this)
-        // Svitlyna: reading photos' text for search, in the background while charging.
+        // Svitlyna: reading photos' text for search, in the background while charging; hints and
+        // automatic cropping after a screenshot (if switched on); the bars' exact heights for cropping.
         ua.svitlyna.search.IndexJob.schedule(this)
+        ua.svitlyna.screenshots.Screenshots.schedule(this)
+        measureBars()
         enableEdgeToEdge()
         val settingsPreferences = SettingsPreferences(this)
         val initialSettings = settingsPreferences.state.value
@@ -94,6 +97,26 @@ class MainActivity : FragmentActivity() {
                     }} else null,
                 )
             }
+        }
+    }
+
+    /** The exact heights of the status and navigation bars, for cropping screenshots precisely. */
+    private fun measureBars() {
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { view, insets ->
+            val metrics = windowManager.currentWindowMetrics.bounds
+            // Only a full-screen portrait window measures the whole screen (not split screen).
+            val full = !isInMultiWindowMode && metrics == windowManager.maximumWindowMetrics.bounds
+            if (full && metrics.width() < metrics.height()) {
+                val status = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars()).top
+                // With gesture navigation there is no bar, only a thin handle drawn over the app:
+                // cutting it would cut real content, so nothing is cut at the bottom then.
+                val buttons = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.tappableElement()).bottom > 0
+                val nav = if (buttons) insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars()).bottom else 0
+                val prefs = ua.svitlyna.core.Prefs(this)
+                val measured = ua.svitlyna.core.Bars(metrics.width(), metrics.height(), status, nav)
+                if (status > 0 && prefs.bars != measured) prefs.bars = measured
+            }
+            androidx.core.view.ViewCompat.onApplyWindowInsets(view, insets)
         }
     }
 

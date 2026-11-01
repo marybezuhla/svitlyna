@@ -68,6 +68,7 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.TextFields
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Crop
 import androidx.compose.material.icons.outlined.DriveFileMove
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.AutoFixHigh
@@ -142,6 +143,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
 import ua.svitlyna.data.MediaImage
+import ua.svitlyna.data.isScreenshot
 import ua.svitlyna.data.ExifMetadata
 import ua.svitlyna.data.ExifEditRequest
 import ua.svitlyna.data.loadExifMetadata
@@ -864,6 +866,27 @@ internal fun PhotoViewer(
                         if (!current.isVideo && !current.mimeType.equals("image/gif", true)) {
                             // Svitlyna: check before sending (card numbers, phones, addresses… blacked
                             // out), sizes for social networks, a copy without metadata.
+                            if (current.isScreenshot) {
+                                // Svitlyna: a copy without the status bar, next to the screenshot.
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.sv_screenshot_crop)) },
+                                    leadingIcon = { Icon(Icons.Outlined.Crop, null) },
+                                    onClick = {
+                                        viewerMenuExpanded = false
+                                        val shot = current
+                                        ua.svitlyna.screenshots.Screenshots.launch {
+                                            val ok = ua.svitlyna.screenshots.Screenshots.cropNow(context, shot.asItem())
+                                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                                android.widget.Toast.makeText(
+                                                    context,
+                                                    if (ok) R.string.sv_screenshot_cropped else R.string.sv_screenshot_crop_failed,
+                                                    android.widget.Toast.LENGTH_SHORT,
+                                                ).show()
+                                            }
+                                        }
+                                    }
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.sv_prepare_title)) },
                                 leadingIcon = { Icon(Icons.Outlined.Shield, null) },

@@ -121,6 +121,18 @@
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/iris_photo_widget_info" />
         </receiver>
+        <!-- Woken by Android when the photos change, for the optional hints after a screenshot -->
+        <service
+            android:name=".screenshots.ScreenshotJob"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+        <receiver android:name=".screenshots.ScreenshotActionReceiver" android:exported="false" />
+        <receiver android:name=".screenshots.RestartReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
         <!-- Reads photos' text for search, only while charging and not in use -->
         <service
             android:name=".search.IndexJob"
