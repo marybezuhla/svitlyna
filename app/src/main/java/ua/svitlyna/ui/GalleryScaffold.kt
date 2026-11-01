@@ -2295,13 +2295,14 @@ internal fun GalleryScaffold(
                     viewerImages = viewerImages?.filterNot { it.id == media.id }
                 }
 
-                if (isViewingTrash || deletePermanently) {
-                    handleDeletePermanently(listOf(media), onConfirmedAction)
-                } else if (isViewingLocked) {
+                // Svitlyna: a vault photo is deleted from the vault (its own index and encrypted file).
+                if (isViewingLocked) {
                     onDeleteFromLocked(listOf(media)) {
                         onTrashFeedbackChange(TrashFeedback(TrashFeedbackType.PERMANENTLY_DELETED, 1))
                         onConfirmedAction()
                     }
+                } else if (isViewingTrash || deletePermanently) {
+                    handleDeletePermanently(listOf(media), onConfirmedAction)
                 } else {
                     handleTrash(listOf(media), onConfirmedAction)
                 }

@@ -394,8 +394,9 @@ class TrashRepository(private val context: Context) {
     suspend fun deletePermanently(mediaList: List<MediaImage>) = indexLocked {
         val currentItems = readIndex().toMutableList()
         val idsToRemove = mediaList.map { abs(it.id) }.toSet()
-        val pathsToRemove = mediaList.map { it.path }.toSet()
-        val fileNamesToRemove = mediaList.map { File(it.path).name }.toSet()
+        // Empty paths (vault items) match nothing.
+        val pathsToRemove = mediaList.map { it.path }.filter { it.isNotBlank() }.toSet()
+        val fileNamesToRemove = mediaList.map { File(it.path).name }.filter { it.isNotBlank() }.toSet()
         val hasManagerAccess = hasAllFilesAccess()
 
         currentItems.removeAll { item ->

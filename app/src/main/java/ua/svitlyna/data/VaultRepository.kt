@@ -367,6 +367,13 @@ class VaultRepository(private val context: Context) {
                 false
             }
         }
+        // Copies that never made it into the index: their originals were never removed (that only
+        // happens after the index is safely written), so the copy goes.
+        val indexed = readIndex().map { it.vaultFileName }.toSet()
+        for (media in vaultedItems) {
+            val name = media.uri.lastPathSegment ?: continue
+            if (name !in indexed && !name.contains('/') && !name.startsWith(".")) runCatching { File(vaultDir, name).delete() }
+        }
         writeIndex(currentItems)
         loadVaultItems()
     }

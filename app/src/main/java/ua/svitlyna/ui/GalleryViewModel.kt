@@ -313,7 +313,7 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
     fun markMediaDeleted(ids: Collection<Long>, paths: Collection<String> = emptyList()) {
         if (ids.isEmpty() && paths.isEmpty()) return
         val idSet = ids.toSet()
-        val pathSet = paths.toSet()
+        val pathSet = paths.filter { it.isNotBlank() }.toSet()
         idSet.forEach { libraryPreferences.setCustomTitle(it, null) }
         repository.markMovedOrDeleted(idSet, pathSet)
         idSet.forEach { ThumbnailCache.remove(it) }
