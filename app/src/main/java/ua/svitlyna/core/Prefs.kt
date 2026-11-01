@@ -8,7 +8,7 @@ class Prefs(context: Context) {
     private val p = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
 
     var columns: Int
-        get() = p.getInt("columns", 4).coerceIn(MIN_COLUMNS, MAX_COLUMNS)
+        get() = p.getInt("columns", 4).coerceIn(2, 6)
         set(v) = p.edit().putInt("columns", v).apply()
 
     /** Share copies without location (on by default). */
