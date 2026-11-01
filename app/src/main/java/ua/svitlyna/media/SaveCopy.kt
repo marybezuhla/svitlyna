@@ -18,8 +18,6 @@ import java.io.File
  * - the original is never changed or removed.
  */
 object SaveCopy {
-    private const val SOFTWARE = "Svitlyna"
-
     /** Returns the new file's address, or null if it couldn't be saved (nothing half-written is left). */
     suspend fun save(context: Context, original: MediaItem, picture: Bitmap, suffix: String): Uri? = withContext(Dispatchers.IO) {
         val resolver = context.contentResolver
@@ -43,7 +41,14 @@ object SaveCopy {
                 put(MediaStore.MediaColumns.DATE_TAKEN, original.dateMs)
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
-            uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return@withContext null
+            uri = try {
+                resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            } catch (e: IllegalArgumentException) {
+                // Android keeps photos only under DCIM/ and Pictures/: an original elsewhere
+                // (Download/, another app's folder) gets its copy in Pictures/Svitlyna.
+                values.put(MediaStore.MediaColumns.RELATIVE_PATH, "Pictures/Svitlyna/")
+                resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            } ?: return@withContext null
             resolver.openOutputStream(uri)!!.use { out -> temp.inputStream().use { it.copyTo(out) } }
             // The system re-reads the file when it stops being pending: the date taken is set again after.
             resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
@@ -64,9 +69,9 @@ object SaveCopy {
             context.contentResolver.openInputStream(MediaStore.setRequireOriginal(original.uri))!!.use { ExifInterface(it) }
         }.recoverCatching {
             context.contentResolver.openInputStream(original.uri)!!.use { ExifInterface(it) }
-        }.getOrNull() ?: return
+        }.getOrNull()
         val exif = ExifInterface(target)
-        Metadata.copy(source, exif, SOFTWARE)
+        Metadata.copy(source, exif, original.dateMs)
         exif.saveAttributes()
     }
 

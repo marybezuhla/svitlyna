@@ -62,13 +62,14 @@
 
     <string name="settings_screenshots">After a screenshot</string>
     <string name="screenshot_hints">Hints after a screenshot</string>
-    <string name="screenshot_hints_explain">A notification with "Without bars", "Text" and "Open". Your screenshot itself is never changed.</string>
+    <string name="screenshot_hints_explain">A notification: tap it to open the screenshot, or use "Without bars" and "Text". No picture of the screenshot in it, and on the lock screen only "Svitlyna". Your screenshot itself is never changed.</string>
     <string name="crop_navigation">Remove the navigation bar too</string>
     <string name="auto_crop">Always save a copy without bars</string>
-    <string name="auto_crop_explain">Right after each screenshot, with no tap. The original stays next to it.</string>
+    <string name="auto_crop_explain">Right after each screenshot, with no tap. The original stays next to it. In full-screen apps (video, games) there is no status bar, so the top of the picture would be cut: use the button instead.</string>
     <string name="screenshot_channel">Screenshot hints</string>
     <string name="screenshot_title">Screenshot taken</string>
-    <string name="screenshot_text">Save without bars, copy its text or open it</string>
+    <string name="screenshot_text">Save without bars or copy its text. Tap to open.</string>
+    <string name="screenshot_text_no_crop">Copy its text. Tap to open.</string>
     <string name="screenshot_crop">Without bars</string>
     <string name="screenshot_cropped">Saved a copy without bars</string>
     <string name="screenshot_cropped_text">Next to the screenshot, with the same date. Tap to open.</string>

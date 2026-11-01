@@ -51,6 +51,12 @@
             </intent-filter>
         </activity>
 
+        <!-- Svitlyna's own notifications open photos through this private entrance (not exported) -->
+        <activity-alias
+            android:name=".ui.FromHint"
+            android:exported="false"
+            android:targetActivity=".ui.MainActivity" />
+
         <!-- Woken by Android when the photos change, to hint about a fresh screenshot -->
         <service
             android:name=".screenshots.ScreenshotJob"

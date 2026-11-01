@@ -18,7 +18,6 @@ import android.graphics.ImageDecoder
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Size
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -132,30 +131,37 @@ object Screenshots {
         PendingIntent.getActivity(
             context,
             request,
-            Intent(context, MainActivity::class.java)
+            Intent().setClassName(context, MainActivity.FROM_HINT)
                 .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 .putExtra(MainActivity.EXTRA_OPEN_ID, id)
                 .putExtra(MainActivity.EXTRA_READ_TEXT, text),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
+    /**
+     * No picture of the screenshot in the notification: screenshots often hold codes and chats, and a
+     * notification can show on the lock screen and be read by apps with notification access. On the
+     * lock screen only "Svitlyna" shows.
+     */
     private fun base(context: Context, item: MediaItem): Notification.Builder {
-        val builder = Notification.Builder(context, CHANNEL)
+        val public = Notification.Builder(context, CHANNEL)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(context.getString(R.string.app_name))
+            .build()
+        return Notification.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             .setAutoCancel(true)
             .setTimeoutAfter(10 * 60 * 1000L)
+            .setVisibility(Notification.VISIBILITY_PRIVATE)
+            .setPublicVersion(public)
             .setContentIntent(openIntent(context, item.id, text = false, request = 1))
-        runCatching { context.contentResolver.loadThumbnail(item.uri, Size(512, 512), null) }.getOrNull()?.let {
-            builder.setLargeIcon(it)
-        }
-        return builder
     }
 
     fun notify(context: Context, item: MediaItem, canCrop: Boolean) {
         if (!canNotify(context)) return
         val nm = channel(context)
         val builder = base(context, item).setContentTitle(context.getString(R.string.screenshot_title))
-            .setContentText(context.getString(R.string.screenshot_text))
+            .setContentText(context.getString(if (canCrop) R.string.screenshot_text else R.string.screenshot_text_no_crop))
         if (canCrop) {
             val crop = PendingIntent.getBroadcast(
                 context,
@@ -180,6 +186,10 @@ object Screenshots {
                 d.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
             }
         }.getOrNull() ?: return
+        if (full.width != item.width || full.height != item.height) {
+            full.recycle()
+            return
+        }
         val cropped = android.graphics.Bitmap.createBitmap(full, 0, keep.first, full.width, keep.last - keep.first + 1)
         val uri = SaveCopy.save(context, item, cropped, "no-bars")
         cropped.recycle()
@@ -226,6 +236,8 @@ class ScreenshotActionReceiver : BroadcastReceiver() {
         val pending = goAsync()
         Screenshots.launch {
             try {
+                // One tap, one copy: the hint goes away as soon as its button is used.
+                context.getSystemService(NotificationManager::class.java)?.cancel(Screenshots.NOTIFICATION_ID)
                 val item = MediaRepository(context.contentResolver).loadOne(id)
                 if (item != null) Screenshots.crop(context.applicationContext, item)
             } catch (_: Exception) {

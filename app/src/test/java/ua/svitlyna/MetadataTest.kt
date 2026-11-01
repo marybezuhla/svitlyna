@@ -51,7 +51,7 @@ class MetadataTest {
             val from = ExifInterface(original(name))
             val target = sample(name)
             val to = ExifInterface(target)
-            Metadata.copy(from, to, "Svitlyna")
+            Metadata.copy(from, to, takenMs = 0)
             to.saveAttributes()
 
             val back = ExifInterface(target)
@@ -65,6 +65,17 @@ class MetadataTest {
             assertTrue("$name: XMP kept", back.getAttribute(ExifInterface.TAG_XMP)?.contains("GPSLatitude") == true)
             assertEquals("$name: upright", ExifInterface.ORIENTATION_NORMAL, back.getAttributeInt(ExifInterface.TAG_ORIENTATION, 0))
         }
+    }
+
+    @Test
+    fun copyWithoutDateInsideGetsTheOriginalsDate() {
+        // A PNG screenshot has no date taken in the file: the copy gets it written in.
+        val target = sample("plain.png")
+        val to = ExifInterface(target)
+        val taken = java.time.ZonedDateTime.of(2024, 3, 9, 18, 5, 0, 0, java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        Metadata.copy(from = null, to = to, takenMs = taken)
+        to.saveAttributes()
+        assertEquals("2024:03:09 18:05:00", ExifInterface(target).getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL))
     }
 
     @Test

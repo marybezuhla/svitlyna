@@ -26,6 +26,9 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val EXTRA_OPEN_ID = "open_id"
         const val EXTRA_READ_TEXT = "read_text"
+
+        /** The private entrance used by Svitlyna's own notifications; other apps can't open photos by id. */
+        const val FROM_HINT = "ua.svitlyna.ui.FromHint"
     }
 
     /** A photo to open (from a screenshot hint), and whether to read its text right away. */
@@ -37,7 +40,8 @@ class MainActivity : ComponentActivity() {
         // Copies made for sharing are removed an hour later.
         Thread { Share.cleanup(applicationContext) }.start()
         Screenshots.schedule(this)
-        takeRequest(intent)
+        // Reopened from the recent apps after the process was gone: the old request is not repeated.
+        if (savedInstanceState == null && intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY == 0) takeRequest(intent)
         measureBars()
         setContent { SvitlynaTheme { App(openRequest = openRequest) } }
     }
@@ -48,11 +52,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun takeRequest(intent: Intent?) {
-        val id = intent?.getLongExtra(EXTRA_OPEN_ID, -1L) ?: -1L
+        if (intent?.component?.className != FROM_HINT) return
+        val id = intent.getLongExtra(EXTRA_OPEN_ID, -1L)
         if (id > 0) {
-            openRequest.value = OpenRequest(id, intent?.getBooleanExtra(EXTRA_READ_TEXT, false) == true)
+            openRequest.value = OpenRequest(id, intent.getBooleanExtra(EXTRA_READ_TEXT, false))
             // Opened once: turning the phone or coming back must not open it again.
-            intent?.removeExtra(EXTRA_OPEN_ID)
+            intent.removeExtra(EXTRA_OPEN_ID)
         }
     }
 
@@ -60,10 +65,17 @@ class MainActivity : ComponentActivity() {
     private fun measureBars() {
         ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { view, insets ->
             val metrics = windowManager.currentWindowMetrics.bounds
-            if (metrics.width() < metrics.height()) {
+            // Only a full-screen portrait window measures the whole screen (not split screen).
+            val full = !isInMultiWindowMode && metrics == windowManager.maximumWindowMetrics.bounds
+            if (full && metrics.width() < metrics.height()) {
                 val status = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
-                val nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
-                if (status > 0) Prefs(this).bars = Bars(metrics.width(), metrics.height(), status, nav)
+                // With gesture navigation there is no bar, only a thin handle drawn over the app:
+                // cutting it would cut real content, so nothing is cut at the bottom then.
+                val buttons = insets.getInsets(WindowInsetsCompat.Type.tappableElement()).bottom > 0
+                val nav = if (buttons) insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom else 0
+                val prefs = Prefs(this)
+                val measured = Bars(metrics.width(), metrics.height(), status, nav)
+                if (status > 0 && prefs.bars != measured) prefs.bars = measured
             }
             ViewCompat.onApplyWindowInsets(view, insets)
         }
