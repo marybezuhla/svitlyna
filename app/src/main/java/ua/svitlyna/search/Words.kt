@@ -6,7 +6,7 @@ import java.text.Normalizer
  * How words are compared in search. Every word, Ukrainian or Latin, becomes one plain Latin "key":
  * - letters are lower-cased, apostrophes dropped («пам'ять» = «памʼять» = «память»);
  * - Cyrillic is written in Latin letters (as in passports), so «Шевченко» and «Shevchenko» meet;
- * - a few spellings that differ between transliterations are made the same (y = i, kh = h…), so
+ * - a few spellings that differ between transliterations are made the same (y = i, j = i, w = v), so
  *   «і», «ї», «и», «й» don't matter either;
  * - the ending is cut off («Шевченка», «Шевченку», «Шевченком» → one key).
  * The same is done to what is found on photos and to what is typed, so they meet.
@@ -29,8 +29,8 @@ object Words {
 
     /** Endings cut from keys, longest first (Ukrainian endings as they look after [key]). */
     private val ENDINGS = listOf(
-        "iami", "oiu", "eiu", "oho", "omu", "ami", "ovi", "evi", "imi", "iam", "iah",
-        "ih", "im", "ii", "ah", "am", "om", "em", "iv", "ei", "iu", "ia", "ie",
+        "iakh", "iami", "oiu", "eiu", "oho", "omu", "ami", "ovi", "evi", "imi", "iam",
+        "ikh", "akh", "im", "ii", "am", "om", "em", "iv", "ei", "iu", "ia", "ie",
         "o", "a", "u", "i", "e",
     )
 
@@ -74,7 +74,6 @@ object Words {
             }
         }
         return sb.toString()
-            .replace("kh", "h")
             .replace('y', 'i')
             .replace('j', 'i')
             .replace('w', 'v')

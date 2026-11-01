@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Two photos, one behind the other; on the front one a sun over hills. "Svitlyna" is an old
-     Ukrainian word for a photograph. The common style of the author's apps: deep blue, cream, gold. -->
+     Ukrainian word for a photograph. Deep blue, cream and gold. Scaled a little so the corners stay
+     inside the part every launcher shape shows. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <group android:scaleX="0.86" android:scaleY="0.86" android:pivotX="54" android:pivotY="55">
     <!-- The photo behind (gold), showing below and to the right -->
     <path
         android:fillColor="#FFF5B83A"
@@ -29,4 +31,5 @@
     <path
         android:fillColor="#FFF5B83A"
         android:pathData="M63,43 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" />
+    </group>
 </vector>

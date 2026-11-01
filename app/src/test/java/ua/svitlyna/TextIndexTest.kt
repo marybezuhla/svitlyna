@@ -5,7 +5,6 @@ import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import org.robolectric.RuntimeEnvironment
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -48,7 +47,6 @@ class TextIndexTest {
         assertEquals(setOf(1L), find(i, "українки"))
         i.remove(listOf(1L))
         assertEquals(emptySet<Long>(), find(i, "українка"))
-        assertNull(i.text(1))
         i.clear()
         assertEquals(emptyMap<Long, Long>(), i.stamps())
     }
@@ -62,5 +60,9 @@ class TextIndexTest {
         assertEquals(setOf(1L), find(i, "\" OR * ( NEAR"))
         assertEquals(emptySet<Long>(), find(i, "\" AND * ( NOT"))
         assertEquals(null, TextIndex.match(emptyList()))
+        // One letter looks for nothing; only the word being typed is a beginning.
+        assertEquals(null, TextIndex.match(listOf("s")))
+        assertEquals("chai kit*", TextIndex.match(listOf("chai", "kit")))
+        assertEquals("chai kit", TextIndex.match(listOf("chai", "kit"), lastIsBeginning = false))
     }
 }

@@ -48,7 +48,26 @@ object DateWords {
     private fun isMonth(w: String) = w.startsWith("місяц") || w.startsWith("місяць") || w == "month"
     private fun isYear(w: String) = w == "рік" || w == "року" || w == "році" || w == "year"
 
+    /** 01.05.2024, 1.5.24, 2024-05-01 */
+    private val NUMERIC = Regex("""\b(\d{1,2})\.(\d{1,2})\.(\d{4}|\d{2})\b|\b(\d{4})-(\d{1,2})-(\d{1,2})\b""")
+
     fun parse(query: String, today: LocalDate): Parsed {
+        // A date in numbers is taken first, as a whole.
+        NUMERIC.find(query)?.let { m ->
+            val g = m.groupValues
+            val date = runCatching {
+                if (g[1].isNotEmpty()) {
+                    val y = g[3].toInt().let { if (g[3].length == 2) 2000 + it else it }
+                    LocalDate.of(y, g[2].toInt(), g[1].toInt())
+                } else {
+                    LocalDate.of(g[4].toInt(), g[5].toInt(), g[6].toInt())
+                }
+            }.getOrNull()
+            if (date != null) {
+                val rest = parse(query.removeRange(m.range), today).rest
+                return Parsed(date, date, rest)
+            }
+        }
         val words = Words.split(query).map { it.lowercase() }
         val used = BooleanArray(words.size)
         var from: LocalDate? = null
@@ -109,8 +128,9 @@ object DateWords {
             }
             y != null -> set(LocalDate.of(y, 1, 1), LocalDate.of(y, 12, 31))
         }
-        // A month name that turned out not to be needed for a date is still a word to look for.
-        val rest = words.filterIndexed { i, _ -> !used[i] }
+        // «минулого» or "last" before something that isn't a time («минулого літа») says nothing to
+        // look for on a photo either.
+        val rest = words.filterIndexed { i, w -> !used[i] && w !in LAST && w !in THIS }
         return Parsed(from, to, rest)
     }
 }

@@ -35,31 +35,60 @@ object IndexDb {
     private fun open(context: Context): SupportSQLiteDatabase {
         helper?.let { return it.writableDatabase }
         System.loadLibrary("sqlcipher")
-        val key = runCatching { readKey(context) }.getOrNull() ?: run {
-            // No key, or it can't be unwrapped any more: a new, empty database.
+        // Started anew only when the old key is surely gone (never for a passing error: hours of
+        // reading would be lost for nothing). Other errors go up; the next attempt tries again.
+        val key = try {
+            readKey(context)
+        } catch (e: Exception) {
+            if (!lost(e)) throw e
+            null
+        } ?: run {
             context.deleteDatabase(NAME)
             newKey(context)
         }
-        val made = try {
-            build(context, key).also { it.writableDatabase }
+        val made = build(context, key)
+        val db = try {
+            made.writableDatabase
         } catch (e: Exception) {
-            // The file doesn't open with this key (left from before): started anew.
+            runCatching { made.close() }
+            if (e.message?.contains("not a database", ignoreCase = true) != true) throw e
+            // The file belongs to a key that is gone: started anew.
             context.deleteDatabase(NAME)
-            build(context, newKey(context)).also { it.writableDatabase }
+            val fresh = build(context, newKey(context))
+            helper = fresh
+            return fresh.writableDatabase.also(::secure)
+        } finally {
+            key.fill(0)
         }
         helper = made
-        return made.writableDatabase
+        secure(db)
+        return db
     }
+
+    /** Deleted rows are overwritten, not just marked free. */
+    private fun secure(db: SupportSQLiteDatabase) {
+        runCatching { db.query("PRAGMA secure_delete = ON").use { it.moveToFirst() } }
+    }
+
+    /** The wrapped key can never be opened again (as opposed to Keystore being busy for a moment). */
+    private fun lost(e: Exception): Boolean = e is javax.crypto.AEADBadTagException ||
+        e is java.security.UnrecoverableKeyException ||
+        e is android.security.keystore.KeyPermanentlyInvalidatedException ||
+        e is java.security.InvalidKeyException ||
+        e is javax.crypto.BadPaddingException ||
+        e is IndexOutOfBoundsException
 
     private fun build(context: Context, key: ByteArray): SupportSQLiteOpenHelper {
         val config = SupportSQLiteOpenHelper.Configuration.builder(context)
             .name(NAME)
-            .callback(object : SupportSQLiteOpenHelper.Callback(1) {
+            .callback(object : SupportSQLiteOpenHelper.Callback(TextIndex.VERSION) {
                 override fun onCreate(db: SupportSQLiteDatabase) = TextIndex.create(db)
-                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = TextIndex.create(db)
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = TextIndex.recreate(db)
             })
             .build()
-        return SupportOpenHelperFactory(key.copyOf()).create(config)
+        // A random key needs no stretching: given raw (x'…'), so opening is quick.
+        val raw = "x'" + key.joinToString("") { "%02x".format(it) } + "'"
+        return SupportOpenHelperFactory(raw.toByteArray(Charsets.US_ASCII)).create(config)
     }
 
     /** Everything read from photos is gone: the database and its key. */
@@ -100,6 +129,7 @@ object IndexDb {
         if (!file.exists()) return null
         val bytes = file.readBytes()
         val ivSize = bytes[0].toInt()
+        if (ivSize <= 0 || bytes.size < 1 + ivSize + 16) throw IndexOutOfBoundsException("damaged key file")
         val iv = bytes.copyOfRange(1, 1 + ivSize)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply { init(Cipher.DECRYPT_MODE, wrapping(), GCMParameterSpec(128, iv)) }
         return cipher.doFinal(bytes, 1 + ivSize, bytes.size - 1 - ivSize)

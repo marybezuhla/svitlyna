@@ -130,7 +130,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
     var shown by remember { mutableStateOf<Shown?>(null) }
     // Photos with text on them, from the search index (for the "With text" filter).
     val withText by ua.svitlyna.search.Indexer.withText.collectAsState()
-    LaunchedEffect(Unit) { ua.svitlyna.search.Indexer.refreshCount(context) }
+    LaunchedEffect(state.items) { if (!state.loading) ua.svitlyna.search.Indexer.refreshCount(context, state.items) }
     LaunchedEffect(state.items, state.timeline, filter, hidden, if (filter == Filter.TEXT) withText else null) {
         shown = if (filter == Filter.ALL && hidden.isEmpty()) {
             Shown(state.items, state.timeline)
@@ -146,7 +146,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
     // Search: the line and its results, kept while the viewer is open on one of them.
     var searchQuery by remember { mutableStateOf("") }
     var searchResult by remember { mutableStateOf(ua.svitlyna.search.Search.EMPTY) }
-    LaunchedEffect(searchQuery, state.items, withText) {
+    LaunchedEffect(searchQuery, state.items) {
         if (searchQuery.isBlank()) {
             searchResult = ua.svitlyna.search.Search.EMPTY
             return@LaunchedEffect
@@ -632,6 +632,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
                 state.loading && page != Page.Settings ->
                     CircularProgressIndicator(Modifier.align(Alignment.Center))
                 page == Page.Search -> SearchScreen(
+                    items = state.items,
                     query = searchQuery,
                     onQuery = { searchQuery = it },
                     result = searchResult,

@@ -6,20 +6,36 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
  * The text found on photos, in a full-text index (SQLite FTS4). Each photo is one row: its id, a
- * stamp (to notice a changed file), whether it has text, the search keys ([Words.keys]) and the text
- * as read (to show and to highlight). The database itself is encrypted ([IndexDb]).
+ * stamp (to notice a changed file), whether it has text, and only the search keys ([Words.keys]),
+ * not the text itself (the viewer reads the photo again to show it). The database itself is
+ * encrypted ([IndexDb]).
  */
 class TextIndex(private val db: SupportSQLiteDatabase) {
     companion object {
+        const val VERSION = 2
+
         fun create(db: SupportSQLiteDatabase) {
             db.execSQL("CREATE TABLE IF NOT EXISTS photo (id INTEGER PRIMARY KEY, stamp INTEGER NOT NULL, has_text INTEGER NOT NULL)")
-            db.execSQL("CREATE VIRTUAL TABLE IF NOT EXISTS words USING fts4(keys, body, notindexed=body)")
+            // Prefix indexes for 2 and 3 letters: a short beginning doesn't make SQLite scan every word.
+            db.execSQL("CREATE VIRTUAL TABLE IF NOT EXISTS words USING fts4(keys, prefix=\"2,3\")")
         }
 
-        /** The FTS query for typed keys: every key must begin a word of the photo. */
-        fun match(keys: List<String>): String? {
-            val safe = keys.map { k -> k.filter { it in 'a'..'z' || it in '0'..'9' } }.filter { it.isNotEmpty() }.distinct()
-            return if (safe.isEmpty()) null else safe.joinToString(" ") { "$it*" }
+        /** A new layout: what was read is read again (it is only a cache of the photos). */
+        fun recreate(db: SupportSQLiteDatabase) {
+            db.execSQL("DROP TABLE IF EXISTS photo")
+            db.execSQL("DROP TABLE IF EXISTS words")
+            create(db)
+        }
+
+        /**
+         * The FTS query for typed keys: every key must be a word of the photo; the last one may be
+         * just the beginning of a word ([lastIsBeginning]: it is still being typed). Keys of one
+         * letter look for nothing (they would match half the words).
+         */
+        fun match(keys: List<String>, lastIsBeginning: Boolean = true): String? {
+            val safe = keys.map { k -> k.filter { it in 'a'..'z' || it in '0'..'9' } }.filter { it.length >= 2 || it.all(Char::isDigit) && it.isNotEmpty() }.distinct()
+            if (safe.isEmpty()) return null
+            return safe.mapIndexed { i, k -> if (lastIsBeginning && i == safe.lastIndex) "$k*" else k }.joinToString(" ")
         }
     }
 
@@ -48,7 +64,7 @@ class TextIndex(private val db: SupportSQLiteDatabase) {
             })
             db.execSQL("DELETE FROM words WHERE docid = ?", arrayOf<Any>(id))
             if (keys.isNotEmpty()) {
-                db.execSQL("INSERT INTO words (docid, keys, body) VALUES (?, ?, ?)", arrayOf<Any>(id, keys.joinToString(" "), text))
+                db.execSQL("INSERT INTO words (docid, keys) VALUES (?, ?)", arrayOf<Any>(id, keys.joinToString(" ")))
             }
             db.setTransactionSuccessful()
         } finally {
@@ -70,17 +86,13 @@ class TextIndex(private val db: SupportSQLiteDatabase) {
         }
     }
 
-    /** Photos whose text has all of [keys] (word beginnings). */
-    fun search(keys: List<String>): Set<Long> {
-        val q = match(keys) ?: return emptySet()
+    /** Photos whose text has all of [keys] (see [match]). */
+    fun search(keys: List<String>, lastIsBeginning: Boolean = true): Set<Long> {
+        val q = match(keys, lastIsBeginning) ?: return emptySet()
         val out = HashSet<Long>()
         db.query("SELECT docid FROM words WHERE words MATCH ?", arrayOf<Any>(q)).use { c -> while (c.moveToNext()) out += c.getLong(0) }
         return out
     }
-
-    /** The text read on one photo, or null. */
-    fun text(id: Long): String? =
-        db.query("SELECT body FROM words WHERE docid = ?", arrayOf<Any>(id)).use { c -> if (c.moveToFirst()) c.getString(0) else null }
 
     fun clear() {
         db.execSQL("DELETE FROM photo")
