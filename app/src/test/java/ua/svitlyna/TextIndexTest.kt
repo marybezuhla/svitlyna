@@ -57,8 +57,10 @@ class TextIndexTest {
     fun oddInputIsSafe() {
         val i = index()
         i.put(1, 1, "\"OR\" * NEAR ( ) - :")
-        // Quotes, stars and FTS words typed by the person don't break the query.
-        assertEquals(emptySet<Long>(), find(i, "\" OR * ( NEAR"))
+        // Quotes, stars and query words typed by the person don't break the query: the words
+        // "or" and "near" are simply looked for (and are on this photo).
+        assertEquals(setOf(1L), find(i, "\" OR * ( NEAR"))
+        assertEquals(emptySet<Long>(), find(i, "\" AND * ( NOT"))
         assertEquals(null, TextIndex.match(emptyList()))
     }
 }
