@@ -829,36 +829,16 @@ private fun applyExifEditFields(
     exif.setAttribute(androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION, exifOrientation.toString())
 }
 
+/**
+ * Svitlyna: the person's own photo is changed only through a checked copy (media/InPlace): the
+ * original is read as the original (so the place is never blanked), the copy is changed and checked
+ * (everything outside the metadata block byte for byte the same, e.g. a live photo's video), and only
+ * then written over; if writing fails, the photo goes back to exactly what it was.
+ */
 fun saveExifToMedia(context: android.content.Context, uri: Uri, path: String, request: ExifEditRequest): Boolean {
-    var saved = false
-    if (path.isNotBlank()) {
-        val fileRes = runCatching {
-            val file = java.io.File(path)
-            if (file.exists()) {
-                val exif = androidx.exifinterface.media.ExifInterface(file)
-                applyExifToExifInterface(exif, request)
-                exif.saveAttributes()
-                saved = true
-            }
-        }
-        if (fileRes.isFailure) {
-            android.util.Log.w("IrisGallery", "Direct file save failed for $path", fileRes.exceptionOrNull())
-        }
-    }
-    if (!saved) {
-        val pfdRes = runCatching {
-            context.contentResolver.openFileDescriptor(uri, "rw")?.use { pfd ->
-                val exif = androidx.exifinterface.media.ExifInterface(pfd.fileDescriptor)
-                applyExifToExifInterface(exif, request)
-                exif.saveAttributes()
-                saved = true
-            }
-        }
-        if (pfdRes.isFailure) {
-            android.util.Log.w("IrisGallery", "PFD save failed for $uri", pfdRes.exceptionOrNull())
-        }
-    }
-    return saved
+    val anyTag = ua.svitlyna.media.Metadata.COPYABLE_TAGS.toSet() + androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION
+    return ua.svitlyna.media.InPlace.rewrite(context, uri, anyTag) { exif -> applyExifToExifInterface(exif, request) } ==
+        ua.svitlyna.media.InPlace.Result.DONE
 }
 
 private fun extractStoragePath(raw: String): String? {
