@@ -13,14 +13,15 @@ import java.io.File
 /**
  * Sharing without location. Photos in formats whose metadata can be rewritten (JPEG, PNG, WebP) are
  * copied into the app's private cache, the location is removed from the copy, and only the copy is
- * shared. The original is never changed. Other files (HEIC, videos, GIF…) can't be cleaned yet:
- * they are reported so the person decides.
+ * shared. Videos (MP4, MOV, 3GP) are copied with their notes boxes emptied ([VideoClean]). The
+ * original is never changed. Other files (HEIC, GIF…) can't be cleaned yet: they are reported so
+ * the person decides.
  */
 object Share {
     private val CLEANABLE = setOf("image/jpeg", "image/png", "image/webp")
+    private val CLEANABLE_VIDEO = setOf("video/mp4", "video/quicktime", "video/3gpp")
 
-
-    fun canClean(item: MediaItem) = !item.isVideo && item.mime.lowercase() in CLEANABLE
+    fun canClean(item: MediaItem) = item.mime.lowercase() in (if (item.isVideo) CLEANABLE_VIDEO else CLEANABLE)
 
     /** The share intent, or null when nothing is left to share; [skipped] photos could not be cleaned. */
     class Prepared(val intent: Intent?, val skipped: Int)
@@ -59,6 +60,15 @@ object Share {
         }
 
     private fun cleanCopy(context: Context, item: MediaItem, target: File): Uri? = runCatching {
+        if (item.isVideo) {
+            // Not enough room for a copy of a big video: not sent with its location instead.
+            check(context.cacheDir.usableSpace > item.sizeBytes + 50L * 1024 * 1024)
+            val ok = context.contentResolver.openInputStream(item.uri)!!.use { input ->
+                target.outputStream().use { VideoClean.clean(input, it) }
+            }
+            check(ok)
+            return@runCatching FileProvider.getUriForFile(context, "${context.packageName}.share", target)
+        }
         context.contentResolver.openInputStream(item.uri)!!.use { input ->
             target.outputStream().use { input.copyTo(it) }
         }
