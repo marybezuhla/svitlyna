@@ -395,6 +395,7 @@ private const val CERTIFICATE = "53027b1a87085eb9e40a74820ff2aa067dd3350a0e3010a
  */
 @Composable
 fun FolderPickDialog(folders: List<Folder>, videos: Boolean, photos: Boolean, onDismiss: () -> Unit, onPick: (path: String, copy: Boolean) -> Unit) {
+    if (LocalLocked.current) return
     var chosen by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
     var newName by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
     val target = if (newName.isNotBlank()) ua.svitlyna.media.FileOps.newFolderPath(newName) else chosen

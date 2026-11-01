@@ -17,23 +17,34 @@ class MediaRepository(private val resolver: ContentResolver) {
     /** Items in the system trash, newest first. */
     fun loadTrash(): List<MediaItem> = query(trashed = true)
 
+    /** Items taken within any of [ranges] (ms, inclusive): a small query instead of the whole gallery. */
+    fun loadTaken(ranges: List<LongRange>): List<MediaItem> =
+        if (ranges.isEmpty()) emptyList() else query(trashed = false, taken = ranges)
+
     /** One item by its id, or null if it is gone (or the app can't see it). */
     fun loadOne(id: Long): MediaItem? = query(trashed = false, id = id).firstOrNull()
 
-    private fun query(trashed: Boolean, id: Long? = null): List<MediaItem> {
+    private fun query(trashed: Boolean, id: Long? = null, taken: List<LongRange>? = null): List<MediaItem> {
         val args = Bundle().apply {
             val types = "${MediaStore.Files.FileColumns.MEDIA_TYPE} IN (?, ?)"
+            val when_ = taken?.joinToString(" OR ", "(", ")") { "${MediaStore.MediaColumns.DATE_TAKEN} BETWEEN ? AND ?" }
             putString(
                 ContentResolver.QUERY_ARG_SQL_SELECTION,
-                if (id != null) "$types AND ${MediaStore.MediaColumns._ID} = ?" else types,
+                when {
+                    id != null -> "$types AND ${MediaStore.MediaColumns._ID} = ?"
+                    when_ != null -> "$types AND $when_"
+                    else -> types
+                },
             )
             putStringArray(
                 ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS,
-                listOfNotNull(
-                    MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString(),
-                    MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString(),
-                    id?.toString(),
-                ).toTypedArray(),
+                (
+                    listOfNotNull(
+                        MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString(),
+                        MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString(),
+                        id?.toString(),
+                    ) + taken.orEmpty().flatMap { listOf(it.first.toString(), it.last.toString()) }
+                    ).toTypedArray(),
             )
             if (trashed) putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_ONLY)
         }

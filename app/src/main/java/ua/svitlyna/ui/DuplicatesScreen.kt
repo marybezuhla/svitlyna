@@ -86,8 +86,9 @@ fun DuplicatesScreen(
                                         stringResource(if (g.exact) R.string.dupes_same else R.string.dupes_similar),
                                         style = MaterialTheme.typography.labelMedium,
                                     )
-                                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        g.items.forEach { item -> Tile(item, item.id in marked, item === g.best) { onMark(item) } }
+                                    // Lazy: only the previews on screen are loaded, however large the group.
+                                    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        items(g.items, key = { it.id }) { item -> Tile(item, item.id in marked, item === g.best) { onMark(item) } }
                                     }
                                 }
                             }

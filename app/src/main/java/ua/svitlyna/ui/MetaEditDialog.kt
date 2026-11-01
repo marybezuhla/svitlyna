@@ -29,6 +29,7 @@ import java.time.ZoneId
 /** Date taken and place of one photo, typed in; written into the file after Android's permission. */
 @Composable
 fun MetaEditDialog(item: MediaItem, details: PhotoDetails?, onDismiss: () -> Unit, onSave: (MetaEdit.Change) -> Unit) {
+    if (LocalLocked.current) return
     val startDate = remember(item.id) {
         MetaEdit.formatDate(Instant.ofEpochMilli(item.dateMs).atZone(ZoneId.systemDefault()).toLocalDateTime())
     }

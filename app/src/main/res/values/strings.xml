@@ -58,7 +58,7 @@
 
     <string name="settings_sharing">Sharing</string>
     <string name="remove_location">Several photos: share without location</string>
-    <string name="remove_location_explain">Photos are sent as copies with the location removed; your originals stay as they are. MP4 videos are sent without location too. Some formats (HEIC, GIF…) can\'t be cleaned yet: you\'ll be asked before sending them.</string>
+    <string name="remove_location_explain">Photos are sent as copies with the location removed; your originals stay as they are. MP4, MOV and 3GP videos are sent without location too. Some formats (HEIC, GIF…) can\'t be cleaned yet: you\'ll be asked before sending them.</string>
 
     <string name="settings_screenshots">After a screenshot</string>
     <string name="screenshot_hints">Hints after a screenshot</string>
@@ -214,6 +214,7 @@
     <string name="app_lock">Lock the app</string>
     <string name="app_lock_explain">Opening Svitlyna asks for your fingerprint or the phone\'s PIN (Android checks it; Svitlyna never sees it). Within half a minute it doesn\'t ask again. The app is hidden in recent apps (on Android 11–12 screenshots of the app are also blocked).</string>
     <string name="save">Save</string>
+    <string name="share_preparing">Preparing the video without location (≈%d s)…</string>
     <string name="widget_name">This day</string>
     <string name="widget_description">A photo taken on this date in an earlier year</string>
     <string name="widget_nothing">No photos from this day in earlier years</string>
@@ -223,7 +224,7 @@
     <string name="meta_place">Place: latitude, longitude</string>
     <string name="meta_place_hint">As a maps app copies it, e.g. 50.45010, 30.52340</string>
     <string name="meta_remove_place">Remove the place</string>
-    <string name="meta_explain">Written into the photo itself, after Android asks you. Nothing else in the file changes.</string>
+    <string name="meta_explain">Written into the photo itself, after Android asks you; a checked copy is made first, and nothing else in the file changes. If another program also wrote the place into XMP, it stays there.</string>
     <string name="meta_saved">Saved in the photo.</string>
     <string name="meta_failed">Couldn\'t change the photo (it may need "media location" access).</string>
     <string name="pick_title">Choose</string>
@@ -330,7 +331,7 @@
         <item quantity="other">Delete %d items for good? This can\'t be undone.</item>
     </plurals>
     <plurals name="share_skipped">
-        <item quantity="one">%d photo couldn\'t be cleaned and was not sent.</item>
-        <item quantity="other">%d photos couldn\'t be cleaned and were not sent.</item>
+        <item quantity="one">%d file couldn\'t be cleaned and was not sent.</item>
+        <item quantity="other">%d files couldn\'t be cleaned and were not sent.</item>
     </plurals>
 </resources>

@@ -282,7 +282,7 @@ fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -> Unit) {
 
     if (askText) {
         var text by remember { mutableStateOf("") }
-        AlertDialog(
+        if (!LocalLocked.current) AlertDialog(
             onDismissRequest = { askText = false },
             title = { Text(stringResource(R.string.edit_add_text)) },
             text = { OutlinedTextField(value = text, onValueChange = { text = it }, singleLine = false) },
@@ -298,7 +298,7 @@ fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -> Unit) {
         )
     }
     if (askLeave) {
-        AlertDialog(
+        if (!LocalLocked.current) AlertDialog(
             onDismissRequest = { askLeave = false },
             title = { Text(stringResource(R.string.edit_leave_title)) },
             text = { Text(stringResource(R.string.edit_leave)) },
@@ -307,7 +307,7 @@ fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -> Unit) {
         )
     }
     if (failed) {
-        AlertDialog(
+        if (!LocalLocked.current) AlertDialog(
             onDismissRequest = { failed = false },
             text = { Text(stringResource(R.string.edit_save_failed)) },
             confirmButton = { TextButton(onClick = { failed = false }) { Text(stringResource(R.string.close)) } },
