@@ -14,5 +14,7 @@ Svitlyna's own code is licensed under GPL-3.0 (see `LICENSE`).
   `media/Similar.kt` follows Iris Gallery's way of grouping similar photos (difference hash, six bands);
   `media/VideoClean.kt` follows the idea of its MP4 metadata stripper (boxes are emptied in place here).
 - ONNX Runtime (Microsoft, MIT) runs the text models.
+- SQLCipher for Android (Zetetic LLC, BSD-style licence) encrypts the search database; androidx.sqlite
+  (Google, Apache License 2.0).
 - AndroidX, Jetpack Compose, Media3 and ExifInterface (Google, Apache License 2.0); Kotlin and kotlinx
   coroutines (JetBrains, Apache License 2.0) are used as dependencies under their own licences.
