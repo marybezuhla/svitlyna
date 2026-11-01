@@ -27,8 +27,11 @@ import java.nio.ByteBuffer
 class VaultProvider : ContentProvider() {
     companion object {
         fun authority(context: Context) = "${context.packageName}.vault"
-        fun uriFor(context: Context, vaultFileName: String): Uri =
-            Uri.Builder().scheme("content").authority(authority(context)).appendPath(vaultFileName).build()
+        /** The type travels in the address: vault file names carry no extension. */
+        fun uriFor(context: Context, vaultFileName: String, mimeType: String = ""): Uri =
+            Uri.Builder().scheme("content").authority(authority(context)).appendPath(vaultFileName)
+                .apply { if (mimeType.isNotBlank()) appendQueryParameter("t", mimeType) }
+                .build()
 
         private val thread by lazy { HandlerThread("vault-reader").apply { start() } }
     }
@@ -82,6 +85,7 @@ class VaultProvider : ContentProvider() {
     }
 
     override fun getType(uri: Uri): String? {
+        uri.getQueryParameter("t")?.takeIf { Regex("^[a-z]+/[a-z0-9.+-]+$").matches(it) }?.let { return it }
         val ext = uri.lastPathSegment?.substringAfterLast('.', "")?.lowercase().orEmpty()
         return MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "application/octet-stream"
     }
@@ -93,7 +97,7 @@ class VaultProvider : ContentProvider() {
         return MatrixCursor(cols).apply {
             addRow(cols.map { c ->
                 when (c) {
-                    OpenableColumns.DISPLAY_NAME -> f.name.substringAfter('_')
+                    OpenableColumns.DISPLAY_NAME -> "svitlyna"
                     OpenableColumns.SIZE -> size
                     else -> null
                 }

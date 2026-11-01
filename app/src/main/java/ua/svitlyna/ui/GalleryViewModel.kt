@@ -84,6 +84,8 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             // Adopt vault files that were copied but never made it into the index.
             vaultRepository.recoverOrphanedItems()
+            // Svitlyna: files from 0.5.0 get names that say nothing; the list gets encrypted.
+            vaultRepository.sealNames()
         }
     }
 
