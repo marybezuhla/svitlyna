@@ -125,33 +125,12 @@ fun AboutScreen(
                     modifier = Modifier
                         .size(92.dp)
                         .clip(RoundedCornerShape(22.dp))
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    Color(0xFF9D34F5),
-                                    Color(0xFF4F16D8)
-                                )
-                            )
-                        )
-                        .clickable {
-                            eggClicks++
-                            activeToast?.cancel()
-                            if (eggClicks >= 5) {
-                                eggClicks = 0
-                                activeToast = Toast.makeText(context, context.getString(R.string.toast_optics_unlocked), Toast.LENGTH_SHORT).apply { show() }
-                                showEasterEggSheet = true
-                            } else {
-                                val remaining = 5 - eggClicks
-                                val message = if (remaining == 1) context.getString(R.string.toast_easter_egg_hint_one)
-                                else context.getString(R.string.toast_easter_egg_hint, remaining)
-                                activeToast = Toast.makeText(context, message, Toast.LENGTH_SHORT).apply { show() }
-                            }
-                        },
+                        .background(Color(0xFF17406F)),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                        contentDescription = "Iris Gallery Logo",
+                        contentDescription = null,
                         modifier = Modifier.size(76.dp)
                     )
                 }
@@ -198,34 +177,35 @@ fun AboutScreen(
             ) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     AboutLinkRow(
-                        icon = Icons.Outlined.Psychology,
-                        title = androidx.compose.ui.res.stringResource(R.string.about_developer_label),
-                        subtitle = androidx.compose.ui.res.stringResource(R.string.about_developer_name)
-                    ) { openUrl("https://bn3di.is-a.dev") }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-                    AboutLinkRow(
-                        icon = Icons.Outlined.Language,
-                        title = androidx.compose.ui.res.stringResource(R.string.about_website_label),
-                        subtitle = "https://bn3di.is-a.dev"
-                    ) { openUrl("https://bn3di.is-a.dev") }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-                    AboutLinkRow(
                         icon = Icons.Outlined.Code,
                         title = androidx.compose.ui.res.stringResource(R.string.about_source_label),
-                        subtitle = androidx.compose.ui.res.stringResource(R.string.about_source_url)
-                    ) { openUrl("https://github.com/MohamadOday/iris-gallery") }
+                        subtitle = "github.com/Marybezu/svitlyna"
+                    ) { openUrl("https://github.com/Marybezu/svitlyna") }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
                     AboutLinkRow(
                         icon = Icons.Outlined.VerifiedUser,
                         title = androidx.compose.ui.res.stringResource(R.string.about_license_label),
-                        subtitle = androidx.compose.ui.res.stringResource(R.string.about_license_name)
-                    ) { openUrl("https://github.com/MohamadOday/iris-gallery/blob/main/LICENSE") }
+                        subtitle = "GPL-3.0"
+                    ) { openUrl("https://github.com/Marybezu/svitlyna/blob/main/LICENSE") }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    // The interface comes from Iris Gallery: credited here, as its licence asks.
+                    AboutLinkRow(
+                        icon = Icons.Outlined.Psychology,
+                        title = androidx.compose.ui.res.stringResource(R.string.sv_based_on_iris),
+                        subtitle = "Iris Gallery · Mohamad Oday · Apache 2.0"
+                    ) { openUrl("https://github.com/MohamadOday/iris-gallery") }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    AboutLinkRow(
+                        icon = Icons.Outlined.Language,
+                        title = androidx.compose.ui.res.stringResource(R.string.sv_certificate),
+                        subtitle = "53027b1a87085eb9e40a74820ff2aa067dd3350a0e3010a8f6c559e04a628630"
+                    ) { }
                 }
             }
         }

@@ -7,4 +7,6 @@
     <string name="sv_lock_no_screen_lock">Set a PIN, pattern or fingerprint for the phone first.</string>
     <string name="sv_lock_turned_off">The phone has no screen lock any more, so the app lock was turned off.</string>
     <string name="sv_app_lock_desc">Ask for the fingerprint or the phone\'s PIN to open Svitlyna and its photo chooser. Within half a minute it doesn\'t ask again; the app is hidden in recent apps.</string>
+    <string name="sv_based_on_iris">Interface based on</string>
+    <string name="sv_certificate">Signing certificate (SHA-256)</string>
 </resources>

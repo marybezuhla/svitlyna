@@ -86,18 +86,8 @@ data class AppLanguage(
 
 val SUPPORTED_LANGUAGES = listOf(
     AppLanguage("", "System Default", "System Default", "🌐"),
-    AppLanguage("en", "English", "English", "🇺🇸"),
-    AppLanguage("ar", "Arabic", "العربية", "🇮🇶"),
-    AppLanguage("es", "Spanish", "Español", "🇪🇸"),
-    AppLanguage("fr", "French", "Français", "🇫🇷"),
-    AppLanguage("de", "German", "Deutsch", "🇩🇪"),
-    AppLanguage("zh", "Chinese (Simplified)", "简体中文", "🇨🇳"),
-    AppLanguage("pt", "Portuguese", "Português", "🇧🇷"),
-    AppLanguage("it", "Italian", "Italiano", "🇮🇹"),
-    AppLanguage("ja", "Japanese", "日本語", "🇯🇵"),
-    AppLanguage("pl", "Polish", "Polski", "🇵🇱"),
-    AppLanguage("ru", "Russian", "Русский", "🇷🇺"),
-    AppLanguage("tr", "Turkish", "Türkçe", "🇹🇷"),
+    AppLanguage("uk", "Ukrainian", "Українська", "🇺🇦"),
+    AppLanguage("en", "English", "English", "🇬🇧"),
 )
 
 fun getSystemDefaultLocale(context: Context? = null): java.util.Locale {
