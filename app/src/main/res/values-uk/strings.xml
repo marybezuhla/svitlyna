@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Світлина</string>
+
+    <string name="photos">Фото</string>
+    <string name="folders">Папки</string>
+    <string name="trash">Кошик</string>
+    <string name="settings">Налаштування</string>
+    <string name="back">Назад</string>
+    <string name="cancel">Скасувати</string>
+    <string name="close">Закрити</string>
+    <string name="today">Сьогодні</string>
+    <string name="yesterday">Учора</string>
+    <string name="no_photos">Поки немає ні фото, ні відео.</string>
+    <string name="no_folder_name">Без назви</string>
+    <string name="folder_named">Папка: %1$s</string>
+
+    <string name="share">Поділитися</string>
+    <string name="details">Подробиці</string>
+    <string name="play">Відтворити</string>
+    <string name="move_to_trash">У кошик</string>
+    <string name="restore">Відновити</string>
+    <string name="delete_for_good">Видалити назавжди</string>
+    <string name="empty_trash">Очистити кошик</string>
+    <string name="trash_empty">Кошик порожній.</string>
+    <string name="trash_explain">Android тримає тут фото й відео близько 30 днів, а потім видаляє назавжди. Торкніться, щоб вибрати, а потім відновіть чи видаліть.</string>
+
+    <string name="access_explain">Щоб показати ваші фото й відео, Світлині потрібен доступ до них. Лише фото й відео: жодних інших файлів, контактів чи геолокації.</string>
+    <string name="no_internet_note">Світлина не має доступу до інтернету: нічого не залишає ваш телефон.</string>
+    <string name="allow_access">Дозволити доступ до фото й відео</string>
+    <string name="open_app_settings">Відкрити налаштування застосунку</string>
+
+    <string name="share_location_title">З деяких файлів не вдасться прибрати геолокацію</string>
+    <string name="share_as_is">Надіслати їх як є</string>
+    <string name="share_without_them">Надіслати без них</string>
+
+    <string name="settings_access">Доступ</string>
+    <string name="access_all">Світлина бачить усі фото й відео (і нічого іншого).</string>
+    <string name="access_selected">Світлина бачить лише вибрані вами фото й відео.</string>
+    <string name="access_none">Світлина не має доступу до фото.</string>
+    <string name="pick_more">Вибрати ще фото</string>
+    <string name="change_access">Змінити в налаштуваннях Android</string>
+    <string name="media_management">Керування медіафайлами</string>
+    <string name="media_management_explain">За бажанням. З ним перенесення в кошик і майбутні правки відбуваються без вікна підтвердження Android щоразу. Це все одно доступ лише до фото й відео.</string>
+    <string name="media_management_on">Увімкнено</string>
+    <string name="media_management_off">Вимкнено</string>
+    <string name="media_management_change">Змінити</string>
+
+    <string name="settings_sharing">Надсилання</string>
+    <string name="remove_location">Надсилати без геолокації</string>
+    <string name="remove_location_explain">Фото надсилаються копіями без геолокації, ваші оригінали лишаються як є. Відео й HEIC поки очистити не вдається: перед надсиланням ми спитаємо.</string>
+
+    <string name="settings_language">Мова</string>
+    <string name="change_language">Змінити мову застосунку</string>
+
+    <string name="settings_about">Про застосунок</string>
+    <string name="about_version">Версія %1$s</string>
+    <string name="about_privacy">Без інтернету, акаунтів і реклами. Безкоштовно, з відкритим кодом.</string>
+    <string name="about_certificate">Справжній застосунок підписано сертифікатом із відбитком SHA-256:</string>
+    <string name="about_licence">Ліцензія: GPL-3.0.</string>
+    <string name="about_source">Вихідний код</string>
+
+    <plurals name="items">
+        <item quantity="one">%d елемент</item>
+        <item quantity="few">%d елементи</item>
+        <item quantity="many">%d елементів</item>
+        <item quantity="other">%d елемента</item>
+    </plurals>
+    <plurals name="selected">
+        <item quantity="one">Вибрано %d</item>
+        <item quantity="few">Вибрано %d</item>
+        <item quantity="many">Вибрано %d</item>
+        <item quantity="other">Вибрано %d</item>
+    </plurals>
+    <plurals name="days_left">
+        <item quantity="one">%d день</item>
+        <item quantity="few">%d дні</item>
+        <item quantity="many">%d днів</item>
+        <item quantity="other">%d дня</item>
+    </plurals>
+    <plurals name="share_location_text">
+        <item quantity="one">%d файл (відео, HEIC чи GIF) поки не вдається очистити від геолокації. Інші фото надішлемо без геолокації.</item>
+        <item quantity="few">%d файли (відео, HEIC чи GIF) поки не вдається очистити від геолокації. Інші фото надішлемо без геолокації.</item>
+        <item quantity="many">%d файлів (відео, HEIC чи GIF) поки не вдається очистити від геолокації. Інші фото надішлемо без геолокації.</item>
+        <item quantity="other">%d файлу (відео, HEIC чи GIF) поки не вдається очистити від геолокації. Інші фото надішлемо без геолокації.</item>
+    </plurals>
+    <plurals name="share_skipped">
+        <item quantity="one">%d фото не вдалося очистити, його не надіслано.</item>
+        <item quantity="few">%d фото не вдалося очистити, їх не надіслано.</item>
+        <item quantity="many">%d фото не вдалося очистити, їх не надіслано.</item>
+        <item quantity="other">%d фото не вдалося очистити, їх не надіслано.</item>
+    </plurals>
+</resources>
