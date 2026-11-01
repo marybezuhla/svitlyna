@@ -83,10 +83,18 @@ object Sensitive {
     /** Same length as [text]: O, o → 0 and l, I, | → 1 where a digit is right before or after. */
     fun lookalikesAsDigits(text: String): String {
         val c = text.toCharArray()
-        for (i in c.indices) {
-            if (c[i] !in LOOKALIKES) continue
-            val near = (i > 0 && text[i - 1].isDigit()) || (i + 1 < text.length && text[i + 1].isDigit())
-            if (near) c[i] = if (c[i] in "OoОо") '0' else '1'
+        // Repeated until nothing changes, so a run like "4lll" becomes "4111" letter by letter.
+        var changed = true
+        while (changed) {
+            changed = false
+            for (i in c.indices) {
+                if (c[i] !in LOOKALIKES) continue
+                val near = (i > 0 && c[i - 1].isDigit()) || (i + 1 < c.size && c[i + 1].isDigit())
+                if (near) {
+                    c[i] = if (c[i] in "OoОо") '0' else '1'
+                    changed = true
+                }
+            }
         }
         return String(c)
     }
