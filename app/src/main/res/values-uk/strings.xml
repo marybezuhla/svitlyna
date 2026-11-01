@@ -103,6 +103,16 @@
     <string name="keep">Залишити</string>
     <string name="kept">Не залишати</string>
 
+    <string name="stitch">Склеїти</string>
+    <string name="stitching">Склеюю скріншоти…</string>
+    <string name="stitch_saved">Довгий скріншот збережено поруч із першим</string>
+    <string name="open">Відкрити</string>
+    <string name="stitch_no_overlap_title">Спільної частини не знайдено</string>
+    <string name="stitch_no_overlap">Схоже, ці скріншоти не перекриваються (робіть кожен так, щоб було видно трохи попереднього). Скласти їх просто один під одним?</string>
+    <string name="stitch_stack">Один під одним</string>
+    <string name="stitch_too_tall">Задовго для однієї картинки: спробуйте менше скріншотів.</string>
+    <string name="stitch_failed">Не вдалося зробити довгий скріншот.</string>
+
     <string name="settings_language">Мова</string>
     <string name="change_language">Змінити мову застосунку</string>
 
