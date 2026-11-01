@@ -345,6 +345,7 @@ fun SettingsScreen(
                 if (!on) {
                     lock = false
                     prefs.appLock = false
+                    MemoriesWidget.refresh(context)
                     AppLock.applyRecents(activity, false)
                 } else {
                     noLockScreen = true
@@ -354,6 +355,7 @@ fun SettingsScreen(
                 if (on) AppLock.unlocked = true
                 lock = on
                 prefs.appLock = on
+                MemoriesWidget.refresh(context)
                 AppLock.applyRecents(activity, on)
             }
         })

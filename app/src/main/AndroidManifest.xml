@@ -111,6 +111,19 @@
             </intent-filter>
         </receiver>
 
+        <!-- "This day" on the home screen (no photo while the app lock is on) -->
+        <receiver
+            android:name=".ui.MemoriesWidget"
+            android:exported="true"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/memories_widget" />
+        </receiver>
+
         <!-- Shares copies without location from the app's private cache, one file at a time -->
         <provider
             android:name="androidx.core.content.FileProvider"

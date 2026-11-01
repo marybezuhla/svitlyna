@@ -214,6 +214,10 @@
     <string name="app_lock">Блокувати застосунок</string>
     <string name="app_lock_explain">Для входу у Світлину потрібен відбиток або PIN-код телефона (перевіряє Android; Світлина його не бачить). Протягом пів хвилини повторно не питає. У недавніх застосунках вміст сховано (на Android 11–12 також заборонено знімки екрана застосунку).</string>
     <string name="save">Зберегти</string>
+    <string name="widget_name">Цього дня</string>
+    <string name="widget_description">Фото, зроблене цього дня в один із минулих років</string>
+    <string name="widget_nothing">Цього дня в минулі роки фото немає</string>
+    <string name="widget_locked">Світлина заблокована</string>
     <string name="meta_edit">Змінити дату чи місце</string>
     <string name="meta_date">Дата зйомки</string>
     <string name="meta_place">Місце: широта, довгота</string>
@@ -310,6 +314,12 @@
         <item quantity="few">Перенести %1$d у кошик (%2$s)</item>
         <item quantity="many">Перенести %1$d у кошик (%2$s)</item>
         <item quantity="other">Перенести %1$d у кошик (%2$s)</item>
+    </plurals>
+    <plurals name="widget_years_ago">
+        <item quantity="one">%d рік тому</item>
+        <item quantity="few">%d роки тому</item>
+        <item quantity="many">%d років тому</item>
+        <item quantity="other">%d року тому</item>
     </plurals>
     <plurals name="copied_n">
         <item quantity="one">Скопійовано %1$d з %2$d</item>
