@@ -111,6 +111,27 @@ fun Viewer(
     var zoomed by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<MediaItem?>(null) }
 
+    // While a photo is shown the screen doesn't go dark; "brightness" turns it up to full for
+    // showing a ticket or a QR code, and back down when the viewer closes.
+    val window = (LocalContext.current as? android.app.Activity)?.window
+    var bright by remember { mutableStateOf(false) }
+    DisposableEffect(window) {
+        window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        onDispose {
+            window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            window?.let { w ->
+                w.attributes = w.attributes.apply { screenBrightness = android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE }
+            }
+        }
+    }
+    LaunchedEffect(bright) {
+        window?.let { w ->
+            w.attributes = w.attributes.apply {
+                screenBrightness = if (bright) 1f else android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+            }
+        }
+    }
+
     // Text on the photo: read on request, for the photo on screen only.
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -238,6 +259,12 @@ fun Viewer(
                         TextButton(onClick = { onKeep(item) }) {
                             Text(stringResource(if (isKept) R.string.kept else R.string.keep), color = Color.White)
                         }
+                    }
+                    TextButton(onClick = { bright = !bright }) {
+                        Text(
+                            stringResource(if (bright) R.string.brightness_off else R.string.brightness_on),
+                            color = if (bright) Color(0xFFF5C451) else Color.White,
+                        )
                     }
                     IconButton(onClick = { info = item }) {
                         Icon(Icons.Filled.Info, stringResource(R.string.details), tint = Color.White)

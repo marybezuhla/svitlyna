@@ -121,6 +121,9 @@
     <string name="fix_dates_will">Стане: %1$s</string>
     <string name="fix_dates_will_date_only">Стане: %1$s (лише дата, полудень)</string>
 
+    <string name="brightness_on">☀ Яскраво</string>
+    <string name="brightness_off">☀ Звично</string>
+
     <string name="settings_language">Мова</string>
     <string name="change_language">Змінити мову застосунку</string>
 

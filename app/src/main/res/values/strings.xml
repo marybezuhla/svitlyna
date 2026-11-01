@@ -121,6 +121,9 @@
     <string name="fix_dates_will">Will be: %1$s</string>
     <string name="fix_dates_will_date_only">Will be: %1$s (date only, noon)</string>
 
+    <string name="brightness_on">☀ Bright</string>
+    <string name="brightness_off">☀ Normal</string>
+
     <string name="settings_language">Language</string>
     <string name="change_language">Change the app language</string>
 
