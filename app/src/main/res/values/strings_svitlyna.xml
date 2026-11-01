@@ -104,4 +104,5 @@
     <string name="sv_vault_unlock">Open the hidden photos</string>
     <string name="sv_widget_header">SVITLYNA  ·  THIS DAY</string>
     <string name="sv_widget_empty">No photos from this day yet</string>
+    <string name="sv_vault_with_confirm">Move, Android will ask</string>
 </resources>
