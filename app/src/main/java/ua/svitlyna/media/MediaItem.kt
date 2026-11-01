@@ -22,6 +22,8 @@ data class MediaItem(
     val expiresMs: Long = 0,
     /** The folder path on the phone, e.g. "DCIM/Screenshots/". */
     val relativePath: String = "",
+    /** The date taken as the file itself says (0: the file has none, [dateMs] is the file's date). */
+    val takenMs: Long = 0,
 ) {
     /** Screenshots live in a folder called Screenshots on every phone we know of. */
     val isScreenshot: Boolean

@@ -113,6 +113,14 @@
     <string name="stitch_too_tall">Задовго для однієї картинки: спробуйте менше скріншотів.</string>
     <string name="stitch_failed">Не вдалося зробити довгий скріншот.</string>
 
+    <string name="fix_dates">Виправити дату зйомки</string>
+    <string name="fix_dates_open">Переглянути й виправити</string>
+    <string name="fix_dates_explain">Фото з месенджерів часто втрачають дату зйомки й стрибають на день збереження. Світлина бере дату з назви файлу й записує її у фото (лише дату: картинка й усе інше лишаються). Android спершу спитає.</string>
+    <string name="fix_dates_none">Усі фото вже мають дату, або в їхній назві її немає.</string>
+    <string name="fix_dates_was">Зараз: %1$s</string>
+    <string name="fix_dates_will">Стане: %1$s</string>
+    <string name="fix_dates_will_date_only">Стане: %1$s (лише дата, полудень)</string>
+
     <string name="settings_language">Мова</string>
     <string name="change_language">Змінити мову застосунку</string>
 
@@ -152,6 +160,24 @@
         <item quantity="few">%d дні</item>
         <item quantity="many">%d днів</item>
         <item quantity="other">%d дня</item>
+    </plurals>
+    <plurals name="fix_dates_button">
+        <item quantity="one">Виправити %d</item>
+        <item quantity="few">Виправити %d</item>
+        <item quantity="many">Виправити %d</item>
+        <item quantity="other">Виправити %d</item>
+    </plurals>
+    <plurals name="fix_dates_done">
+        <item quantity="one">Виправлено %d фото</item>
+        <item quantity="few">Виправлено %d фото</item>
+        <item quantity="many">Виправлено %d фото</item>
+        <item quantity="other">Виправлено %d фото</item>
+    </plurals>
+    <plurals name="fix_dates_found">
+        <item quantity="one">%d фото може отримати дату з назви.</item>
+        <item quantity="few">%d фото можуть отримати дату з назви.</item>
+        <item quantity="many">%d фото можуть отримати дату з назви.</item>
+        <item quantity="other">%d фото може отримати дату з назви.</item>
     </plurals>
     <plurals name="items">
         <item quantity="one">%d елемент</item>

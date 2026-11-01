@@ -63,6 +63,7 @@ class MediaRepository(private val resolver: ContentResolver) {
             durationMs = getLongOrZero(MediaStore.MediaColumns.DURATION),
             expiresMs = getLongOrZero(MediaStore.MediaColumns.DATE_EXPIRES) * 1000L,
             relativePath = getStringOrEmpty(MediaStore.MediaColumns.RELATIVE_PATH),
+            takenMs = taken,
         )
     }
 
