@@ -2056,7 +2056,7 @@ private fun decodePreviewLegacy(context: Context, image: MediaImage, isFile: Boo
 }
 
 private suspend fun loadPreview(context: Context, image: MediaImage): Bitmap? = withContext(Dispatchers.IO) {
-    val isFile = image.uri.scheme == "file" || image.path.startsWith(context.filesDir.absolutePath)
+    val isFile = image.uri.scheme == "file"
     val standardBitmap = runCatching {
         if (Build.VERSION.SDK_INT >= 28) {
             val source = if (isFile) ImageDecoder.createSource(File(image.path))
@@ -2163,7 +2163,7 @@ private val EXIF_TAGS_TO_PRESERVE = listOf(
 
 private fun readExifTags(context: Context, sourceImage: MediaImage): Map<String, String> {
     return runCatching {
-        val srcExif = if (sourceImage.path.isNotBlank() && File(sourceImage.path).exists()) {
+        val srcExif = if (sourceImage.uri.scheme == "file" && File(sourceImage.path).exists()) {
             ExifInterface(sourceImage.path)
         } else {
             context.contentResolver.openInputStream(sourceImage.uri)?.use {
@@ -2246,7 +2246,7 @@ private suspend fun renderEditedBitmapToBytes(
     targetMaxBytes: Long? = null,
     format: ExportFormat = ExportFormat.JPEG
 ): ByteArray = withContext(Dispatchers.IO) {
-    val isFile = image.uri.scheme == "file" || image.path.startsWith(context.filesDir.absolutePath)
+    val isFile = image.uri.scheme == "file"
     val rawSource: Bitmap = runCatching {
         if (Build.VERSION.SDK_INT >= 28) {
             val source = if (isFile) ImageDecoder.createSource(File(image.path))
@@ -2493,7 +2493,7 @@ private suspend fun performOverwriteWrite(
     format: ExportFormat,
     tags: Map<String, String>
 ): Boolean = withContext(Dispatchers.IO) {
-    val isFile = image.uri.scheme == "file" || image.path.startsWith(context.filesDir.absolutePath)
+    val isFile = image.uri.scheme == "file"
     if (isFile) {
         val targetFile = File(image.path)
         val parent = targetFile.absoluteFile.parentFile ?: return@withContext false

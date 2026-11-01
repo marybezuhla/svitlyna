@@ -103,7 +103,7 @@ class VaultRepository(private val context: Context) {
                 val uniqueId = if (item.id > 0) -item.id else item.id
                 MediaImage(
                     id = uniqueId,
-                    uri = Uri.fromFile(file),
+                    uri = VaultProvider.uriFor(context, file.name),
                     name = item.originalName,
                     dateTaken = item.dateTaken,
                     width = item.width,
@@ -202,12 +202,10 @@ class VaultRepository(private val context: Context) {
             val targetFile = File(vaultDir, vaultFileName)
 
             val copySuccess = runCatching {
-                context.contentResolver.openInputStream(item.uri)?.use { input ->
-                    FileOutputStream(targetFile).use { output ->
-                        input.copyTo(output)
-                    }
-                }
-                val copiedBytes = targetFile.length()
+                // Svitlyna: the vault keeps files only encrypted (VaultCrypto).
+                val copiedBytes = context.contentResolver.openInputStream(item.uri)?.use { input ->
+                    VaultCrypto.encrypt(context, input, targetFile)
+                } ?: 0L
                 // A truncated copy is worse than no copy: the original is only
                 // deleted after this check passes.
                 targetFile.exists() && copiedBytes > 0 && (item.sizeBytes <= 0 || copiedBytes == item.sizeBytes)
@@ -233,7 +231,7 @@ class VaultRepository(private val context: Context) {
                     isVideo = item.isVideo,
                     durationMs = item.durationMs,
                     mimeType = item.mimeType,
-                    sizeBytes = targetFile.length(),
+                    sizeBytes = if (item.sizeBytes > 0) item.sizeBytes else targetFile.length(),
                     orientation = item.orientation,
                     title = item.title,
                     description = item.description,
@@ -241,7 +239,7 @@ class VaultRepository(private val context: Context) {
                 currentItems.add(vaultItem)
                 val media = MediaImage(
                     id = -uniqueId,
-                    uri = Uri.fromFile(targetFile),
+                    uri = VaultProvider.uriFor(context, targetFile.name),
                     name = item.name,
                     dateTaken = item.dateTaken,
                     width = item.width,
@@ -440,17 +438,20 @@ class VaultRepository(private val context: Context) {
     private fun restoreFileToStorage(item: VaultItem, vaultFile: File): VaultRestoreTarget? {
         return try {
             if (hasAllFilesAccess()) {
-                val destFile = if (item.originalPath.isNotBlank()) {
+                val wanted = if (item.originalPath.isNotBlank()) {
                     val file = File(item.originalPath)
                     file.parentFile?.mkdirs()
                     file
                 } else {
                     val fallbackDir = Environment.getExternalStoragePublicDirectory(
                         if (item.isVideo) Environment.DIRECTORY_MOVIES else Environment.DIRECTORY_PICTURES
-                    ).resolve("Iris").apply { mkdirs() }
+                    ).resolve("Svitlyna").apply { mkdirs() }
                     File(fallbackDir, item.originalName)
                 }
-                vaultFile.copyTo(destFile, overwrite = true)
+                // Decrypted back; never over a file already there.
+                val target = if (wanted.exists()) uniqueDestinationFile(wanted.parentFile!!, item.originalName) else wanted
+                VaultCrypto.decrypting(context, vaultFile).use { input -> target.outputStream().use { input.copyTo(it) } }
+                val destFile = target
                 if (item.dateTaken > 0) {
                     destFile.setLastModified(item.dateTaken)
                 }
@@ -496,7 +497,7 @@ class VaultRepository(private val context: Context) {
                     return null
                 }
                 outputStream.use { output ->
-                    vaultFile.inputStream().use { input -> input.copyTo(output) }
+                    VaultCrypto.decrypting(context, vaultFile).use { input -> input.copyTo(output) }
                 }
                 values.clear()
                 values.put(MediaStore.MediaColumns.IS_PENDING, 0)
@@ -511,14 +512,14 @@ class VaultRepository(private val context: Context) {
                 val publicDir = if (item.originalPath.isNotBlank()) {
                     File(item.originalPath).parentFile ?: Environment.getExternalStoragePublicDirectory(
                         if (item.isVideo) Environment.DIRECTORY_MOVIES else Environment.DIRECTORY_PICTURES
-                    ).resolve("Iris")
+                    ).resolve("Svitlyna")
                 } else {
                     Environment.getExternalStoragePublicDirectory(
                         if (item.isVideo) Environment.DIRECTORY_MOVIES else Environment.DIRECTORY_PICTURES
-                    ).resolve("Iris")
+                    ).resolve("Svitlyna")
                 }.apply { mkdirs() }
                 val destFile = uniqueDestinationFile(publicDir, item.originalName)
-                vaultFile.copyTo(destFile, overwrite = false)
+                VaultCrypto.decrypting(context, vaultFile).use { input -> destFile.outputStream().use { input.copyTo(it) } }
                 if (item.dateTaken > 0) {
                     destFile.setLastModified(item.dateTaken)
                 }

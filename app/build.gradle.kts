@@ -82,6 +82,9 @@ dependencies {
     implementation("org.aomedia.avif.android:avif:1.1.1.14d8e3c4")
     implementation("androidx.appcompat:appcompat:1.7.0")
 
+    // The vault is encrypted with Tink (Google, Apache 2.0): streaming AES-256-GCM, key in Keystore
+    implementation("com.google.crypto.tink:tink-android:1.15.0")
+
     implementation("androidx.core:core-ktx:1.16.0")
     implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2")
