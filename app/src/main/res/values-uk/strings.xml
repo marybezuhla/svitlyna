@@ -22,11 +22,12 @@
     <string name="restore">Відновити</string>
     <string name="delete_for_good">Видалити назавжди</string>
     <string name="empty_trash">Очистити кошик</string>
+    <string name="request_failed">Android не зміг цього зробити. Спробуйте з меншою кількістю фото.</string>
     <string name="trash_empty">Кошик порожній.</string>
     <string name="trash_explain">Android тримає тут фото й відео близько 30 днів, а потім видаляє назавжди. Торкніться, щоб вибрати, а потім відновіть чи видаліть.</string>
 
     <string name="access_explain">Щоб показати ваші фото й відео, Світлині потрібен доступ до них. Лише фото й відео: жодних інших файлів, контактів чи геолокації.</string>
-    <string name="no_internet_note">Світлина не має доступу до інтернету: нічого не залишає ваш телефон.</string>
+    <string name="no_internet_note">Світлина не має доступу до інтернету: усе лишається на вашому телефоні.</string>
     <string name="allow_access">Дозволити доступ до фото й відео</string>
     <string name="open_app_settings">Відкрити налаштування застосунку</string>
 
@@ -41,14 +42,14 @@
     <string name="pick_more">Вибрати ще фото</string>
     <string name="change_access">Змінити в налаштуваннях Android</string>
     <string name="media_management">Керування медіафайлами</string>
-    <string name="media_management_explain">За бажанням. З ним перенесення в кошик і майбутні правки відбуваються без вікна підтвердження Android щоразу. Це все одно доступ лише до фото й відео.</string>
+    <string name="media_management_explain">За бажанням. З ним перенесення в кошик, видалення назавжди й майбутні правки відбуваються без вікна підтвердження Android щоразу (перед видаленням назавжди Світлина все одно спитає). Це все одно доступ лише до фото й відео.</string>
     <string name="media_management_on">Увімкнено</string>
     <string name="media_management_off">Вимкнено</string>
     <string name="media_management_change">Змінити</string>
 
     <string name="settings_sharing">Надсилання</string>
     <string name="remove_location">Надсилати без геолокації</string>
-    <string name="remove_location_explain">Фото надсилаються копіями без геолокації, ваші оригінали лишаються як є. Відео й HEIC поки очистити не вдається: перед надсиланням ми спитаємо.</string>
+    <string name="remove_location_explain">Фото надсилаються копіями без геолокації, ваші оригінали лишаються як є. Відео й деякі формати (HEIC, GIF…) поки очистити не вдається: перед надсиланням ми спитаємо.</string>
 
     <string name="settings_language">Мова</string>
     <string name="change_language">Змінити мову застосунку</string>
@@ -83,6 +84,12 @@
         <item quantity="few">%d файли (відео, HEIC чи GIF) поки не вдається очистити від геолокації. Інші фото надішлемо без геолокації.</item>
         <item quantity="many">%d файлів (відео, HEIC чи GIF) поки не вдається очистити від геолокації. Інші фото надішлемо без геолокації.</item>
         <item quantity="other">%d файлу (відео, HEIC чи GIF) поки не вдається очистити від геолокації. Інші фото надішлемо без геолокації.</item>
+    </plurals>
+    <plurals name="delete_confirm">
+        <item quantity="one">Видалити %d елемент назавжди? Це не можна скасувати.</item>
+        <item quantity="few">Видалити %d елементи назавжди? Це не можна скасувати.</item>
+        <item quantity="many">Видалити %d елементів назавжди? Це не можна скасувати.</item>
+        <item quantity="other">Видалити %d елемента назавжди? Це не можна скасувати.</item>
     </plurals>
     <plurals name="share_skipped">
         <item quantity="one">%d фото не вдалося очистити, його не надіслано.</item>
