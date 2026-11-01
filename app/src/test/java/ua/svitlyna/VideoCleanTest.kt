@@ -63,16 +63,14 @@ class VideoCleanTest {
 
     @Test
     fun aVideoWithADataTrackIsRefused() {
-        // hdlr: version/flags, pre_defined, then the kind of track: here GoPro-like "meta" data.
-        val gps = box("ftyp", "isom".toByteArray(), ByteArray(4)) +
-            box("moov", box("trak", box("mdia", box("hdlr", ByteArray(8), "meta".toByteArray(), ByteArray(12))))) +
+        // stsd: version/flags, one entry, then the entry: here GoPro GPS ("gpmd").
+        fun withSamples(kind: String) = box("ftyp", "isom".toByteArray(), ByteArray(4)) +
+            box("moov", box("trak", box("mdia", box("minf", box("stbl", box("stsd", ByteArray(4), byteArrayOf(0, 0, 0, 1), box(kind, ByteArray(8)))))))) +
             box("mdat", pictures)
-        assertFalse(clean(gps).first)
-        // The same with an ordinary video track goes through.
-        val plain = box("ftyp", "isom".toByteArray(), ByteArray(4)) +
-            box("moov", box("trak", box("mdia", box("hdlr", ByteArray(8), "vide".toByteArray(), ByteArray(12))))) +
-            box("mdat", pictures)
-        assertTrue(clean(plain).first)
+        assertFalse(clean(withSamples("gpmd")).first)
+        assertFalse(clean(withSamples("tx3g")).first)
+        // An ordinary video track goes through.
+        assertTrue(clean(withSamples("avc1")).first)
     }
 
     @Test

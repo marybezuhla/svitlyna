@@ -68,6 +68,27 @@ class InPlaceTest {
     }
 
     @Test
+    fun aSmallPhotoCanBeChanged() {
+        // Smaller than any fixed "end of file" window: only the part after EXIF is compared.
+        val f = File.createTempFile("small", ".jpg")
+        javaClass.classLoader!!.getResourceAsStream("plain.jpg")!!.use { input -> f.outputStream().use { input.copyTo(it) } }
+        val c = MetaEdit.Change(place = 50.45 to 30.52)
+        val after = changedCopy(f) { MetaEdit.write(it, c) }
+        assertTrue(InPlace.same(f, after, MetaEdit.changedTags(c)))
+    }
+
+    @Test
+    fun pngAndWebpToo() {
+        for (name in listOf("plain.png", "plain.webp")) {
+            val f = File.createTempFile("p", "." + name.substringAfterLast('.'))
+            javaClass.classLoader!!.getResourceAsStream(name)!!.use { input -> f.outputStream().use { input.copyTo(it) } }
+            val c = MetaEdit.Change(taken = LocalDateTime.of(2024, 5, 1, 14, 30))
+            val after = changedCopy(f) { MetaEdit.write(it, c) }
+            assertTrue(name, InPlace.same(f, after, MetaEdit.changedTags(c)))
+        }
+    }
+
+    @Test
     fun aCutVideoIsRefused() {
         val f = livePhoto()
         val after = File.createTempFile("cut", ".jpg")

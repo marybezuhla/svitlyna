@@ -225,6 +225,7 @@
     <string name="meta_place_hint">As a maps app copies it, e.g. 50.45010, 30.52340</string>
     <string name="meta_remove_place">Remove the place</string>
     <string name="meta_explain">Written into the photo itself, after Android asks you; a checked copy is made first, and nothing else in the file changes. If another program also wrote the place into XMP, it stays there.</string>
+    <string name="meta_broken">Writing the photo failed; its original is saved in Pictures/Svitlyna.</string>
     <string name="meta_saved">Saved in the photo.</string>
     <string name="meta_failed">Couldn\'t change the photo (it may need "media location" access).</string>
     <string name="pick_title">Choose</string>

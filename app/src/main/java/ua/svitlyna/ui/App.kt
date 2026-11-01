@@ -56,6 +56,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import ua.svitlyna.R
 import ua.svitlyna.media.Folder
@@ -425,16 +426,10 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
     fun doShare(items: List<MediaItem>, clean: Boolean) {
         if (sharing != null) return
         val seconds = Share.seconds(items, clean)
-        val job = scope.launch {
-            val prepared = Share.prepare(context, items, clean)
-            if (prepared.skipped > 0) {
-                snackbar.showSnackbar(context.resources.getQuantityString(R.plurals.share_skipped, prepared.skipped, prepared.skipped))
-            }
-            prepared.intent?.let { context.startActivity(it) }
-        }
+        val job = scope.async { Share.prepare(context, items, clean) }
         sharing = job
         scope.launch {
-            // The "Stop" notice lasts exactly as long as the preparing.
+            // The "Stop" notice lasts exactly as long as the preparing; the result comes after it.
             val notice = if (seconds > 0) launch {
                 val r = snackbar.showSnackbar(
                     context.getString(R.string.share_preparing, seconds),
@@ -443,9 +438,15 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
                 )
                 if (r == androidx.compose.material3.SnackbarResult.ActionPerformed) job.cancel()
             } else null
-            job.join()
+            val prepared = runCatching { job.await() }.getOrNull()
             notice?.cancel()
             sharing = null
+            if (prepared == null) return@launch
+            // Not over the lock screen: the choice of app shows the file.
+            prepared.intent?.let { whenUnlocked { context.startActivity(it) } }
+            if (prepared.skipped > 0) {
+                snackbar.showSnackbar(context.resources.getQuantityString(R.plurals.share_skipped, prepared.skipped, prepared.skipped))
+            }
         }
     }
 
@@ -849,8 +850,16 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
             metaEditing = null
             runCatching { MediaStore.createWriteRequest(resolver, listOf(item.uri)) }.onSuccess { pi ->
                 askToWrite(pi) {
-                    val ok = ua.svitlyna.edit.MetaEdit.apply(context, item, change)
-                    snackbar.showSnackbar(context.getString(if (ok) R.string.meta_saved else R.string.meta_failed))
+                    val result = ua.svitlyna.edit.MetaEdit.apply(context, item, change)
+                    snackbar.showSnackbar(
+                        context.getString(
+                            when (result) {
+                                ua.svitlyna.media.InPlace.Result.DONE -> R.string.meta_saved
+                                ua.svitlyna.media.InPlace.Result.REFUSED -> R.string.meta_failed
+                                ua.svitlyna.media.InPlace.Result.BROKEN_SAVED -> R.string.meta_broken
+                            },
+                        ),
+                    )
                 }
             }
         }
