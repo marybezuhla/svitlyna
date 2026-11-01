@@ -37,7 +37,6 @@ class MainActivity : FragmentActivity() {
 
     /** App lock: true while the fingerprint/PIN hasn't been given. */
     val locked = mutableStateOf(false)
-    private var leftAt = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,8 +48,8 @@ class MainActivity : FragmentActivity() {
         if (savedInstanceState == null && intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY == 0) takeRequest(intent)
         measureBars()
         val prefs = Prefs(this)
-        // Recreated (theme change, process kept): still unlocked. A new process: locked.
-        locked.value = prefs.appLock && AppLock.unlockedUntil == 0L
+        // Recreated soon after (theme change): still unlocked. A new process or a long absence: locked.
+        locked.value = AppLock.shouldLock(prefs.appLock)
         AppLock.applyRecents(this, prefs.appLock)
         setContent {
             SvitlynaTheme(amoled = prefs.amoled) {
@@ -66,8 +65,8 @@ class MainActivity : FragmentActivity() {
     private fun unlocked() {
         locked.value = false
         // The PIN screen itself takes the app to the background: that doesn't count as leaving.
-        leftAt = 0
-        AppLock.unlockedUntil = Long.MAX_VALUE
+        AppLock.leftAt = 0
+        AppLock.unlocked = true
     }
 
     /** The phone's screen lock was removed: the app lock can't work, so it is switched off. */
@@ -80,15 +79,18 @@ class MainActivity : FragmentActivity() {
 
     override fun onStop() {
         super.onStop()
-        leftAt = android.os.SystemClock.elapsedRealtime()
+        AppLock.leftAt = android.os.SystemClock.elapsedRealtime()
     }
 
     override fun onStart() {
         super.onStart()
         val prefs = Prefs(this)
-        if (prefs.appLock && leftAt > 0 && android.os.SystemClock.elapsedRealtime() - leftAt > AppLock.GRACE_MS) {
+        if (AppLock.shouldLock(prefs.appLock)) {
             locked.value = true
-            AppLock.unlockedUntil = 0L
+            AppLock.unlocked = false
+        } else if (!locked.value) {
+            // Back within half a minute: the absence is over.
+            AppLock.leftAt = 0
         }
         if (locked.value) AppLock.ask(this, onNoScreenLock = ::lockImpossible) { unlocked() }
     }

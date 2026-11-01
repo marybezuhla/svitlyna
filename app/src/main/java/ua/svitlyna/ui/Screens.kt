@@ -350,6 +350,8 @@ fun SettingsScreen(
                     noLockScreen = true
                 }
             }) {
+                // Just confirmed: a theme change right after doesn't ask again.
+                if (on) AppLock.unlocked = true
                 lock = on
                 prefs.appLock = on
                 AppLock.applyRecents(activity, on)

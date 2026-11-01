@@ -51,7 +51,7 @@
     <string name="pick_more">Вибрати ще фото</string>
     <string name="change_access">Змінити в налаштуваннях Android</string>
     <string name="media_management">Керування медіафайлами</string>
-    <string name="media_management_explain">За бажанням. З ним перенесення в кошик, видалення назавжди, переміщення в іншу папку, перейменування, обрані й виправлення дат відбуваються без вікна підтвердження Android щоразу (перед видаленням назавжди Світлина все одно спитає). Це все одно доступ лише до фото й відео.</string>
+    <string name="media_management_explain">За бажанням. З ним перенесення в кошик, видалення назавжди, переміщення в іншу папку, перейменування, позначка «Обране» й виправлення дат відбуваються без вікна підтвердження Android щоразу (перед видаленням назавжди Світлина все одно спитає). Це все одно доступ лише до фото й відео.</string>
     <string name="media_management_on">Увімкнено</string>
     <string name="media_management_off">Вимкнено</string>
     <string name="media_management_change">Змінити</string>
@@ -225,7 +225,7 @@
     <string name="folder_show">Показати в шкалі</string>
     <string name="sort_newest">Нові</string>
     <string name="sort_name">Назва</string>
-    <string name="sort_biggest">Найбільше фото</string>
+    <string name="sort_biggest">За кількістю</string>
     <string name="filter_favorites">♥ Обрані</string>
 
     <string name="settings_language">Мова</string>
