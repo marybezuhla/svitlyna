@@ -7,6 +7,8 @@ import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
 import android.graphics.ImageDecoder
 import android.graphics.Rect
+import androidx.exifinterface.media.ExifInterface
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -42,15 +44,40 @@ object PhotoTextReader {
     private const val TILE_RATIO = 2
     private const val MAX_TILES = 12
 
-    /** Reads all the text on [item]. Runs off the main thread; cancelling stops between parts. */
+    /** Parts overlap by this much (in the file's pixels), so a line on the seam is read whole in one of them. */
+    private const val OVERLAP = 96
+
+    /**
+     * Reads all the text on [item], or null when there is none or the photo can't be read (deleted,
+     * access taken away, an unusual file, not enough memory): never a crash. Runs off the main thread;
+     * cancelling stops between lines.
+     */
     suspend fun read(context: Context, item: MediaItem): PhotoText? = withContext(Dispatchers.IO) {
-        val resolver = context.contentResolver
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        resolver.openInputStream(item.uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
-        val w = bounds.outWidth
-        val h = bounds.outHeight
-        val recognizer = TextRecognizer.get(context)
-        if (w > 0 && h > w * TALL) readTall(resolver, item, w, h, recognizer) else readWhole(resolver, item, recognizer)
+        try {
+            val resolver = context.contentResolver
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            resolver.openInputStream(item.uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+            val w = bounds.outWidth
+            val h = bounds.outHeight
+            val recognizer = TextRecognizer.get(context)
+            // Parts are cut from the file as stored, so only a picture with no rotation goes that way.
+            if (w > 0 && h > w * TALL && upright(resolver, item)) {
+                readTall(resolver, item, w, h, recognizer)
+            } else {
+                readWhole(resolver, item, recognizer)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            null
+        }
+    }
+
+    private fun upright(resolver: ContentResolver, item: MediaItem): Boolean {
+        val orientation = resolver.openInputStream(item.uri)?.use {
+            ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED)
+        } ?: ExifInterface.ORIENTATION_UNDEFINED
+        return orientation == ExifInterface.ORIENTATION_NORMAL || orientation == ExifInterface.ORIENTATION_UNDEFINED
     }
 
     private suspend fun readWhole(resolver: ContentResolver, item: MediaItem, recognizer: TextRecognizer): PhotoText? {
@@ -93,14 +120,21 @@ object PhotoTextReader {
                 var groupBase = 0
                 while (top < h && n < MAX_TILES) {
                     coroutineContext.ensureActive()
+                    val bottom = min(h, top + tile)
                     val part = decoder.decodeRegion(
-                        Rect(0, top, w, min(h, top + tile)),
+                        Rect(0, top, w, bottom),
                         BitmapFactory.Options().apply { inSampleSize = sample },
                     )
+                    // Each part keeps only the lines whose middle is in its own share of the overlaps.
+                    val ownFrom = if (top == 0) 0 else top + OVERLAP / 2
+                    val ownTo = if (bottom >= h) h else bottom - OVERLAP / 2
                     if (part != null) {
                         try {
                             val dy = top / sample
-                            val read = recognizer.recognize(part)
+                            val read = recognizer.recognize(part).filter { l ->
+                                val middle = top + l.box.centerY() * sample
+                                middle in ownFrom until ownTo.coerceAtLeast(ownFrom + 1)
+                            }
                             read.forEach { l ->
                                 lines += l.copy(
                                     box = Rect(l.box).apply { offset(0, dy) },
@@ -113,7 +147,8 @@ object PhotoTextReader {
                             part.recycle()
                         }
                     }
-                    top += tile
+                    if (bottom >= h) break
+                    top += tile - OVERLAP
                     n++
                 }
                 // The parts read cover at most MAX_TILES × the tile height; the rest of a very long

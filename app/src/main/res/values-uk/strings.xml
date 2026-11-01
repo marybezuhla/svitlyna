@@ -20,11 +20,11 @@
     <string name="reading_text">Розпізнаю текст на фото…</string>
     <string name="no_text_found">На цьому фото тексту не знайдено.</string>
     <string name="stop">Зупинити</string>
-    <string name="text_chosen">%1$d з %2$d слів</string>
-    <string name="text_hint">торкніться слів або проведіть по них</string>
+    <string name="text_hint">торкніться слів або проведіть по них пальцем</string>
     <string name="choose_all">Усе</string>
-    <string name="choose_none">Нічого</string>
+    <string name="choose_none">Зняти вибір</string>
     <string name="copy">Копіювати</string>
+    <string name="copied">Скопійовано</string>
     <string name="details">Подробиці</string>
     <string name="play">Відтворити</string>
     <string name="move_to_trash">У кошик</string>
@@ -70,6 +70,12 @@
     <string name="about_licence">Ліцензія: GPL-3.0.</string>
     <string name="about_source">Вихідний код</string>
 
+    <plurals name="text_chosen">
+        <item quantity="one">%1$d з %2$d слова</item>
+        <item quantity="few">%1$d з %2$d слів</item>
+        <item quantity="many">%1$d з %2$d слів</item>
+        <item quantity="other">%1$d з %2$d слова</item>
+    </plurals>
     <plurals name="items">
         <item quantity="one">%d елемент</item>
         <item quantity="few">%d елементи</item>

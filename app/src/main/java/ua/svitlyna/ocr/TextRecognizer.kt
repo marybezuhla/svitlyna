@@ -10,6 +10,8 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Rect
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -162,7 +164,8 @@ class TextRecognizer private constructor(private val context: Context) {
     suspend fun recognize(bitmap: Bitmap): List<OcrLine> = withContext(Dispatchers.Default) {
         mutex.withLock {
             load()
-            val read = detect(bitmap).mapNotNull { box -> read(bitmap, box) }
+            // Stop and Back take effect between lines, not after the whole photo.
+            val read = detect(bitmap).mapNotNull { box -> coroutineContext.ensureActive(); read(bitmap, box) }
             order(byScript(read).filter { it.text.isNotBlank() })
         }
     }
