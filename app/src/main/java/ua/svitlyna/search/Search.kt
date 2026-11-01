@@ -2,6 +2,7 @@ package ua.svitlyna.search
 
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import ua.svitlyna.media.MediaItem
 import java.time.LocalDate
@@ -29,27 +30,48 @@ object Search {
         withContext(Dispatchers.Default) {
             val parsed = DateWords.parse(query, today)
             val keys = parsed.rest.map(Words::key).filter { it.isNotEmpty() }.distinct()
+            // The last word is still being typed unless a space follows it: only it is a beginning.
+            val typing = query.isNotEmpty() && !query.last().isWhitespace()
             val range = parsed.range(zone)
             val inTime = if (range == null) items else items.filter { it.dateMs in range }
             if (keys.isEmpty()) {
                 return@withContext if (range == null) EMPTY else Result(inTime, emptyList(), 0, 0, true)
             }
-            val textIds = runCatching { withContext(Dispatchers.IO) { IndexDb.index(context).search(keys) } }.getOrDefault(emptySet())
+            val textIds = if (!ua.svitlyna.ui.Prefs(context).searchText) emptySet() else
+                runCatching { withContext(Dispatchers.IO) { IndexDb.index(context).search(keys, typing) } }.getOrDefault(emptySet())
+            val names = names(items)
             var byText = 0
             var byName = 0
-            val found = inTime.filter { item ->
+            val found = ArrayList<MediaItem>()
+            for ((i, item) in inTime.withIndex()) {
+                if (i % 2000 == 0) ensureActive()
                 when {
-                    item.id in textIds -> { byText++; true }
-                    nameMatches(item, keys) -> { byName++; true }
-                    else -> false
+                    item.id in textIds -> { byText++; found += item }
+                    nameMatches(names[item.id].orEmpty(), keys, typing) -> { byName++; found += item }
                 }
             }
             Result(found, keys, byText, byName, range != null, textIds)
         }
 
-    /** Every key begins a word of the file's name or its folder's. */
-    fun nameMatches(item: MediaItem, keys: List<String>): Boolean {
-        val words = Words.keys(item.name.substringBeforeLast('.') + " " + item.bucketName)
-        return keys.all { k -> words.any { it.startsWith(k) } }
+    /** Keys of each item's file and folder names, made once per gallery list. */
+    @Volatile
+    private var cache: Pair<List<MediaItem>, Map<Long, List<String>>>? = null
+
+    private fun names(items: List<MediaItem>): Map<Long, List<String>> {
+        cache?.let { (list, map) -> if (list === items) return map }
+        val folders = HashMap<Long, List<String>>()
+        val map = HashMap<Long, List<String>>(items.size * 2)
+        for (item in items) {
+            val folder = folders.getOrPut(item.bucketId) { Words.keys(item.bucketName) }
+            map[item.id] = (Words.keys(item.name.substringBeforeLast('.')) + folder).distinct()
+        }
+        cache = items to map
+        return map
     }
+
+    /** Every key is a word of the names (the last one may be a beginning while being typed). */
+    fun nameMatches(words: List<String>, keys: List<String>, typing: Boolean = true): Boolean =
+        keys.withIndex().all { (i, k) ->
+            if (typing && i == keys.lastIndex) words.any { it.startsWith(k) } else k in words
+        }
 }

@@ -220,6 +220,9 @@
     <string name="search_counting">Counting photos…</string>
     <string name="search_read">Text read on %1$d of %2$d photos</string>
     <string name="search_read_now">Read now (≈%d min)</string>
+    <string name="search_read_now_hours">Read now (≈%d h)</string>
+    <string name="search_while_open">Reading goes on while Svitlyna is open; the rest while charging.</string>
+    <string name="search_none_to_read">No photos to read.</string>
     <string name="search_background">The rest is read while the phone is charging and not in use.</string>
     <string name="search_text_setting">Read text on photos</string>
     <string name="search_text_explain">On the phone only; what is read is kept encrypted.</string>

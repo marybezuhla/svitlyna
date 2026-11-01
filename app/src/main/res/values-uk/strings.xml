@@ -220,6 +220,9 @@
     <string name="search_counting">Рахую фото…</string>
     <string name="search_read">Текст прочитано на %1$d з %2$d фото</string>
     <string name="search_read_now">Прочитати зараз (≈%d хв)</string>
+    <string name="search_read_now_hours">Прочитати зараз (≈%d год)</string>
+    <string name="search_while_open">Читання йде, поки Світлина відкрита; решта — під час заряджання.</string>
+    <string name="search_none_to_read">Немає фото для читання.</string>
     <string name="search_background">Решта читається, коли телефон заряджається і ним не користуються.</string>
     <string name="search_text_setting">Читати текст на фото</string>
     <string name="search_text_explain">Лише на телефоні; прочитане зберігається зашифрованим.</string>

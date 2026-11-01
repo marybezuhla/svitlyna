@@ -44,6 +44,13 @@ class DateWordsTest {
     }
 
     @Test
+    fun numbers() {
+        check("01.05.2024", LocalDate.of(2024, 5, 1), LocalDate.of(2024, 5, 1))
+        check("чек 2024-05-01", LocalDate.of(2024, 5, 1), LocalDate.of(2024, 5, 1), listOf("чек"))
+        check("1.5.24", LocalDate.of(2024, 5, 1), LocalDate.of(2024, 5, 1))
+    }
+
+    @Test
     fun otherWordsStayForTheText() {
         check("чек травень 2024", LocalDate.of(2024, 5, 1), LocalDate.of(2024, 5, 31), listOf("чек"))
         // Not months: grass, birch, a sickle.

@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import ua.svitlyna.R
 import ua.svitlyna.search.Indexer
 import ua.svitlyna.search.Search
@@ -46,6 +47,7 @@ import ua.svitlyna.search.Search
  */
 @Composable
 fun SearchScreen(
+    items: List<ua.svitlyna.media.MediaItem>,
     query: String,
     onQuery: (String) -> Unit,
     result: Search.Result,
@@ -59,13 +61,16 @@ fun SearchScreen(
     val progress by Indexer.progress.collectAsState()
     val focus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     LaunchedEffect(Unit) {
-        focus.requestFocus()
-        Indexer.refreshCount(context)
+        // Only an empty line asks for typing at once (coming back from a photo keeps the results in view).
+        if (query.isEmpty()) focus.requestFocus()
+        Indexer.refreshCount(context, items)
     }
     // When a reading pass ends (here or in the background), the count is made exact again.
     LaunchedEffect(progress.running) {
-        if (!progress.running) Indexer.refreshCount(context)
+        if (!progress.running) Indexer.refreshCount(context, items)
     }
     Column(Modifier.fillMaxSize().padding(contentPadding)) {
         OutlinedTextField(
@@ -87,20 +92,30 @@ fun SearchScreen(
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        if (progress.total == 0) stringResource(R.string.search_counting)
-                        else stringResource(R.string.search_read, progress.done, progress.total),
+                        when {
+                            progress.total > 0 -> stringResource(R.string.search_read, progress.done, progress.total)
+                            progress.counted -> stringResource(R.string.search_none_to_read)
+                            else -> stringResource(R.string.search_counting)
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.weight(1f),
                     )
                     when {
                         progress.running -> TextButton(onClick = { Indexer.stop() }) { Text(stringResource(R.string.stop)) }
                         progress.total > progress.done -> TextButton(onClick = { Indexer.start(context) }) {
-                            Text(stringResource(R.string.search_read_now, (progress.secondsLeft + 59) / 60))
+                            val minutes = (progress.secondsLeft + 59) / 60
+                            Text(
+                                if (minutes > 90) stringResource(R.string.search_read_now_hours, (minutes + 59) / 60)
+                                else stringResource(R.string.search_read_now, minutes),
+                            )
                         }
                     }
                 }
-                if (progress.done < progress.total && !progress.running) {
-                    Text(stringResource(R.string.search_background), style = MaterialTheme.typography.bodySmall)
+                if (progress.done < progress.total) {
+                    Text(
+                        stringResource(if (progress.running) R.string.search_while_open else R.string.search_background),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                 }
             }
         }
@@ -117,7 +132,16 @@ fun SearchScreen(
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 itemsIndexed(result.items, key = { _, it -> it.id }) { i, item ->
-                    Thumbnail(item, 256, Modifier.aspectRatio(1f).clickable { onOpen(i) })
+                    Thumbnail(
+                        item,
+                        256,
+                        Modifier.aspectRatio(1f).clickable {
+                            // The keyboard must not stay over the photo (typing would change the results under it).
+                            focusManager.clearFocus()
+                            keyboard?.hide()
+                            onOpen(i)
+                        },
+                    )
                 }
             }
         } else {
@@ -136,6 +160,7 @@ fun SearchScreen(
                     on = true
                     prefs.searchText = true
                     ua.svitlyna.search.IndexJob.schedule(context)
+                    scope.launch { Indexer.refreshCount(context, items) }
                 } else {
                     askErase = true
                 }
@@ -152,7 +177,7 @@ fun SearchScreen(
                     on = false
                     prefs.searchText = false
                     ua.svitlyna.search.IndexJob.schedule(context)
-                    Indexer.erase(context)
+                    scope.launch { Indexer.erase(context) }
                 }) { Text(stringResource(R.string.search_off_erase)) }
             },
             dismissButton = { TextButton(onClick = { askErase = false }) { Text(stringResource(R.string.cancel)) } },
