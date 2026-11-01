@@ -80,7 +80,7 @@ class InPlaceTest {
     @Test
     fun pngAndWebpToo() {
         for (name in listOf("plain.png", "plain.webp")) {
-            val f = File.createTempFile("p", "." + name.substringAfterLast('.'))
+            val f = File.createTempFile("pic", "." + name.substringAfterLast('.'))
             javaClass.classLoader!!.getResourceAsStream(name)!!.use { input -> f.outputStream().use { input.copyTo(it) } }
             val c = MetaEdit.Change(taken = LocalDateTime.of(2024, 5, 1, 14, 30))
             val after = changedCopy(f) { MetaEdit.write(it, c) }
