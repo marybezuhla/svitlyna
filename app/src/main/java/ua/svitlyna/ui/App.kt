@@ -326,7 +326,9 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
 
     // Fix date taken: candidates, the chosen ones, Android's write permission, then the writing.
     val fixes = remember(state.items) { FixDates.candidates(state.items) }
-    var fixChosen by remember(fixes) { mutableStateOf(fixes.map { it.item.id }.toSet()) }
+    // What the person un-ticked stays un-ticked when the gallery changes.
+    var fixExcluded by remember { mutableStateOf(emptySet<Long>()) }
+    val fixChosen = remember(fixes, fixExcluded) { fixes.map { it.item.id }.filterTo(HashSet()) { it !in fixExcluded } }
     var fixing by remember { mutableStateOf(false) }
     var pendingFix by remember { mutableStateOf(emptyList<FixDates.Fix>()) }
     val fixLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
@@ -562,7 +564,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                     fixDatesCount = fixes.size,
                     fixes = fixes,
                     fixChosen = fixChosen,
-                    onFixChosen = { fixChosen = it },
+                    onFixChosen = { chosen -> fixExcluded = fixes.map { it.item.id }.filterTo(HashSet()) { it !in chosen } },
                     onFix = ::fixDates,
                     fixing = fixing,
                     filter = filter,

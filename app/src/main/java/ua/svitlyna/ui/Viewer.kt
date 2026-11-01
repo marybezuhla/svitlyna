@@ -290,7 +290,7 @@ fun Viewer(
                             Text(stringResource(if (livePlaying == null) R.string.live_play else R.string.live_stop), color = Color.White)
                         }
                     }
-                    if (!item.isVideo) {
+                    if (!item.isVideo && !item.mime.equals("image/gif", true)) {
                         TextButton(onClick = { onEdit(item) }) {
                             Text(stringResource(R.string.edit), color = Color.White)
                         }

@@ -30,7 +30,8 @@ object StitchMaker {
     /** [items] in the order they were taken. With [stack], simply one under the other. */
     suspend fun make(context: Context, items: List<MediaItem>, stack: Boolean): Result = withContext(Dispatchers.IO) {
         try {
-            val sorted = items.sortedBy { it.dateMs }
+            // In the order taken; the same second: by the order Android numbered them.
+            val sorted = items.sortedWith(compareBy<MediaItem>({ it.dateMs }, { it.id }))
             val heights = sorted.map { it.height }
             val pieces = if (stack) {
                 Stitch.stacked(heights)
@@ -62,6 +63,8 @@ object StitchMaker {
                 }
                 bmp.recycle()
             }
+            // Stopped while drawing: nothing is saved.
+            coroutineContext.ensureActive()
             val uri = SaveCopy.save(context, sorted.first(), out, "long")
             out.recycle()
             if (uri != null) Result.Saved(uri) else Result.Failed

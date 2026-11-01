@@ -68,6 +68,9 @@ object Metadata {
         if (from != null) {
             for (tag in COPYABLE_TAGS) {
                 val value = from.getAttribute(tag) ?: continue
+                // XMP describing a video inside the photo or an Ultra HDR gain map would be wrong in
+                // a copy that has neither: such XMP is left out.
+                if (tag == ExifInterface.TAG_XMP && XMP_NOT_IN_COPY.any { value.contains(it) }) continue
                 to.setAttribute(tag, value)
             }
         }
@@ -80,6 +83,8 @@ object Metadata {
     }
 
     private val EXIF_DATE = java.time.format.DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
+
+    private val XMP_NOT_IN_COPY = listOf("MicroVideo", "MotionPhoto", "hdrgm:", "GContainer", "Container:Directory")
 
     fun removeLocation(exif: ExifInterface) {
         LOCATION_TAGS.forEach { exif.setAttribute(it, null) }

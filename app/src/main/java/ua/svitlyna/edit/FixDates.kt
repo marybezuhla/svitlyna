@@ -28,7 +28,14 @@ object FixDates {
     fun candidates(items: List<MediaItem>): List<Fix> = items.mapNotNull { item ->
         if (item.isVideo || item.takenMs > 0 || item.mime.lowercase() !in WRITABLE) return@mapNotNull null
         val date = NameDate.parse(item.name) ?: return@mapNotNull null
-        Fix(item, date).takeIf { kotlin.math.abs(it.newMs - item.dateMs) > 60_000 }
+        val fix = Fix(item, date)
+        // A name with only the date, and the photo already on that day: nothing to move.
+        if (!date.hasTime) {
+            val zone = ZoneId.systemDefault()
+            val now = java.time.Instant.ofEpochMilli(item.dateMs).atZone(zone).toLocalDate()
+            if (now == date.at.toLocalDate()) return@mapNotNull null
+        }
+        fix.takeIf { kotlin.math.abs(it.newMs - item.dateMs) > 60_000 }
     }
 
     private val EXIF_DATE = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
@@ -39,7 +46,10 @@ object FixDates {
         for (fix in fixes) {
             try {
                 val zoned = fix.date.at.atZone(ZoneId.systemDefault())
-                context.contentResolver.openFileDescriptor(fix.item.uri, "rw")?.use { pfd ->
+                // Opened as the original, so the location is real: without "media location" access
+                // Android would hand over zeros, and saving would write them into the photo. Then this
+                // photo is skipped instead.
+                context.contentResolver.openFileDescriptor(MediaStore.setRequireOriginal(fix.item.uri), "rw")?.use { pfd ->
                     val exif = ExifInterface(pfd.fileDescriptor)
                     exif.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, EXIF_DATE.format(zoned))
                     exif.setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, zoned.offset.id.let { if (it == "Z") "+00:00" else it })

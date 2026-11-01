@@ -62,28 +62,37 @@ object EditorRender {
     /** Longest side of the saved picture (memory); photos larger than this are scaled down. */
     private const val MAX_SIDE = 8192
 
-    /** The preview the editor works on: the photo turned the right way up, at most [maxSide]. */
+    /**
+     * The preview the editor works on: turned and straightened exactly as the saved copy will be,
+     * at most [maxSide]. Drawing happens on this picture, so what is blacked out on the screen is
+     * blacked out in the file.
+     */
     suspend fun preview(context: Context, item: MediaItem, edits: Edits, maxSide: Int): Bitmap? = withContext(Dispatchers.IO) {
-        decode(context, item, maxSide)?.let { turn(it, edits) }
+        decode(context, item, maxSide)?.let { straighten(turn(it, edits), edits.straighten) }
     }
 
-    suspend fun render(context: Context, item: MediaItem, edits: Edits, session: EditorSession): Bitmap? = withContext(Dispatchers.IO) {
-        val raw = decode(context, item, MAX_SIDE) ?: return@withContext null
-        var source = turn(raw, edits)
-        if (edits.straighten != 0f) {
-            val rad = Math.toRadians(abs(edits.straighten).toDouble())
-            val r = source.width.toFloat() / source.height.toFloat().coerceAtLeast(1f)
-            val maxR = maxOf(r, 1f / r)
-            val scale = (cos(rad) + sin(rad) * maxR).toFloat()
-            val m = Matrix().apply {
-                postRotate(edits.straighten, source.width / 2f, source.height / 2f)
-                postScale(scale, scale, source.width / 2f, source.height / 2f)
-            }
-            val straightened = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
-            Canvas(straightened).drawBitmap(source, m, Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
-            source.recycle()
-            source = straightened
+    private fun straighten(source: Bitmap, angle: Float): Bitmap {
+        if (angle == 0f) return source
+        val rad = Math.toRadians(abs(angle).toDouble())
+        val r = source.width.toFloat() / source.height.toFloat().coerceAtLeast(1f)
+        val maxR = maxOf(r, 1f / r)
+        val scale = (cos(rad) + sin(rad) * maxR).toFloat()
+        val m = Matrix().apply {
+            postRotate(angle, source.width / 2f, source.height / 2f)
+            postScale(scale, scale, source.width / 2f, source.height / 2f)
         }
+        val out = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
+        Canvas(out).drawBitmap(source, m, Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
+        source.recycle()
+        return out
+    }
+
+    suspend fun render(context: Context, item: MediaItem, edits: Edits, session: EditorSession, previewWidth: Int): Bitmap? = withContext(Dispatchers.IO) {
+        // Memory: a quarter of what the app may use, at 4 bytes a pixel, a few copies at a time.
+        val budget = (Runtime.getRuntime().maxMemory() / 4 / 4 / 3).toDouble()
+        val side = minOf(MAX_SIDE, kotlin.math.sqrt(budget).toInt().coerceAtLeast(2048))
+        val raw = decode(context, item, side) ?: return@withContext null
+        val source = straighten(turn(raw, edits), edits.straighten)
         val crop = RectF(session.crop)
         val left = (crop.left * source.width).toInt().coerceIn(0, source.width - 1)
         val top = (crop.top * source.height).toInt().coerceIn(0, source.height - 1)
@@ -96,8 +105,10 @@ object EditorRender {
             android.graphics.Rect(0, 0, w, h),
             Paint(Paint.ANTI_ALIAS_FLAG).apply { if (edits.adjusted) colorFilter = ColorMatrixColorFilter(edits.colorMatrix()) },
         )
+        // Blur and pixel strength were chosen on the smaller preview: scaled so the saved copy looks the same.
+        val factor = source.width.toFloat() / previewWidth.coerceAtLeast(1)
         source.recycle()
-        renderBrushes(out, session.strokes, crop)
+        renderBrushes(out, session.strokes.map { if (factor > 1f) it.copy(strength = (it.strength * factor).toInt()) else it }, crop)
         renderTextOverlays(out, session.textOverlays, crop)
         out
     }

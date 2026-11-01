@@ -110,16 +110,22 @@ fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -> Unit) {
 
     BackHandler { if (changed()) askLeave = true else onClose() }
 
-    // A new preview when the photo is turned or flipped (drawing is kept only before that: see below).
-    LaunchedEffect(edits.rotation, edits.flipH, edits.flipV) {
+    // A new preview when the photo is turned, flipped or straightened: these are baked into the
+    // picture that is drawn on, exactly as in the saved copy. They are possible only before drawing.
+    LaunchedEffect(edits.rotation, edits.flipH, edits.flipV, edits.straighten) {
         val p = EditorRender.preview(context, item, edits, 2048)
         if (p != null) {
+            canvas.clearBitmaps()
             canvas.session.crop.set(0f, 0f, 1f, 1f)
+            canvas.straightenAngle = 0f
+            canvas.isStraightening = false
             canvas.setSource(p)
             preview = p
             canvas.setCropAspect(aspect)
         }
     }
+    // While the slider moves, the canvas only turns the picture on the screen; letting go bakes it in.
+    var straightening by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(Unit) {
         canvas.onHistoryChanged = { u, r ->
             undo = u
@@ -136,7 +142,7 @@ fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -> Unit) {
     canvas.currentShapeType = shape
     canvas.shapeFilled = filled
     canvas.effectStrength = 24
-    canvas.straightenAngle = edits.straighten
+    canvas.straightenAngle = straightening - edits.straighten
     canvas.colorFilter = if (edits.adjusted) ColorMatrixColorFilter(edits.colorMatrix()) else null
 
     fun pick(c: Category) {
@@ -169,9 +175,21 @@ fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -> Unit) {
                 onClick = {
                     saving = true
                     scope.launch {
-                        val picture = EditorRender.render(context, item, edits, canvas.session)
-                        val uri = picture?.let { SaveCopy.save(context, item, it, "edited") }
-                        picture?.recycle()
+                        // A snapshot of the drawing, so the finger can't change it while saving.
+                        val session = ua.svitlyna.edit.EditorSession().also { s ->
+                            s.crop.set(canvas.session.crop)
+                            s.strokes += canvas.session.strokes.map { it.copy(points = it.points.toMutableList()) }
+                            s.textOverlays += canvas.session.textOverlays.map { it.copy() }
+                        }
+                        val uri = try {
+                            val picture = EditorRender.render(context, item, edits, session, previewWidth = preview?.width ?: 2048)
+                            picture?.let { SaveCopy.save(context, item, it, "edited").also { _ -> it.recycle() } }
+                        } catch (e: kotlinx.coroutines.CancellationException) {
+                            throw e
+                        } catch (e: Throwable) {
+                            // Not enough memory for a very large photo, or an unusual file.
+                            null
+                        }
                         saving = false
                         if (uri != null) onSaved(uri) else failed = true
                     }
@@ -201,11 +219,9 @@ fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -> Unit) {
                     onRotate = { d -> edits = edits.copy(rotation = (edits.rotation + d + 360) % 360) },
                     onFlipH = { edits = edits.copy(flipH = !edits.flipH) },
                     onFlipV = { edits = edits.copy(flipV = !edits.flipV) },
-                    straighten = edits.straighten,
-                    onStraighten = {
-                        edits = edits.copy(straighten = it)
-                        canvas.isStraightening = true
-                    },
+                    straighten = straightening,
+                    onStraighten = { straightening = it },
+                    onStraightenDone = { edits = edits.copy(straighten = straightening) },
                 )
                 Category.ADJUST -> AdjustTools(edits) { edits = it }
                 Category.MARKUP -> MarkupTools(
@@ -323,6 +339,7 @@ private fun TransformTools(
     onFlipV: () -> Unit,
     straighten: Float,
     onStraighten: (Float) -> Unit,
+    onStraightenDone: () -> Unit,
 ) {
     ChipRow {
         ASPECTS.forEach { (label, value) ->
@@ -338,7 +355,18 @@ private fun TransformTools(
     if (!canTurn) {
         Text(stringResource(R.string.edit_turn_first), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 16.dp))
     }
-    LabeledSlider(stringResource(R.string.edit_straighten), straighten, -45f..45f, onStraighten)
+    if (canTurn) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.edit_straighten), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(end = 8.dp).size(width = 96.dp, height = 20.dp))
+            Slider(
+                value = straighten,
+                onValueChange = onStraighten,
+                onValueChangeFinished = onStraightenDone,
+                valueRange = -45f..45f,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
 }
 
 @Composable

@@ -115,7 +115,7 @@
 
     <string name="fix_dates">Fix date taken</string>
     <string name="fix_dates_open">Review and fix</string>
-    <string name="fix_dates_explain">Photos from messengers often lose the date they were taken and jump to the day they were saved. Svitlyna reads the date from the file name and writes it into the photo (only the date: the picture and everything else stay). Android asks you first.</string>
+    <string name="fix_dates_explain">Photos from messengers often lose the date they were taken and jump to the day they were saved. Svitlyna reads the date from the file name and writes it into the photo (only the date: the picture and everything else stay). Android asks you first (unless Media management is on).</string>
     <string name="fix_dates_none">Every photo already has its date, or its name doesn\'t say one.</string>
     <string name="fix_dates_was">Now: %1$s</string>
     <string name="fix_dates_will">Will be: %1$s</string>

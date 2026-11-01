@@ -57,7 +57,9 @@ fun FixDatesScreen(
             TextButton(onClick = { onChosen(emptySet()) }) { Text(stringResource(R.string.choose_none)) }
             androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
             Button(enabled = chosen.isNotEmpty() && !busy, onClick = onFix) {
-                Text(pluralStringResource(R.plurals.fix_dates_button, chosen.size, chosen.size))
+                // Android takes at most 500 at a time; the rest stay ticked for the next round.
+                val n = minOf(chosen.size, 500)
+                Text(pluralStringResource(R.plurals.fix_dates_button, n, n))
             }
         }
         LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
