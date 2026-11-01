@@ -30,7 +30,7 @@ class VaultProvider : ContentProvider() {
         /** The type travels in the address: vault file names carry no extension. */
         fun uriFor(context: Context, vaultFileName: String, mimeType: String = ""): Uri =
             Uri.Builder().scheme("content").authority(authority(context)).appendPath(vaultFileName)
-                .apply { if (mimeType.isNotBlank()) appendQueryParameter("t", mimeType) }
+                .apply { if (mimeType.isNotBlank()) appendQueryParameter("t", mimeType.lowercase().substringBefore(';').trim()) }
                 .build()
 
         private val thread by lazy { HandlerThread("vault-reader").apply { start() } }
@@ -97,7 +97,7 @@ class VaultProvider : ContentProvider() {
         return MatrixCursor(cols).apply {
             addRow(cols.map { c ->
                 when (c) {
-                    OpenableColumns.DISPLAY_NAME -> "svitlyna"
+                    OpenableColumns.DISPLAY_NAME -> "svitlyna" + (getType(uri)?.let { MimeTypeMap.getSingleton().getExtensionFromMimeType(it) }?.let { ".$it" } ?: "")
                     OpenableColumns.SIZE -> size
                     else -> null
                 }

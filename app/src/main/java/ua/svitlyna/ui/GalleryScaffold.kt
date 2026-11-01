@@ -1316,6 +1316,7 @@ internal fun GalleryScaffold(
                 // Svitlyna: old screenshots offered for the trash (if switched on in the settings).
                 TempScreenshotsBanner(
                     images = images,
+                    favorites = favorites,
                     visible = onPick == null && selectedIds.isEmpty() && !loading && fileSearchQuery.isBlank(),
                     padding = PaddingValues(bottom = gridPadding.calculateBottomPadding()),
                     onTrash = { onTrash(it, null) },

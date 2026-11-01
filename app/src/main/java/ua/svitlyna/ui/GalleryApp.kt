@@ -2,9 +2,6 @@
 
 package ua.svitlyna.ui
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
@@ -522,19 +519,41 @@ internal fun GalleryApp(
             PermissionScreen { permissionLauncher.launch(permissions) }
         }
     } else {
-        // Svitlyna: the lock covers the gallery instead of replacing it, so after unlocking
-        // everything is where it was (an open photo, an album, a selection). Before the first
-        // unlock nothing of the gallery is composed at all.
-        val unlockedNow = !settings.appLockEnabled || isAppUnlocked
-        var everUnlocked by remember { mutableStateOf(unlockedNow) }
-        if (unlockedNow) everUnlocked = true
-        Box(Modifier.fillMaxSize()) {
-            if (everUnlocked) Box(
-                Modifier.fillMaxSize().then(
-                    // Hidden from TalkBack while the lock is on.
-                    if (unlockedNow) Modifier else Modifier.clearAndSetSemantics {}
+        AnimatedContent(
+            targetState = (!settings.appLockEnabled || isAppUnlocked),
+            transitionSpec = {
+                // Svitlyna: locking is instant (a fade would show the gallery for a moment); only
+                // unlocking is animated.
+                if (!targetState) {
+                    androidx.compose.animation.EnterTransition.None togetherWith androidx.compose.animation.ExitTransition.None
+                } else {
+                (fadeIn(animationSpec = tween(320, easing = FastOutSlowInEasing)) +
+                 scaleIn(initialScale = 0.94f, animationSpec = tween(320, easing = FastOutSlowInEasing)))
+                    .togetherWith(
+                        fadeOut(animationSpec = tween(220, easing = FastOutSlowInEasing)) +
+                        scaleOut(targetScale = 1.06f, animationSpec = tween(220, easing = FastOutSlowInEasing))
+                    )
+                }
+            },
+            label = "AppLockTransition"
+        ) { unlocked ->
+            if (!unlocked) {
+                DeviceLockScreen(
+                    onUnlocked = {
+                        ua.svitlyna.core.AppLock.unlocked = true
+                        ua.svitlyna.core.AppLock.leftAt = 0
+                        isSessionAppUnlocked = true
+                        isAppUnlocked = true
+                    },
+                    onNoScreenLock = {
+                        // The phone's screen lock was removed: the app lock can't work, so it is turned off.
+                        settingsPreferences.setAppLockEnabled(false)
+                        (context as? androidx.fragment.app.FragmentActivity)?.let { ua.svitlyna.core.AppLock.applyRecents(it, false) }
+                        isAppUnlocked = true
+                        Toast.makeText(context, R.string.sv_lock_turned_off, Toast.LENGTH_LONG).show()
+                    },
                 )
-            ) {
+            } else {
                 val visibleMedia = remember(state.images, requestedType, libraryState.lockedMedia, libraryState.excludedFolders) {
                     val requested = when {
                         requestedType?.startsWith("image/") == true -> state.images.filterNot { it.isVideo }
@@ -1139,39 +1158,6 @@ internal fun GalleryApp(
                             }
                         }
                     )
-                }
-            }
-            // Locking is instant (nothing of the gallery may flash); unlocking fades the cover away.
-            androidx.compose.animation.AnimatedVisibility(
-                visible = !unlockedNow,
-                enter = androidx.compose.animation.EnterTransition.None,
-                exit = fadeOut(animationSpec = tween(220, easing = FastOutSlowInEasing)),
-            ) {
-                // Back on the lock leaves the app; it never reaches the gallery underneath.
-                androidx.activity.compose.BackHandler { (context as? android.app.Activity)?.moveTaskToBack(true) }
-                // No touch goes through to the gallery underneath.
-                Box(
-                    Modifier.fillMaxSize().pointerInput(Unit) {
-                        awaitPointerEventScope {
-                            while (true) awaitPointerEvent().changes.forEach { it.consume() }
-                        }
-                    }
-                ) {
-                DeviceLockScreen(
-                    onUnlocked = {
-                        ua.svitlyna.core.AppLock.unlocked = true
-                        ua.svitlyna.core.AppLock.leftAt = 0
-                        isSessionAppUnlocked = true
-                        isAppUnlocked = true
-                    },
-                    onNoScreenLock = {
-                        // The phone's screen lock was removed: the app lock can't work, so it is turned off.
-                        settingsPreferences.setAppLockEnabled(false)
-                        (context as? androidx.fragment.app.FragmentActivity)?.let { ua.svitlyna.core.AppLock.applyRecents(it, false) }
-                        isAppUnlocked = true
-                        Toast.makeText(context, R.string.sv_lock_turned_off, Toast.LENGTH_LONG).show()
-                    },
-                )
                 }
             }
         }
