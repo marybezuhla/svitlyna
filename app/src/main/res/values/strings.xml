@@ -213,6 +213,15 @@
     <string name="settings_lock">Lock</string>
     <string name="app_lock">Lock the app</string>
     <string name="app_lock_explain">Opening Svitlyna asks for your fingerprint or the phone\'s PIN (Android checks it; Svitlyna never sees it). Within half a minute it doesn\'t ask again. The app is hidden in recent apps (on Android 11–12 screenshots of the app are also blocked).</string>
+    <string name="save">Save</string>
+    <string name="meta_edit">Change date or place</string>
+    <string name="meta_date">Date taken</string>
+    <string name="meta_place">Place: latitude, longitude</string>
+    <string name="meta_place_hint">As a maps app copies it, e.g. 50.45010, 30.52340</string>
+    <string name="meta_remove_place">Remove the place</string>
+    <string name="meta_explain">Written into the photo itself, after Android asks you. Nothing else in the file changes.</string>
+    <string name="meta_saved">Saved in the photo.</string>
+    <string name="meta_failed">Couldn\'t change the photo (it may need "media location" access).</string>
     <string name="pick_title">Choose</string>
     <string name="pick_done">Done</string>
     <string name="pick_not_this_kind">The app asked for a different kind of file.</string>
