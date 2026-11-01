@@ -89,4 +89,19 @@
     <string name="sv_stitch_no_overlap">Схоже, ці скріншоти не перекриваються (робіть кожен так, щоб було видно трохи попереднього). Скласти їх просто один під одним?</string>
     <string name="sv_stitch_stack">Один під одним</string>
     <string name="sv_pick_not_cleaned">Файл, який не вдалося очистити від геолокації, не передано (вимкніть безпечне надсилання, щоб надіслати як є).</string>
+    <string name="sv_fix_dates">Виправити дату зйомки</string>
+    <string name="sv_fix_dates_explain">Фото з месенджерів часто втрачають дату зйомки й стрибають на день збереження. Світлина бере дату з назви файлу й записує її у фото (лише дату: картинка й усе інше лишаються). Android спершу спитає дозволу.</string>
+    <string name="sv_fix_dates_none">Усі фото вже мають дату, або в їхній назві її немає.</string>
+    <plurals name="sv_fix_dates_button">
+        <item quantity="one">Виправити %d</item>
+        <item quantity="few">Виправити %d</item>
+        <item quantity="many">Виправити %d</item>
+        <item quantity="other">Виправити %d</item>
+    </plurals>
+    <plurals name="sv_fix_dates_done">
+        <item quantity="one">Виправлено %d фото</item>
+        <item quantity="few">Виправлено %d фото</item>
+        <item quantity="many">Виправлено %d фото</item>
+        <item quantity="other">Виправлено %d фото</item>
+    </plurals>
 </resources>
