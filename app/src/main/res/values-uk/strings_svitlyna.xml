@@ -69,4 +69,24 @@
     <string name="sv_preset_telegram">Telegram</string>
     <string name="sv_share">Поділитися</string>
     <string name="sv_stop">Зупинити</string>
+    <string name="sv_screenshot_channel">Підказки після скріншота</string>
+    <string name="sv_screenshot_title">Знято скріншот</string>
+    <string name="sv_screenshot_text_no_crop">Скопіювати текст. Торкніться, щоб відкрити.</string>
+    <string name="sv_screenshot_text">Зберегти без панелей чи скопіювати текст. Торкніться, щоб відкрити.</string>
+    <string name="sv_screenshot_crop_failed">Не вдалося зберегти копію без панелей</string>
+    <string name="sv_screenshot_cropped_text">Поруч зі скріншотом, з тією самою датою. Торкніться, щоб відкрити.</string>
+    <string name="sv_screenshot_cropped">Збережено копію без панелей</string>
+    <string name="sv_screenshot_crop">Без панелей</string>
+    <string name="sv_screenshot_hints">Підказки після скріншота</string>
+    <string name="sv_screenshot_hints_explain">Сповіщення: торкніться, щоб відкрити скріншот, або скористайтеся «Без панелей» і «Текст». Картинки скріншота в ньому немає, а на заблокованому екрані видно лише «Світлина». Сам скріншот ніколи не змінюється.</string>
+    <string name="sv_auto_crop">Автоматично прибирати рядок стану</string>
+    <string name="sv_auto_crop_explain">Одразу після кожного скріншота зберігається копія без рядка стану (і панелі навігації, якщо вибрано вище), без дотику; працює й без підказок. Оригінал лишається поруч. У повноекранних застосунках (відео, ігри) рядка стану немає, і обрізався б верх картинки: там краще кнопкою.</string>
+    <string name="sv_crop_navigation">Прибирати й панель навігації</string>
+    <string name="sv_settings_screenshots">Після скріншота</string>
+    <string name="sv_stitch">Склеїти</string>
+    <string name="sv_stitch_saved">Довгий скріншот збережено поруч із першим</string>
+    <string name="sv_stitch_failed">Не вдалося зробити довгий скріншот.</string>
+    <string name="sv_stitch_too_tall">Задовго для однієї картинки: спробуйте менше скріншотів.</string>
+    <string name="sv_stitch_no_overlap">Схоже, ці скріншоти не перекриваються (робіть кожен так, щоб було видно трохи попереднього). Скласти їх просто один під одним?</string>
+    <string name="sv_stitch_stack">Один під одним</string>
 </resources>

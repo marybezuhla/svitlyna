@@ -75,6 +75,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.SelectAll
+import androidx.compose.material.icons.outlined.ViewDay
 import androidx.compose.material.icons.outlined.PermMedia
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.VideoLibrary
@@ -610,6 +611,7 @@ internal fun GalleryScaffold(
         selectedIds = if (selected) selectedIds + ids else selectedIds - ids.toSet()
     }
     fun clearSelection() { selectedIds = emptySet() }
+    val stitchScope = rememberCoroutineScope()
     fun shareSelection() {
         val selected = activeMedia.filter { it.id in selectedIds }
         if (selected.isEmpty()) return
@@ -855,6 +857,36 @@ internal fun GalleryScaffold(
                             DropdownMenu(selectionMenuExpanded, onDismissRequest = { selectionMenuExpanded = false }) {
                                 DropdownMenuItem(text = { Text(stringResource(R.string.action_select_all)) }, leadingIcon = { Icon(Icons.Outlined.SelectAll, null) },
                                     onClick = { selectionMenuExpanded = false; selectedIds = activeMedia.mapTo(mutableSetOf()) { it.id } })
+                                // Svitlyna: screenshots of one long page made into one long screenshot.
+                                val chosenShots = activeMedia.filter { it.id in selectedIds }
+                                if (chosenShots.size >= 2 && chosenShots.all { !it.isVideo && it.id > 0 } &&
+                                    chosenShots.map { it.width }.distinct().size == 1 && chosenShots.map { it.height }.distinct().size == 1
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.sv_stitch)) },
+                                        leadingIcon = { Icon(Icons.Outlined.ViewDay, null) },
+                                        onClick = {
+                                            selectionMenuExpanded = false
+                                            clearSelection()
+                                            stitchScope.launch {
+                                                var result = ua.svitlyna.edit.StitchMaker.make(context, chosenShots.map { it.asItem() }, stack = false)
+                                                // No overlap found: put one under the other.
+                                                if (result is ua.svitlyna.edit.StitchMaker.Result.NoOverlap) {
+                                                    result = ua.svitlyna.edit.StitchMaker.make(context, chosenShots.map { it.asItem() }, stack = true)
+                                                }
+                                                android.widget.Toast.makeText(
+                                                    context,
+                                                    when (result) {
+                                                        is ua.svitlyna.edit.StitchMaker.Result.Saved -> R.string.sv_stitch_saved
+                                                        ua.svitlyna.edit.StitchMaker.Result.TooTall -> R.string.sv_stitch_too_tall
+                                                        else -> R.string.sv_stitch_failed
+                                                    },
+                                                    android.widget.Toast.LENGTH_LONG,
+                                                ).show()
+                                            }
+                                        }
+                                    )
+                                }
                                 if (destination == 1 && selectedAlbum != null && selectedIds.size == 1) {
                                     DropdownMenuItem(text = { Text(stringResource(R.string.action_set_album_cover)) }, leadingIcon = { Icon(Icons.Outlined.Wallpaper, null) },
                                         onClick = { selectionMenuExpanded = false; onSetAlbumCover(selectedAlbum!!.id, selectedIds.first()); clearSelection() })
