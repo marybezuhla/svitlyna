@@ -147,7 +147,7 @@
     <string name="edit_flip_v">⇅ Flip</string>
     <string name="edit_turn_first">Turn and mirror before drawing: they are off once something is drawn (undo to turn).</string>
     <string name="edit_straighten">Straighten</string>
-    <string name="edit_size">Size:</string>
+    <string name="edit_copy_size">Copy size:</string>
     <string name="edit_size_original">As is</string>
     <string name="edit_brightness">Brightness</string>
     <string name="edit_contrast">Contrast</string>
