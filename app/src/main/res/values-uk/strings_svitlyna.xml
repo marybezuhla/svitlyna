@@ -33,4 +33,40 @@
     <string name="sv_search_while_open">Читання йде, поки Світлина відкрита; решта — під час заряджання.</string>
     <string name="sv_search_off_question">Вимкнути читання тексту на фото? Прочитане буде стерто, пошук за текстом не працюватиме.</string>
     <string name="sv_search_off_erase">Вимкнути й стерти</string>
+    <plurals name="sv_prepare_found">
+        <item quantity="one">Знайдено %1$d: %2$s.</item>
+        <item quantity="few">Знайдено %1$d: %2$s.</item>
+        <item quantity="many">Знайдено %1$d: %2$s.</item>
+        <item quantity="other">Знайдено %1$d: %2$s.</item>
+    </plurals>
+    <plurals name="sv_prepare_hidden">
+        <item quantity="one">Затерто %d.</item>
+        <item quantity="few">Затерто %d.</item>
+        <item quantity="many">Затерто %d.</item>
+        <item quantity="other">Затерто %d.</item>
+    </plurals>
+    <string name="sv_back">Назад</string>
+    <string name="sv_kind_address">адреса</string>
+    <string name="sv_kind_card">номер картки</string>
+    <string name="sv_kind_email">ел. пошта</string>
+    <string name="sv_kind_iban">IBAN</string>
+    <string name="sv_kind_phone">телефон</string>
+    <string name="sv_kind_plate">номер авто</string>
+    <string name="sv_prepare_as_is">Надіслати як є</string>
+    <string name="sv_prepare_checking">Шукаю особисті дані в тексті…</string>
+    <string name="sv_prepare_clear_manual">Прибрати мої ділянки</string>
+    <string name="sv_prepare_hint">Торкніться знайденого, щоб показати чи затерти. Проведіть пальцем, щоб затерти будь-яку іншу ділянку; торкніться її, щоб прибрати.</string>
+    <string name="sv_prepare_location_removed">У цьому фото є геолокація: у копії, яку ви надішлете, її не буде. Інших метаданих теж.</string>
+    <string name="sv_prepare_no_metadata">Копія, яку ви надішлете, без метаданих (без геолокації, камери й дат).</string>
+    <string name="sv_prepare_not_checked">Текст не перевірено (зупинено, довше хвилини або не вдалося прочитати). Перегляньте фото самі чи затріть ділянки вручну.</string>
+    <string name="sv_prepare_nothing_found">У тексті не знайдено номерів карток і телефонів, email, IBAN, номерів авто чи адрес. Обличчя й місця перевірте самі.</string>
+    <string name="sv_prepare_partial">Перевірено лише верхню частину цього дуже довгого скріншота.</string>
+    <string name="sv_prepare_title">Перед надсиланням</string>
+    <string name="sv_preset_original">Як є</string>
+    <string name="sv_preset_post">Пост 4:5</string>
+    <string name="sv_preset_square">Квадрат</string>
+    <string name="sv_preset_story">Сторіз 9:16</string>
+    <string name="sv_preset_telegram">Telegram</string>
+    <string name="sv_share">Поділитися</string>
+    <string name="sv_stop">Зупинити</string>
 </resources>

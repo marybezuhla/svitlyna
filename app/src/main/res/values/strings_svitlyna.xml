@@ -32,4 +32,36 @@
     <string name="sv_search_while_open">Reading goes on while Svitlyna is open; the rest while charging.</string>
     <string name="sv_search_off_question">Turn off reading text on photos? What was read is erased; search by text won\'t work.</string>
     <string name="sv_search_off_erase">Turn off and erase</string>
+    <plurals name="sv_prepare_found">
+        <item quantity="one">Found %1$d detail: %2$s.</item>
+        <item quantity="other">Found %1$d details: %2$s.</item>
+    </plurals>
+    <plurals name="sv_prepare_hidden">
+        <item quantity="one">%d is blacked out.</item>
+        <item quantity="other">%d are blacked out.</item>
+    </plurals>
+    <string name="sv_back">Back</string>
+    <string name="sv_kind_address">address</string>
+    <string name="sv_kind_card">card number</string>
+    <string name="sv_kind_email">e-mail</string>
+    <string name="sv_kind_iban">IBAN</string>
+    <string name="sv_kind_phone">phone</string>
+    <string name="sv_kind_plate">car plate</string>
+    <string name="sv_prepare_as_is">Send as it is</string>
+    <string name="sv_prepare_checking">Looking for personal details in the text…</string>
+    <string name="sv_prepare_clear_manual">Remove my areas</string>
+    <string name="sv_prepare_hint">Tap a found detail to show or hide it. Drag a finger to black out any other area; tap it to remove.</string>
+    <string name="sv_prepare_location_removed">This photo has a location: the copy you send won\'t. No other metadata goes either.</string>
+    <string name="sv_prepare_no_metadata">The copy you send has no metadata (no location, camera or dates).</string>
+    <string name="sv_prepare_not_checked">The text wasn\'t checked (stopped, took over a minute, or couldn\'t be read). Look the photo over yourself or black out areas by hand.</string>
+    <string name="sv_prepare_nothing_found">No card or phone numbers, e-mail, IBAN, car plates or addresses found in the text. Check faces and places yourself.</string>
+    <string name="sv_prepare_partial">Only the top part of this very long screenshot was checked.</string>
+    <string name="sv_prepare_title">Before sending</string>
+    <string name="sv_preset_original">As it is</string>
+    <string name="sv_preset_post">Post 4:5</string>
+    <string name="sv_preset_square">Square</string>
+    <string name="sv_preset_story">Story 9:16</string>
+    <string name="sv_preset_telegram">Telegram</string>
+    <string name="sv_share">Share</string>
+    <string name="sv_stop">Stop</string>
 </resources>
