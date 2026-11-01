@@ -58,8 +58,8 @@ object Sensitive {
 
     /**
      * The card number (13–19 digits passing Luhn) inside a run of digits, as a range in it. Several
-     * windows may pass by chance, so the likeliest wins: one that starts and ends where the digit
-     * groups do, then 16 digits (the usual length), then the longer one.
+     * windows may pass by chance, so only one that starts and ends where the digit groups do counts
+     * (a long order number in one piece isn't taken for a card), and 16 digits (the usual length) win.
      */
     private fun cardIn(run: String): IntRange? {
         val pos = run.indices.filter { run[it].isDigit() }
@@ -70,10 +70,10 @@ object Sensitive {
         for (len in 13..19) {
             for (start in 0..pos.size - len) {
                 val digits = String(CharArray(len) { run[pos[start + it]] })
-                if (!luhn(digits)) continue
                 val first = pos[start]
                 val last = pos[start + len - 1]
-                val score = (if (edgeBefore(first) && edgeAfter(last)) 100 else 0) + (if (len == 16) 50 else 0) + len
+                if (!edgeBefore(first) || !edgeAfter(last) || !luhn(digits)) continue
+                val score = (if (len == 16) 50 else 0) + len
                 if (score > bestScore) {
                     bestScore = score
                     best = first..last
