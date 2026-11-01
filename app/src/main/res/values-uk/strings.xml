@@ -62,13 +62,14 @@
 
     <string name="settings_screenshots">Після скріншота</string>
     <string name="screenshot_hints">Підказки після скріншота</string>
-    <string name="screenshot_hints_explain">Сповіщення з кнопками «Без панелей», «Текст» і «Відкрити». Сам скріншот ніколи не змінюється.</string>
+    <string name="screenshot_hints_explain">Сповіщення: торкніться, щоб відкрити скріншот, або скористайтеся «Без панелей» і «Текст». Картинки скріншота в ньому немає, а на заблокованому екрані видно лише «Світлина». Сам скріншот ніколи не змінюється.</string>
     <string name="crop_navigation">Прибирати й панель навігації</string>
     <string name="auto_crop">Завжди зберігати копію без панелей</string>
-    <string name="auto_crop_explain">Одразу після кожного скріншота, без дотику. Оригінал лишається поруч.</string>
+    <string name="auto_crop_explain">Одразу після кожного скріншота, без дотику. Оригінал лишається поруч. У повноекранних застосунках (відео, ігри) рядка стану немає, і обрізався б верх картинки: там краще кнопкою.</string>
     <string name="screenshot_channel">Підказки після скріншота</string>
     <string name="screenshot_title">Знято скріншот</string>
-    <string name="screenshot_text">Зберегти без панелей, скопіювати текст або відкрити</string>
+    <string name="screenshot_text">Зберегти без панелей чи скопіювати текст. Торкніться, щоб відкрити.</string>
+    <string name="screenshot_text_no_crop">Скопіювати текст. Торкніться, щоб відкрити.</string>
     <string name="screenshot_crop">Без панелей</string>
     <string name="screenshot_cropped">Збережено копію без панелей</string>
     <string name="screenshot_cropped_text">Поруч зі скріншотом, з тією самою датою. Торкніться, щоб відкрити.</string>

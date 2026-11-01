@@ -22,6 +22,8 @@ object Metadata {
         ExifInterface.TAG_THUMBNAIL_IMAGE_LENGTH, ExifInterface.TAG_THUMBNAIL_IMAGE_WIDTH,
         ExifInterface.TAG_THUMBNAIL_ORIENTATION, ExifInterface.TAG_NEW_SUBFILE_TYPE,
         ExifInterface.TAG_SUBFILE_TYPE, ExifInterface.TAG_DEFAULT_CROP_SIZE,
+        // A changed picture is a different picture: it must not claim the original's unique id.
+        ExifInterface.TAG_IMAGE_UNIQUE_ID,
     )
 
     /** Every tag ExifInterface knows, minus the pixel ones: found by reflection, so new tags are never forgotten. */
@@ -57,15 +59,27 @@ object Metadata {
     /**
      * Copies every copyable tag that [from] has into [to] (the caller saves [to]). The copy is marked
      * upright, because its pixels were already turned the right way up when it was made.
+     *
+     * If the original has no date taken inside the file (PNG screenshots don't), the copy gets
+     * [takenMs] written in: otherwise a later rescan would date the copy "now" and it would jump to
+     * the top of the timeline.
      */
-    fun copy(from: ExifInterface, to: ExifInterface, software: String) {
-        for (tag in COPYABLE_TAGS) {
-            val value = from.getAttribute(tag) ?: continue
-            to.setAttribute(tag, value)
+    fun copy(from: ExifInterface?, to: ExifInterface, takenMs: Long) {
+        if (from != null) {
+            for (tag in COPYABLE_TAGS) {
+                val value = from.getAttribute(tag) ?: continue
+                to.setAttribute(tag, value)
+            }
+        }
+        if (to.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL) == null && takenMs > 0) {
+            val at = java.time.Instant.ofEpochMilli(takenMs).atZone(java.time.ZoneId.systemDefault())
+            to.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, EXIF_DATE.format(at))
+            to.setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, at.offset.id.let { if (it == "Z") "+00:00" else it })
         }
         to.setAttribute(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL.toString())
-        to.setAttribute(ExifInterface.TAG_SOFTWARE, software)
     }
+
+    private val EXIF_DATE = java.time.format.DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
 
     fun removeLocation(exif: ExifInterface) {
         LOCATION_TAGS.forEach { exif.setAttribute(it, null) }

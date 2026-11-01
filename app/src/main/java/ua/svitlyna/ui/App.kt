@@ -362,6 +362,8 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
 
     viewer?.let { at ->
         val list = if (at.bucketId == null) state.items else state.byFolder[at.bucketId]?.items.orEmpty()
+        // A new request (a hint tapped while a photo is open) starts the viewer afresh at its photo.
+        androidx.compose.runtime.key(at) {
         Viewer(
             items = list,
             startIndex = at.index,
@@ -370,6 +372,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
             onShare = { share(listOf(it)) },
             onTrash = { trash(listOf(it), toTrash = true) },
         )
+        }
     }
 
     askShare?.let { items ->
