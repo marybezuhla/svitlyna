@@ -97,6 +97,9 @@ fun Viewer(
     onClose: () -> Unit,
     onShare: (MediaItem) -> Unit,
     onTrash: (MediaItem) -> Unit,
+    /** For temporary screenshots: whether this one is kept (null: not a screenshot or the option is off). */
+    keep: (MediaItem) -> Boolean? = { null },
+    onKeep: (MediaItem) -> Unit = {},
 ) {
     BackHandler(onBack = onClose)
     if (items.isEmpty()) {
@@ -229,6 +232,11 @@ fun Viewer(
                     if (!item.isVideo) {
                         TextButton(onClick = { readText(item) }) {
                             Text(stringResource(R.string.text_on_photo), color = Color.White)
+                        }
+                    }
+                    keep(item)?.let { isKept ->
+                        TextButton(onClick = { onKeep(item) }) {
+                            Text(stringResource(if (isKept) R.string.kept else R.string.keep), color = Color.White)
                         }
                     }
                     IconButton(onClick = { info = item }) {

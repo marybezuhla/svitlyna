@@ -31,6 +31,20 @@ class Prefs(context: Context) {
         get() = p.getBoolean("auto_crop", false)
         set(v) = p.edit().putBoolean("auto_crop", v).apply()
 
+    /** Offer to move screenshots older than [tempDays] to the trash (off by default). */
+    var tempScreenshots: Boolean
+        get() = p.getBoolean("temp_screenshots", false)
+        set(v) = p.edit().putBoolean("temp_screenshots", v).apply()
+
+    var tempDays: Int
+        get() = p.getInt("temp_days", 30)
+        set(v) = p.edit().putInt("temp_days", v).apply()
+
+    /** Screenshots marked "keep": never offered for the trash. */
+    var keptScreenshots: Set<Long>
+        get() = p.getStringSet("kept_screenshots", emptySet())!!.mapNotNull { it.toLongOrNull() }.toSet()
+        set(v) = p.edit().putStringSet("kept_screenshots", v.map { it.toString() }.toSet()).apply()
+
     /** "Media location" was asked for once after an update; not asked again if refused. */
     var askedMediaLocation: Boolean
         get() = p.getBoolean("asked_media_location", false)
