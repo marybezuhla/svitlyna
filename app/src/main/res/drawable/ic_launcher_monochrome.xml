@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The same picture in one colour (Android's themed icons): outlines and shapes only. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M81,46 L81,74 Q81,79 76,79 L40,79 Q35,79 35,77 L76,77 Q79,77 79,74 L79,46 Q79,43 81,46 Z" />
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineJoin="round"
+        android:pathData="M30,31 L71,31 Q77,31 77,37 L77,67 Q77,73 71,73 L30,73 Q24,73 24,67 L24,37 Q24,31 30,31 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M26,66 L41,49 L54,62 L61,55 L72,66 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M63,43 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" />
+</vector>

@@ -49,7 +49,7 @@ object Words {
             when {
                 c.isLetterOrDigit() -> sb.append(c)
                 // An apostrophe between letters belongs to the word.
-                c in APOSTROPHES && sb.isNotEmpty() && i + 1 < text.length && text[i + 1].isLetter() -> {}
+                c in APOSTROPHES && sb.isNotEmpty() && i + 1 < text.length && text[i + 1].isLetter() -> sb.append(c)
                 else -> flush()
             }
         }
