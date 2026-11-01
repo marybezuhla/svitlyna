@@ -58,7 +58,7 @@
 
     <string name="settings_sharing">Sharing</string>
     <string name="remove_location">Several photos: share without location</string>
-    <string name="remove_location_explain">Photos are sent as copies with the location removed; your originals stay as they are. Videos and some formats (HEIC, GIF…) can\'t be cleaned yet: you\'ll be asked before sending them.</string>
+    <string name="remove_location_explain">Photos are sent as copies with the location removed; your originals stay as they are. MP4 videos are sent without location too. Some formats (HEIC, GIF…) can\'t be cleaned yet: you\'ll be asked before sending them.</string>
 
     <string name="settings_screenshots">After a screenshot</string>
     <string name="screenshot_hints">Hints after a screenshot</string>
@@ -314,8 +314,8 @@
         <item quantity="other">%d days</item>
     </plurals>
     <plurals name="share_location_text">
-        <item quantity="one">%d file (a video, HEIC or GIF) can\'t be cleaned of its location yet. Other photos will be sent without location.</item>
-        <item quantity="other">%d files (videos, HEIC or GIF) can\'t be cleaned of their location yet. Other photos will be sent without location.</item>
+        <item quantity="one">%d file (HEIC, GIF or a rare video format) can\'t be cleaned of its location yet. Other photos will be sent without location.</item>
+        <item quantity="other">%d files (HEIC, GIF or a rare video format) can\'t be cleaned of their location yet. Other photos will be sent without location.</item>
     </plurals>
     <plurals name="delete_confirm">
         <item quantity="one">Delete %d item for good? This can\'t be undone.</item>
