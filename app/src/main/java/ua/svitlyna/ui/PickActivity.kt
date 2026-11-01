@@ -33,6 +33,10 @@ class PickActivity : MainActivity() {
             val clean = Prefs(this@PickActivity).removeLocation
             val ok = if (clean) items.filter { ua.svitlyna.media.Share.canClean(it) } else items
             val left = items.size - ok.size
+            val seconds = ua.svitlyna.media.Share.seconds(ok, clean)
+            if (seconds > 0) {
+                android.widget.Toast.makeText(this@PickActivity, getString(R.string.share_preparing, seconds), android.widget.Toast.LENGTH_LONG).show()
+            }
             val (uris, skipped) = ua.svitlyna.media.Share.uris(this@PickActivity, ok, clean)
             if (left + skipped > 0) {
                 android.widget.Toast.makeText(

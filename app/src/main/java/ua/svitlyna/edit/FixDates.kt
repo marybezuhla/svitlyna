@@ -58,7 +58,7 @@ object FixDates {
                     exif.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, EXIF_DATE.format(zoned))
                     exif.setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, zoned.offset.id.let { if (it == "Z") "+00:00" else it })
                 }
-                if (!ok) continue
+                if (ok != ua.svitlyna.media.InPlace.Result.DONE) continue
                 // The system re-reads the file; the date is also set in the media list right away.
                 runCatching {
                     context.contentResolver.update(

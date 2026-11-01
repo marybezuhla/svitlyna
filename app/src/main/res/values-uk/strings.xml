@@ -225,6 +225,7 @@
     <string name="meta_place_hint">Як копіює застосунок карт, напр. 50.45010, 30.52340</string>
     <string name="meta_remove_place">Прибрати місце</string>
     <string name="meta_explain">Записується в саме фото, після запиту Android; спершу робиться й перевіряється копія, інше у файлі не змінюється. Якщо інша програма записала місце ще й в XMP, там воно лишиться.</string>
+    <string name="meta_broken">Записати фото не вдалося; його оригінал збережено в Pictures/Svitlyna.</string>
     <string name="meta_saved">Збережено у фото.</string>
     <string name="meta_failed">Не вдалося змінити фото (може знадобитися доступ до місця у фото).</string>
     <string name="pick_title">Виберіть</string>

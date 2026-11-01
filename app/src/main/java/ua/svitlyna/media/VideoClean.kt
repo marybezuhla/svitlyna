@@ -22,8 +22,11 @@ object VideoClean {
     private val NOTES = setOf("udta", "meta")
     private val TOP = setOf("ftyp", "moov", "mdat", "free", "skip", "wide", "uuid", "udta", "meta", "moof", "mfra", "sidx", "styp", "pdin")
     private val FIRST = setOf("ftyp", "wide", "free", "skip", "mdat", "moov")
-    /** Tracks that carry data instead of pictures or sound (GPS of GoPro, DJI, Sony, dash cams…). */
-    private val DATA_TRACKS = setOf("meta", "text", "sbtl", "subt", "camm", "tmcd")
+    /**
+     * Kinds of samples that may carry the place in every frame: GoPro GPS, camera motion, timed
+     * metadata, subtitles (DJI and dash cams write GPS as subtitles).
+     */
+    private val DATA_SAMPLES = setOf("gpmd", "camm", "mebx", "mett", "metx", "tx3g", "text", "wvtt", "stpp", "c608", "c708")
 
     /** XMP inside a video: uuid BE7ACFCB-97A9-42E8-9C71-999491E3AFAC. */
     private val XMP_UUID = byteArrayOf(
@@ -116,8 +119,16 @@ object VideoClean {
                     "free".toByteArray(Charsets.ISO_8859_1).copyInto(buf, at + 4)
                     buf.fill(0, bodyStart, boxEnd)
                 }
-                type == "hdlr" && boxEnd - bodyStart >= 12 &&
-                    String(buf, bodyStart + 8, 4, Charsets.ISO_8859_1) in DATA_TRACKS -> throw IOException("data track")
+                type == "stsd" -> {
+                    // A full box: version and flags, the number of entries, then the entries.
+                    var e = bodyStart + 8
+                    while (e + 8 <= boxEnd) {
+                        val entrySize = u32(buf, e).toInt()
+                        if (String(buf, e + 4, 4, Charsets.ISO_8859_1) in DATA_SAMPLES) throw IOException("data track")
+                        if (entrySize < 8) break
+                        e += entrySize
+                    }
+                }
                 type in CONTAINERS -> blank(buf, bodyStart, boxEnd)
             }
             at = boxEnd

@@ -108,7 +108,7 @@ fun EditorScreen(item: MediaItem, onClose: () -> Unit, onSaved: (Uri) -> Unit) {
 
     fun changed() = drawn || edits != Edits() || canvas.session.crop.width() < 0.999f || canvas.session.crop.height() < 0.999f
 
-    BackHandler { if (changed()) askLeave = true else onClose() }
+    GuardedBackHandler { if (changed()) askLeave = true else onClose() }
 
     // A new preview when the photo is turned, flipped or straightened: these are baked into the
     // picture that is drawn on, exactly as in the saved copy. They are possible only before drawing.

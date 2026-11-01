@@ -62,19 +62,19 @@ object MetaEdit {
         if (change.place != null || change.removePlace) addAll(Metadata.LOCATION_TAGS.filter { it != ExifInterface.TAG_XMP })
     }
 
-    /** After Android's write permission. False if the file couldn't be changed (it stays as it was). */
-    suspend fun apply(context: Context, item: MediaItem, change: Change): Boolean = withContext(Dispatchers.IO) {
+    /** After Android's write permission (see [InPlace.Result]). */
+    suspend fun apply(context: Context, item: MediaItem, change: Change): InPlace.Result = withContext(Dispatchers.IO) {
         runCatching {
             // Checked copy first, then the photo (see InPlace): nothing else in the file may change.
-            val ok = InPlace.rewrite(context, item.uri, changedTags(change)) { write(it, change) }
-            if (!ok) return@runCatching false
+            val result = InPlace.rewrite(context, item.uri, changedTags(change)) { write(it, change) }
+            if (result != InPlace.Result.DONE) return@runCatching result
             change.taken?.let { at ->
                 val ms = at.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 runCatching {
                     context.contentResolver.update(item.uri, ContentValues().apply { put(MediaStore.MediaColumns.DATE_TAKEN, ms) }, null, null)
                 }
             }
-            true
-        }.getOrDefault(false)
+            InPlace.Result.DONE
+        }.getOrDefault(InPlace.Result.REFUSED)
     }
 }

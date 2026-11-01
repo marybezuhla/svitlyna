@@ -88,6 +88,7 @@ fun PrepareScreen(item: MediaItem, onClose: () -> Unit, onSendAsIs: () -> Unit) 
     var location by remember(item.id) { mutableStateOf(false) }
     var preset by remember(item.id) { mutableStateOf(Preset.ORIGINAL) }
     var sending by remember { mutableStateOf(false) }
+    var ready by remember { mutableStateOf<android.content.Intent?>(null) }
     var checkJob by remember(item.id) { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
     LaunchedEffect(item.id) {
@@ -200,6 +201,16 @@ fun PrepareScreen(item: MediaItem, onClose: () -> Unit, onSendAsIs: () -> Unit) 
                     TextButton(onClick = onSendAsIs) { Text(stringResource(R.string.prepare_as_is)) }
                 }
                 androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                // Sent when ready, but not over the lock screen: then right after unlocking.
+                val locked = LocalLocked.current
+                LaunchedEffect(ready, locked) {
+                    val i = ready
+                    if (i != null && !locked) {
+                        ready = null
+                        context.startActivity(i)
+                        onClose()
+                    }
+                }
                 Button(
                     // Not while checking: what is found must be blacked out before anything is sent.
                     enabled = picture != null && !sending && !checking,
@@ -209,10 +220,7 @@ fun PrepareScreen(item: MediaItem, onClose: () -> Unit, onSendAsIs: () -> Unit) 
                             val areas = findings.filterIndexed { i, _ -> i !in off }.map { it.area } + manual
                             val intent = Prepare.share(context, item, preset, areas)
                             sending = false
-                            if (intent != null) {
-                                context.startActivity(intent)
-                                onClose()
-                            }
+                            if (intent != null) ready = intent
                         }
                     },
                 ) {
