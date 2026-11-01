@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
@@ -78,6 +79,7 @@ private sealed interface Page {
     data object Settings : Page
     data object FixDates : Page
     data object Duplicates : Page
+    data object Search : Page
 }
 
 private enum class RequestKind { TRASH, RESTORE, DELETE }
@@ -86,7 +88,7 @@ private enum class RequestKind { TRASH, RESTORE, DELETE }
 private const val REQUEST_CHUNK = 500
 
 /** Which photos the open viewer swipes through: all of them, or one folder. */
-private data class ViewerAt(val bucketId: Long?, val index: Int, val readText: Boolean = false, val unfiltered: Boolean = false)
+private data class ViewerAt(val bucketId: Long?, val index: Int, val readText: Boolean = false, val unfiltered: Boolean = false, val search: Boolean = false)
 
 /** The timeline as shown: filtered by kind and without hidden folders. */
 private class Shown(val items: List<MediaItem>, val timeline: List<ua.svitlyna.media.TimelineEntry>)
@@ -126,15 +128,32 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
     }
     var hidden by remember { mutableStateOf(prefs.hiddenFolders) }
     var shown by remember { mutableStateOf<Shown?>(null) }
-    LaunchedEffect(state.items, state.timeline, filter, hidden) {
+    // Photos with text on them, from the search index (for the "With text" filter).
+    val withText by ua.svitlyna.search.Indexer.withText.collectAsState()
+    LaunchedEffect(Unit) { ua.svitlyna.search.Indexer.refreshCount(context) }
+    LaunchedEffect(state.items, state.timeline, filter, hidden, if (filter == Filter.TEXT) withText else null) {
         shown = if (filter == Filter.ALL && hidden.isEmpty()) {
             Shown(state.items, state.timeline)
         } else {
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-                val list = state.items.filter { it.bucketId !in hidden && it.matches(filter) }
+                val list = state.items.filter {
+                    it.bucketId !in hidden && if (filter == Filter.TEXT) it.id in withText else it.matches(filter)
+                }
                 Shown(list, Timeline.byDay(list))
             }
         }
+    }
+    // Search: the line and its results, kept while the viewer is open on one of them.
+    var searchQuery by remember { mutableStateOf("") }
+    var searchResult by remember { mutableStateOf(ua.svitlyna.search.Search.EMPTY) }
+    LaunchedEffect(searchQuery, state.items, withText) {
+        if (searchQuery.isBlank()) {
+            searchResult = ua.svitlyna.search.Search.EMPTY
+            return@LaunchedEffect
+        }
+        // Typed letters settle a moment before searching.
+        kotlinx.coroutines.delay(250)
+        searchResult = ua.svitlyna.search.Search.find(context, searchQuery, state.items)
     }
     var pinned by remember { mutableStateOf(prefs.pinnedFolders) }
     var folderSort by remember { mutableIntStateOf(prefs.folderSort) }
@@ -503,6 +522,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
             page is Page.InFolder -> goTo(Page.Folders)
             page == Page.Trash || page == Page.Settings -> goTo(lastTab)
             page == Page.FixDates || page == Page.Duplicates -> goTo(Page.Settings)
+            page == Page.Search -> goTo(lastTab)
             else -> goTo(Page.Photos)
         }
     }
@@ -554,11 +574,12 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
                     Page.Settings -> stringResource(R.string.settings)
                     Page.FixDates -> stringResource(R.string.fix_dates)
                     Page.Duplicates -> stringResource(R.string.dupes)
+                    Page.Search -> stringResource(R.string.search)
                 }
                 TopAppBar(
                     title = { Text(title) },
                     navigationIcon = {
-                        if (page is Page.InFolder || page == Page.Trash || page == Page.Settings || page == Page.FixDates || page == Page.Duplicates) {
+                        if (page is Page.InFolder || page == Page.Trash || page == Page.Settings || page == Page.FixDates || page == Page.Duplicates || page == Page.Search) {
                             IconButton(onClick = {
                                 goTo(
                                     when (page) {
@@ -574,6 +595,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
                     },
                     actions = {
                         if (pick == null && (page == Page.Photos || page == Page.Folders)) {
+                            IconButton(onClick = { goTo(Page.Search) }) { Icon(Icons.Filled.Search, stringResource(R.string.search)) }
                             IconButton(onClick = { goTo(Page.Trash) }) { Icon(Icons.Filled.Delete, stringResource(R.string.trash)) }
                             IconButton(onClick = { goTo(Page.Settings) }) { Icon(Icons.Filled.Settings, stringResource(R.string.settings)) }
                         }
@@ -609,6 +631,13 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
                     AccessScreen(onRequest = { permissionLauncher.launch(Access.permissionsToRequest()) }, contentPadding = padding)
                 state.loading && page != Page.Settings ->
                     CircularProgressIndicator(Modifier.align(Alignment.Center))
+                page == Page.Search -> SearchScreen(
+                    query = searchQuery,
+                    onQuery = { searchQuery = it },
+                    result = searchResult,
+                    onOpen = { i -> viewer = ViewerAt(null, i, search = true) },
+                    contentPadding = padding,
+                )
                 else -> Content(
                     page = page,
                     padding = padding,
@@ -730,6 +759,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
         val list = when {
             at.bucketId != null -> state.byFolder[at.bucketId]?.items.orEmpty()
             at.unfiltered -> state.items
+            at.search -> searchResult.items
             else -> shown?.items ?: state.items
         }
         // A new request (a hint tapped while a photo is open) starts the viewer afresh at its photo.
@@ -737,7 +767,8 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
         Viewer(
             items = list,
             startIndex = at.index,
-            readTextAtStart = at.readText,
+            readTextAtStart = at.readText || (at.search && list.getOrNull(at.index)?.id in searchResult.textIds),
+            highlight = if (at.search) searchResult.keys else emptyList(),
             onClose = { viewer = null },
             onShare = { share(listOf(it)) },
             onTrash = { trash(listOf(it), toTrash = true) },
@@ -989,6 +1020,8 @@ private fun Content(
         )
         Page.FixDates -> FixDatesScreen(fixes, fixChosen, onFixChosen, onFix, fixing, padding)
         Page.Duplicates -> DuplicatesScreen(dupGroups, dupProgress, photoCount, dupMarked, onMarkDupe, onFindDupes, onStopDupes, onTrashDupes, padding)
+        // Shown by the gallery screen itself (it keeps the query and the results).
+        Page.Search -> {}
     }
 }
 
@@ -1014,6 +1047,7 @@ private fun FilterRow(filter: Filter, onFilter: (Filter) -> Unit) {
                                 Filter.PHOTOS -> R.string.filter_photos
                                 Filter.VIDEOS -> R.string.filter_videos
                                 Filter.SCREENSHOTS -> R.string.filter_screenshots
+                                Filter.TEXT -> R.string.filter_text
                                 Filter.GIF -> R.string.filter_gif
                                 Filter.RAW -> R.string.filter_raw
                                 Filter.PANORAMAS -> R.string.filter_panoramas

@@ -111,6 +111,8 @@ fun Viewer(
     onRename: (MediaItem) -> Unit = {},
     /** Opened for another app: only looking, sharing and editing a copy; nothing in the gallery changes. */
     outside: Boolean = false,
+    /** Search keys: in text mode the words they find are the chosen (highlighted) ones. */
+    highlight: List<String> = emptyList(),
     /** Changing the date taken or the place written in the photo (given: what the photo says now). */
     onEditMeta: (MediaItem, PhotoDetails?) -> Unit = { _, _ -> },
 ) {
@@ -194,8 +196,11 @@ fun Viewer(
                 textFor = null
             } else {
                 photoText = read
-                // Everything is chosen at first: the most common wish is "all of it".
-                chosen = read.words.indices.toSet()
+                // From search: the words looked for are chosen. Otherwise everything: the most
+                // common wish is "all of it".
+                val found = if (highlight.isEmpty()) emptySet() else
+                    read.words.indices.filterTo(HashSet()) { ua.svitlyna.search.Words.matches(read.words[it].second.text, highlight) }
+                chosen = found.ifEmpty { read.words.indices.toSet() }
             }
         }
     }
