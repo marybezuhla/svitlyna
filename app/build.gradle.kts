@@ -43,12 +43,6 @@ android {
         buildConfig = true
     }
 
-    testOptions {
-        // Metadata tests run ExifInterface on real files; Android's own helpers it touches (logging)
-        // do nothing in tests instead of failing.
-        unitTests.isReturnDefaultValues = true
-    }
-
     androidResources {
         generateLocaleConfig = true
         // The OCR models are read as they are; compressing them only slows loading.
@@ -85,4 +79,6 @@ dependencies {
     implementation("androidx.media3:media3-ui:1.5.1")
 
     testImplementation("junit:junit:4.13.2")
+    // Real Android classes for tests that write photo metadata with ExifInterface (tests only)
+    testImplementation("org.robolectric:robolectric:4.14.1")
 }

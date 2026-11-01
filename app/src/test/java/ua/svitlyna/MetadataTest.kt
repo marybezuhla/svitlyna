@@ -6,6 +6,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import ua.svitlyna.media.Metadata
 import ua.svitlyna.media.SaveCopy
 import ua.svitlyna.screenshots.Bars
@@ -15,6 +18,8 @@ import java.io.File
  * The metadata rules, checked by writing real files: save → read back → compare.
  * Location sits both in EXIF and in XMP, as phones write it.
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
 class MetadataTest {
     private val xmp = """<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">""" +
         """<rdf:Description xmlns:exif="http://ns.adobe.com/exif/1.0/" exif:GPSLatitude="50,27.0N"/></rdf:RDF></x:xmpmeta>"""
