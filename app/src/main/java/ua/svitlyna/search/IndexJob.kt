@@ -11,7 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import ua.svitlyna.ui.Prefs
+import ua.svitlyna.core.Prefs
 
 /**
  * Reading photos' text in the background: only while the phone is charging and not in use, so the

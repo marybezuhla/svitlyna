@@ -8,57 +8,85 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" tools:node="remove" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove" />
 
-    <!-- Photos and videos only (Android 13+) -->
+    <!-- Photos and videos (Android 13+); "only selected photos" (14+); the older name on 11–12 -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    <!-- "Allow only selected photos" (Android 14+) -->
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
-    <!-- Android 11 and 12: the same access under the older name -->
-    <uses-permission
-        android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    <!-- The location stored inside photos: without it Android removes it from everything the app reads,
-         and a saved copy would silently lose it. Asked together with photos and videos. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <!-- The location stored inside photos (otherwise Android removes it from what the app reads) -->
     <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
-    <!-- Optional hints after a screenshot: a notification (asked only when switched on), and the
-         wake-up job asked for again after the phone restarts -->
+    <!-- Optional "All files access", switched on only by the person in Android settings: moving
+         photos (and to the vault) without a confirmation window each time. -->
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+    <!-- "On this day" reminders (asked only when switched on); jobs again after a restart -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <!-- Optional "Media management" special access (Android 12+), switched on only by the person:
-         changes and moves to trash without a confirmation window every time. Still photos and videos only. -->
-    <uses-permission
-        android:name="android.permission.MANAGE_MEDIA"
-        tools:ignore="ProtectedPermissions" />
+    <!-- App lock with the fingerprint or the phone's PIN -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    <!-- "Set as wallpaper" from the viewer -->
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.EDIT" />
+            <data android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="com.android.camera.action.EDITOR" />
+            <data android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="com.android.camera.action.CROP" />
+            <data android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.ATTACH_DATA" />
+            <data android:mimeType="image/*" />
+        </intent>
+        <intent>
+            <action android:name="android.service.wallpaper.CROP_AND_SET_WALLPAPER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SET_WALLPAPER" />
+        </intent>
+    </queries>
 
     <application
+        android:name=".IrisApplication"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
+        android:appCategory="image"
         android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:largeHeap="true"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Svitlyna"
+        android:theme="@style/Theme.IrisGallery"
         tools:targetApi="36">
-
         <activity
-            android:name=".ui.MainActivity"
-            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density|uiMode"
-            android:exported="true"
-            android:launchMode="singleTop">
+            android:name=".MainActivity"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|smallestScreenSize|keyboardHidden"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.APP_GALLERY" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
-        </activity>
-
-        <!-- Svitlyna as the photo chooser for other apps ("attach a photo"); the app lock applies -->
-        <activity
-            android:name=".ui.PickActivity"
-            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density|uiMode"
-            android:excludeFromRecents="true"
-            android:exported="true"
-            android:label="@string/app_name">
             <intent-filter>
+                <action android:name="android.intent.action.PICK" />
                 <action android:name="android.intent.action.GET_CONTENT" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.OPENABLE" />
@@ -66,78 +94,46 @@
                 <data android:mimeType="video/*" />
             </intent-filter>
             <intent-filter>
-                <action android:name="android.intent.action.PICK" />
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="com.android.camera.action.REVIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
                 <data android:mimeType="image/*" />
                 <data android:mimeType="video/*" />
-                <data android:mimeType="vnd.android.cursor.dir/image" />
-                <data android:mimeType="vnd.android.cursor.dir/video" />
             </intent-filter>
-        </activity>
-
-        <!-- A photo or video opened from another app: shown on its own, the gallery is not reachable -->
-        <activity
-            android:name=".ui.OutsideActivity"
-            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density|uiMode"
-            android:excludeFromRecents="true"
-            android:exported="true"
-            android:label="@string/app_name">
             <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
                 <action android:name="android.intent.action.EDIT" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="content" />
+                <data android:scheme="file" />
                 <data android:mimeType="image/*" />
-                <data android:mimeType="video/*" />
             </intent-filter>
         </activity>
-
-        <!-- Svitlyna's own notifications open photos through this private entrance (not exported) -->
-        <activity-alias
-            android:name=".ui.FromHint"
-            android:exported="false"
-            android:targetActivity=".ui.MainActivity" />
-
-        <!-- Woken by Android when the photos change, to hint about a fresh screenshot -->
-        <service
-            android:name=".screenshots.ScreenshotJob"
-            android:exported="false"
-            android:permission="android.permission.BIND_JOB_SERVICE" />
-        <receiver android:name=".screenshots.ScreenshotActionReceiver" android:exported="false" />
+        <receiver android:name=".MemoriesReceiver" android:exported="false" />
+        <receiver android:name=".BootReceiver" android:exported="false">
+            <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /></intent-filter>
+        </receiver>
+        <receiver android:name=".IrisPhotoWidget" android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/iris_photo_widget_info" />
+        </receiver>
         <!-- Reads photos' text for search, only while charging and not in use -->
         <service
             android:name=".search.IndexJob"
             android:exported="false"
             android:permission="android.permission.BIND_JOB_SERVICE" />
-        <receiver android:name=".screenshots.RestartReceiver" android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-            </intent-filter>
-        </receiver>
-
-        <!-- "This day" on the home screen (no photo while the app lock is on) -->
-        <receiver
-            android:name=".ui.MemoriesWidget"
-            android:exported="true"
-            android:label="@string/widget_name">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/memories_widget" />
-        </receiver>
-
-        <!-- Shares copies without location from the app's private cache, one file at a time -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.share"
+            android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/share_paths" />
+                android:resource="@xml/file_paths" />
         </provider>
     </application>
 </manifest>

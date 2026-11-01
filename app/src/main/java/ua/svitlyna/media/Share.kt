@@ -86,7 +86,7 @@ object Share {
                 target.outputStream().use { VideoClean.clean(input, it, keepGoing) }
             }
             check(ok)
-            return@runCatching FileProvider.getUriForFile(context, "${context.packageName}.share", target)
+            return@runCatching FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", target)
         }
         context.contentResolver.openInputStream(item.uri)!!.use { input ->
             target.outputStream().use { input.copyTo(it) }
@@ -94,7 +94,7 @@ object Share {
         val exif = ExifInterface(target)
         Metadata.removeLocation(exif)
         exif.saveAttributes()
-        FileProvider.getUriForFile(context, "${context.packageName}.share", target)
+        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", target)
     }.getOrElse {
         target.delete()
         null
