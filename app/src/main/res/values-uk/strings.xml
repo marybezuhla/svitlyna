@@ -51,7 +51,7 @@
     <string name="pick_more">Вибрати ще фото</string>
     <string name="change_access">Змінити в налаштуваннях Android</string>
     <string name="media_management">Керування медіафайлами</string>
-    <string name="media_management_explain">За бажанням. З ним перенесення в кошик, видалення назавжди й майбутні правки відбуваються без вікна підтвердження Android щоразу (перед видаленням назавжди Світлина все одно спитає). Це все одно доступ лише до фото й відео.</string>
+    <string name="media_management_explain">За бажанням. З ним перенесення в кошик, видалення назавжди, переміщення в іншу папку, перейменування, обрані й виправлення дат відбуваються без вікна підтвердження Android щоразу (перед видаленням назавжди Світлина все одно спитає). Це все одно доступ лише до фото й відео.</string>
     <string name="media_management_on">Увімкнено</string>
     <string name="media_management_off">Вимкнено</string>
     <string name="media_management_change">Змінити</string>
@@ -193,7 +193,7 @@
     <string name="folder_hidden_mark">сховано</string>
 
     <string name="dupes">Дублікати</string>
-    <string name="dupes_explain">Шукає однакові до байта файли (те саме фото, збережене двічі, з двох месенджерів…). Порівнюються лише файли однакового розміру; нічого не змінюється, доки ви не виберете.</string>
+    <string name="dupes_explain">Шукає однакові до байта файли (те саме фото, збережене двічі, з двох месенджерів…). Порівнюються лише файли однакового розміру; нічого не змінюється, доки ви не натиснете кнопку.</string>
     <string name="dupes_find">Шукати дублікати</string>
     <string name="dupes_checking">Перевіряю %1$d з %2$d…</string>
     <string name="dupes_none">Дублікатів не знайдено.</string>
@@ -206,7 +206,10 @@
     <string name="start_tab">Відкривати</string>
     <string name="settings_lock">Блокування</string>
     <string name="app_lock">Блокувати застосунок</string>
-    <string name="app_lock_explain">Для входу у Світлину потрібен відбиток або PIN-код телефона (перевіряє Android; Світлина його не бачить). Протягом пів хвилини повторно не питає. У недавніх застосунках вміст сховано.</string>
+    <string name="app_lock_explain">Для входу у Світлину потрібен відбиток або PIN-код телефона (перевіряє Android; Світлина його не бачить). Протягом пів хвилини повторно не питає. У недавніх застосунках вміст сховано (на Android 11–12 також заборонено знімки екрана застосунку).</string>
+    <string name="app_lock_turned_off">На телефоні більше немає блокування екрана, тож блокування застосунку вимкнено.</string>
+    <string name="too_many_selected">Щонайбільше %d за раз: виберіть менше.</string>
+    <string name="live_failed">Відео цього живого фото не відтворюється.</string>
     <string name="app_lock_no_screen_lock">Спершу встановіть PIN, графічний ключ чи відбиток для телефона.</string>
     <string name="lock_title">Відкрити Світлину</string>
     <string name="lock_open">Розблокувати</string>
@@ -222,7 +225,7 @@
     <string name="folder_show">Показати в шкалі</string>
     <string name="sort_newest">Нові</string>
     <string name="sort_name">Назва</string>
-    <string name="sort_biggest">Більші</string>
+    <string name="sort_biggest">Найбільше фото</string>
     <string name="filter_favorites">♥ Обрані</string>
 
     <string name="settings_language">Мова</string>
@@ -290,16 +293,16 @@
         <item quantity="other">%1$d зайвої копії, %2$s.</item>
     </plurals>
     <plurals name="copied_n">
-        <item quantity="one">Скопійовано %d</item>
-        <item quantity="few">Скопійовано %d</item>
-        <item quantity="many">Скопійовано %d</item>
-        <item quantity="other">Скопійовано %d</item>
+        <item quantity="one">Скопійовано %1$d з %2$d</item>
+        <item quantity="few">Скопійовано %1$d з %2$d</item>
+        <item quantity="many">Скопійовано %1$d з %2$d</item>
+        <item quantity="other">Скопійовано %1$d з %2$d</item>
     </plurals>
     <plurals name="moved_n">
-        <item quantity="one">Переміщено %d</item>
-        <item quantity="few">Переміщено %d</item>
-        <item quantity="many">Переміщено %d</item>
-        <item quantity="other">Переміщено %d</item>
+        <item quantity="one">Переміщено %1$d з %2$d</item>
+        <item quantity="few">Переміщено %1$d з %2$d</item>
+        <item quantity="many">Переміщено %1$d з %2$d</item>
+        <item quantity="other">Переміщено %1$d з %2$d</item>
     </plurals>
     <plurals name="items">
         <item quantity="one">%d елемент</item>

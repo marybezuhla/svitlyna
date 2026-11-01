@@ -621,6 +621,7 @@ private fun VideoPlayer(item: MediaItem, uri: Uri = item.uri, onEnded: (() -> Un
                 }
 
                 override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                    if (uri != item.uri) android.widget.Toast.makeText(context, R.string.live_failed, android.widget.Toast.LENGTH_SHORT).show()
                     ended?.invoke()
                 }
             })

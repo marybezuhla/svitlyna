@@ -71,6 +71,9 @@ dependencies {
     implementation("androidx.exifinterface:exifinterface:1.4.1")
     // App lock with the fingerprint or the phone's PIN (as in Tarilka)
     implementation("androidx.biometric:biometric:1.1.0")
+    // biometric alone brings an old fragment library that rejects the request codes of Android's
+    // permission and confirmation windows: a current one is required (as appcompat brings in Tarilka).
+    implementation("androidx.fragment:fragment-ktx:1.8.5")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
     // Text on photos: PP-OCRv5 models (in assets/ocr) run with ONNX Runtime (MIT), as in Pysanka

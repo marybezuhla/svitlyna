@@ -340,7 +340,16 @@ fun SettingsScreen(
                 return@SwitchRow
             }
             // Turning it on or off is confirmed with the fingerprint or PIN itself.
-            AppLock.ask(activity) {
+            AppLock.ask(activity, onNoScreenLock = {
+                // The screen lock was removed: turning off needs no confirmation.
+                if (!on) {
+                    lock = false
+                    prefs.appLock = false
+                    AppLock.applyRecents(activity, false)
+                } else {
+                    noLockScreen = true
+                }
+            }) {
                 lock = on
                 prefs.appLock = on
                 AppLock.applyRecents(activity, on)
@@ -381,7 +390,7 @@ private const val CERTIFICATE = "53027b1a87085eb9e40a74820ff2aa067dd3350a0e3010a
  * Android first; copying makes new files and keeps the originals where they are.
  */
 @Composable
-fun FolderPickDialog(folders: List<Folder>, onDismiss: () -> Unit, onPick: (path: String, copy: Boolean) -> Unit) {
+fun FolderPickDialog(folders: List<Folder>, videos: Boolean, photos: Boolean, onDismiss: () -> Unit, onPick: (path: String, copy: Boolean) -> Unit) {
     var chosen by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
     var newName by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
     val target = if (newName.isNotBlank()) ua.svitlyna.media.FileOps.newFolderPath(newName) else chosen
@@ -399,7 +408,10 @@ fun FolderPickDialog(folders: List<Folder>, onDismiss: () -> Unit, onPick: (path
                 )
                 folders.forEach { f ->
                     val path = f.cover.relativePath
-                    if (path.isBlank()) return@forEach
+                    // Android keeps photos only in DCIM/ and Pictures/, videos also in Movies/.
+                    val top = path.substringBefore('/') + "/"
+                    val allowed = top == "DCIM/" || top == "Pictures/" || (top == "Movies/" && videos && !photos)
+                    if (path.isBlank() || !allowed) return@forEach
                     Row(
                         Modifier
                             .fillMaxWidth()
