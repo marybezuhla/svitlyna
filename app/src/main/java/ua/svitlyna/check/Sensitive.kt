@@ -56,16 +56,31 @@ object Sensitive {
         return out.sortedBy { it.range.first }
     }
 
-    /** The longest card number (13–19 digits passing Luhn) inside a run of digits, as a range in it. */
+    /**
+     * The card number (13–19 digits passing Luhn) inside a run of digits, as a range in it. Several
+     * windows may pass by chance, so the likeliest wins: one that starts and ends where the digit
+     * groups do, then 16 digits (the usual length), then the longer one.
+     */
     private fun cardIn(run: String): IntRange? {
         val pos = run.indices.filter { run[it].isDigit() }
-        for (len in 19 downTo 13) {
+        fun edgeBefore(p: Int) = p == 0 || !run[p - 1].isDigit()
+        fun edgeAfter(p: Int) = p == run.length - 1 || !run[p + 1].isDigit()
+        var best: IntRange? = null
+        var bestScore = -1
+        for (len in 13..19) {
             for (start in 0..pos.size - len) {
                 val digits = String(CharArray(len) { run[pos[start + it]] })
-                if (luhn(digits)) return pos[start]..pos[start + len - 1]
+                if (!luhn(digits)) continue
+                val first = pos[start]
+                val last = pos[start + len - 1]
+                val score = (if (edgeBefore(first) && edgeAfter(last)) 100 else 0) + (if (len == 16) 50 else 0) + len
+                if (score > bestScore) {
+                    bestScore = score
+                    best = first..last
+                }
             }
         }
-        return null
+        return best
     }
 
     /** The IBAN at the start of a match, without anything stuck after it (like "UAH"). */
