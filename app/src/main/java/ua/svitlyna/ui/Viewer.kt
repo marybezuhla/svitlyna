@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import android.graphics.Bitmap
+import android.os.Build
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -71,6 +72,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -146,8 +148,8 @@ fun Viewer(
             }
         }
     }
-    // Another photo swiped in: its text is not the one shown.
-    LaunchedEffect(pager.currentPage) {
+    // Another photo swiped in (or the list changed under it): its text is not the one shown.
+    LaunchedEffect(items.getOrNull(pager.currentPage)?.id) {
         if (textFor != null && items.getOrNull(pager.currentPage)?.id != textFor) closeText()
         notice = null
     }
@@ -184,6 +186,7 @@ fun Viewer(
                 chosen = chosen,
                 onChosen = { chosen = it },
                 onClose = ::closeText,
+                onCopied = { notice = R.string.copied },
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         } else if (chrome && item != null) {
@@ -257,6 +260,7 @@ private fun TextBar(
     chosen: Set<Int>,
     onChosen: (Set<Int>) -> Unit,
     onClose: () -> Unit,
+    onCopied: () -> Unit,
     modifier: Modifier,
 ) {
     val context = LocalContext.current
@@ -280,7 +284,8 @@ private fun TextBar(
             return@Column
         }
         Text(
-            stringResource(R.string.text_chosen, chosen.size, text.words.size) + " · " + stringResource(R.string.text_hint),
+            pluralStringResource(R.plurals.text_chosen, text.words.size, chosen.size, text.words.size) + " · " +
+                stringResource(R.string.text_hint),
             color = Color.White,
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(horizontal = 8.dp),
@@ -292,6 +297,8 @@ private fun TextBar(
             TextButton(enabled = chosen.isNotEmpty(), onClick = {
                 val cm = context.getSystemService(ClipboardManager::class.java)
                 cm?.setPrimaryClip(ClipData.newPlainText(context.getString(R.string.text_on_photo), text.text(chosen)))
+                // Android 13+ confirms copying itself.
+                if (Build.VERSION.SDK_INT < 33) onCopied()
             }) {
                 Text(stringResource(R.string.copy), color = Color.White)
             }
@@ -339,22 +346,43 @@ private fun TextOverlay(text: PhotoText, chosen: Set<Int>, onChosen: (Set<Int>) 
         modifier
             .onSizeChanged { size = it }
             .pointerInput(text) {
-                detectTapGestures { p ->
-                    hit(p)?.let { i -> choose(if (i in current) current - i else current + i) }
-                }
-            }
-            .pointerInput(text) {
-                var adding = true
-                detectDragGestures(
-                    onDragStart = { p ->
-                        hit(p)?.let { i ->
-                            adding = i !in current
-                            choose(if (adding) current + i else current - i)
+                // Only a finger that starts on a word chooses: a tap on a word turns it on or off,
+                // a drag chooses every word between the first and the one under the finger (in
+                // reading order). A finger on empty space is left to the photo (pan, double tap),
+                // and a second finger hands the gesture to zooming and undoes the drag.
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    val start = hit(down.position) ?: return@awaitEachGesture
+                    val before = current
+                    val adding = start !in before
+                    var dragging = false
+                    var last: Int? = null
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        if (event.changes.size > 1) {
+                            if (dragging) choose(before)
+                            return@awaitEachGesture
                         }
-                    },
-                ) { change, _ ->
-                    change.consume()
-                    hit(change.position)?.let { i -> choose(if (adding) current + i else current - i) }
+                        val change = event.changes.first()
+                        if (!change.pressed) {
+                            if (!dragging) {
+                                change.consume()
+                                choose(if (adding) before + start else before - start)
+                            }
+                            return@awaitEachGesture
+                        }
+                        if (!dragging && (change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
+                            dragging = true
+                        }
+                        if (dragging) {
+                            change.consume()
+                            val at = hit(change.position) ?: continue
+                            if (at == last) continue
+                            last = at
+                            val range = (minOf(start, at)..maxOf(start, at)).toSet()
+                            choose(if (adding) before + range else before - range)
+                        }
+                    }
                 }
             },
     ) {

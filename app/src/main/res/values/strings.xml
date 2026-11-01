@@ -20,11 +20,11 @@
     <string name="reading_text">Reading the text on the photo…</string>
     <string name="no_text_found">No text found on this photo.</string>
     <string name="stop">Stop</string>
-    <string name="text_chosen">%1$d of %2$d words</string>
-    <string name="text_hint">tap or swipe over words</string>
+    <string name="text_hint">tap words or run a finger over them</string>
     <string name="choose_all">All</string>
-    <string name="choose_none">None</string>
+    <string name="choose_none">Clear</string>
     <string name="copy">Copy</string>
+    <string name="copied">Copied</string>
     <string name="details">Details</string>
     <string name="play">Play</string>
     <string name="move_to_trash">Move to trash</string>
@@ -70,6 +70,10 @@
     <string name="about_licence">Licence: GPL-3.0.</string>
     <string name="about_source">Source code</string>
 
+    <plurals name="text_chosen">
+        <item quantity="one">%1$d of %2$d word</item>
+        <item quantity="other">%1$d of %2$d words</item>
+    </plurals>
     <plurals name="items">
         <item quantity="one">%d item</item>
         <item quantity="other">%d items</item>
