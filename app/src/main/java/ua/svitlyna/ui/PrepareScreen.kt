@@ -63,6 +63,8 @@ import ua.svitlyna.media.MediaItem
 import ua.svitlyna.ocr.PhotoTextReader
 import kotlin.math.abs
 
+private enum class CheckResult { CHECKED, PARTIAL, FAILED, STOPPED }
+
 /** One personal detail found on the photo: what it is and where (fractions of the photo). */
 private class Finding(val kind: Sensitive.Kind, val area: RectF)
 
@@ -73,23 +75,34 @@ private class Finding(val kind: Sensitive.Kind, val area: RectF)
  * sent is a fresh copy with no metadata at all; the original is not touched.
  */
 @Composable
-fun PrepareScreen(item: MediaItem, onClose: () -> Unit) {
+fun PrepareScreen(item: MediaItem, onClose: () -> Unit, onSendAsIs: () -> Unit) {
     BackHandler(onBack = onClose)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var picture by remember { mutableStateOf<Bitmap?>(null) }
-    var checking by remember { mutableStateOf(true) }
-    var findings by remember { mutableStateOf(emptyList<Finding>()) }
-    var off by remember { mutableStateOf(emptySet<Int>()) }
-    var manual by remember { mutableStateOf(emptyList<RectF>()) }
-    var location by remember { mutableStateOf(false) }
-    var preset by remember { mutableStateOf(Preset.ORIGINAL) }
+    var picture by remember(item.id) { mutableStateOf<Bitmap?>(null) }
+    var checking by remember(item.id) { mutableStateOf(true) }
+    var result by remember(item.id) { mutableStateOf(CheckResult.CHECKED) }
+    var findings by remember(item.id) { mutableStateOf(emptyList<Finding>()) }
+    var off by remember(item.id) { mutableStateOf(emptySet<Int>()) }
+    var manual by remember(item.id) { mutableStateOf(emptyList<RectF>()) }
+    var location by remember(item.id) { mutableStateOf(false) }
+    var preset by remember(item.id) { mutableStateOf(Preset.ORIGINAL) }
     var sending by remember { mutableStateOf(false) }
+    var checkJob by remember(item.id) { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
     LaunchedEffect(item.id) {
         picture = Images.full(context.contentResolver, item, 2048)
         location = Prepare.hasLocation(context, item)
-        val text = PhotoTextReader.read(context, item)
+    }
+    LaunchedEffect(item.id) {
+        checkJob = coroutineContext[kotlinx.coroutines.Job]
+        // At most a minute for one photo; "Stop" ends it sooner.
+        val text = kotlinx.coroutines.withTimeoutOrNull(60_000) { PhotoTextReader.read(context, item) }
+        result = when {
+            text == null -> CheckResult.FAILED
+            !text.complete -> CheckResult.PARTIAL
+            else -> CheckResult.CHECKED
+        }
         findings = text?.sensitive()?.map { (kind, words) ->
             val boxes = words.map { text.words[it].second.box }
             RectF(
@@ -100,6 +113,12 @@ fun PrepareScreen(item: MediaItem, onClose: () -> Unit) {
             ).let { Finding(kind, it) }
         }.orEmpty()
         checking = false
+    }
+
+    fun stopChecking() {
+        checkJob?.cancel()
+        checking = false
+        result = CheckResult.STOPPED
     }
 
     Column(Modifier.fillMaxSize().background(Color.Black)) {
@@ -145,8 +164,15 @@ fun PrepareScreen(item: MediaItem, onClose: () -> Unit) {
             if (checking) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                    Text(stringResource(R.string.prepare_checking), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        stringResource(R.string.prepare_checking),
+                        Modifier.padding(start = 8.dp).weight(1f),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    TextButton(onClick = ::stopChecking) { Text(stringResource(R.string.stop)) }
                 }
+            } else if (result == CheckResult.FAILED || result == CheckResult.STOPPED) {
+                Text(stringResource(R.string.prepare_not_checked), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             } else if (findings.isEmpty()) {
                 Text(stringResource(R.string.prepare_nothing_found), style = MaterialTheme.typography.bodySmall)
             } else {
@@ -157,6 +183,9 @@ fun PrepareScreen(item: MediaItem, onClose: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
+            if (result == CheckResult.PARTIAL) {
+                Text(stringResource(R.string.prepare_partial), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            }
             Text(stringResource(R.string.prepare_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 for (p in Preset.entries) {
@@ -166,10 +195,14 @@ fun PrepareScreen(item: MediaItem, onClose: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (manual.isNotEmpty()) {
                     TextButton(onClick = { manual = emptyList() }) { Text(stringResource(R.string.prepare_clear_manual)) }
+                } else {
+                    // The photo as it is (with the "several photos" location setting), without this screen.
+                    TextButton(onClick = onSendAsIs) { Text(stringResource(R.string.prepare_as_is)) }
                 }
                 androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
                 Button(
-                    enabled = picture != null && !sending,
+                    // Not while checking: what is found must be blacked out before anything is sent.
+                    enabled = picture != null && !sending && !checking,
                     onClick = {
                         sending = true
                         scope.launch {
@@ -275,12 +308,13 @@ private fun BlackOutLayer(
                         val r = RectF(minOf(d.first.x, d.second.x), minOf(d.first.y, d.second.y), maxOf(d.first.x, d.second.x), maxOf(d.first.y, d.second.y))
                         if (abs(r.width()) > 0.01f && abs(r.height()) > 0.005f) add(r)
                     } else {
-                        val fi = f.indexOfFirst { it.area.hit(start) }
-                        if (fi >= 0) {
-                            toggle(fi)
+                        // An area the person drew is on top: a tap removes it first.
+                        val mi = m.indexOfLast { it.hit(start, 0f) }
+                        if (mi >= 0) {
+                            remove(mi)
                         } else {
-                            val mi = m.indexOfLast { it.hit(start, 0f) }
-                            if (mi >= 0) remove(mi)
+                            val fi = f.indexOfFirst { it.area.hit(start) }
+                            if (fi >= 0) toggle(fi)
                         }
                     }
                 }

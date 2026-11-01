@@ -82,6 +82,9 @@
     <string name="prepare_nothing_found">No card or phone numbers, e-mail, IBAN, car plates or addresses found in the text. Check faces and places yourself.</string>
     <string name="prepare_hint">Tap a found detail to show or hide it. Drag a finger to black out any other area; tap it to remove.</string>
     <string name="prepare_clear_manual">Remove my areas</string>
+    <string name="prepare_not_checked">The text wasn\'t checked (stopped, took over a minute, or couldn\'t be read). Look the photo over yourself or black out areas by hand.</string>
+    <string name="prepare_partial">Only the top part of this very long screenshot was checked.</string>
+    <string name="prepare_as_is">Send as it is</string>
     <string name="kind_card">card number</string>
     <string name="kind_phone">phone</string>
     <string name="kind_email">e-mail</string>
@@ -95,10 +98,10 @@
     <string name="preset_telegram">Telegram</string>
 
     <string name="temp_screenshots">Temporary screenshots</string>
-    <string name="temp_screenshots_explain">Offers to move old screenshots to the trash (Android asks to confirm; restorable for about 30 days). "Keep" in the viewer saves one from it.</string>
+    <string name="temp_screenshots_explain">Offers to move old screenshots to the trash (Android asks to confirm; restorable for about 30 days). "Keep" in the viewer stops a screenshot from being offered.</string>
     <string name="later">Later</string>
     <string name="keep">Keep</string>
-    <string name="kept">Kept</string>
+    <string name="kept">Don\'t keep</string>
 
     <string name="settings_language">Language</string>
     <string name="change_language">Change the app language</string>

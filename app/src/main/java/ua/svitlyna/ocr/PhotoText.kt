@@ -22,7 +22,13 @@ import kotlin.math.min
  * The text on one photo, with where each word is. Positions are in a picture of [width] × [height]
  * (the photo scaled down, the right way up), so the viewer can draw them over the photo it shows.
  */
-class PhotoText(val width: Int, val height: Int, val lines: List<OcrLine>) {
+class PhotoText(
+    val width: Int,
+    val height: Int,
+    val lines: List<OcrLine>,
+    /** False when a very long screenshot was read only in part (its top). */
+    val complete: Boolean = true,
+) {
     /** Every word with its line, in reading order. */
     val words: List<Pair<OcrLine, OcrWord>> = lines.flatMap { l -> l.words.map { l to it } }
 
@@ -34,7 +40,7 @@ class PhotoText(val width: Int, val height: Int, val lines: List<OcrLine>) {
         val out = ArrayList<Pair<Sensitive.Kind, List<Int>>>()
         val byGroup = LinkedHashMap<Int, MutableList<Int>>()
         words.forEachIndexed { i, (line, _) -> byGroup.getOrPut(line.group) { mutableListOf() } += i }
-        for (indices in byGroup.values) {
+        fun check(indices: List<Int>) {
             val sb = StringBuilder()
             val spans = ArrayList<IntRange>()
             for (i in indices) {
@@ -45,9 +51,13 @@ class PhotoText(val width: Int, val height: Int, val lines: List<OcrLine>) {
             }
             for (f in Sensitive.find(sb.toString())) {
                 val covered = indices.filterIndexed { k, _ -> spans[k].first <= f.range.last && f.range.first <= spans[k].last }
-                if (covered.isNotEmpty()) out += f.kind to covered
+                if (covered.isNotEmpty() && out.none { it.second.containsAll(covered) }) out += f.kind to covered
             }
         }
+        val lines = byGroup.values.toList()
+        lines.forEach { check(it) }
+        // A detail split over two lines ("вул. Хрещатик," / "22"): each pair of neighbouring lines too.
+        for (k in 0 until lines.size - 1) check(lines[k] + lines[k + 1])
         return out
     }
 
@@ -144,6 +154,7 @@ object PhotoTextReader {
                 var top = 0
                 var n = 0
                 var groupBase = 0
+                var reachedEnd = false
                 while (top < h && n < MAX_TILES) {
                     coroutineContext.ensureActive()
                     val bottom = min(h, top + tile)
@@ -173,13 +184,16 @@ object PhotoTextReader {
                             part.recycle()
                         }
                     }
-                    if (bottom >= h) break
+                    if (bottom >= h) {
+                        reachedEnd = true
+                        break
+                    }
                     top += tile - OVERLAP
                     n++
                 }
                 // The parts read cover at most MAX_TILES × the tile height; the rest of a very long
                 // screenshot is not read (the viewer shows the same scaled picture).
-                PhotoText(w / sample, h / sample, lines)
+                PhotoText(w / sample, h / sample, lines, complete = reachedEnd)
             } finally {
                 decoder.recycle()
             }

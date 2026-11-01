@@ -10,11 +10,19 @@ object Sensitive {
 
     data class Found(val kind: Kind, val range: IntRange)
 
-    // Card: 13–19 digits, maybe in groups of 4 with spaces or dashes; checked with the Luhn sum.
-    private val CARD = Regex("""(?<!\d)(?:\d[ -]?){12,18}\d(?!\d)""")
+    // A run of digits with spaces or dashes; card numbers are looked for inside it (expiry dates,
+    // CVV or amounts next to the number don't hide it).
+    private val DIGIT_RUN = Regex("""(?<!\d)\d(?:[ -]?\d){12,}(?!\d)""")
+
+    // Four groups of four digits: blacked out even if the check sum fails (a misread digit).
+    private val CARD_4X4 = Regex("""(?<!\d)\d{4}[ -]\d{4}[ -]\d{4}[ -]\d{4}(?!\d)""")
 
     // Phone: +380 / 380 / 0 and nine digits (Ukrainian), or any + and 10–14 digits; separators allowed.
-    private val PHONE = Regex("""(?<![\d+])(?:\+?38[\s-]?)?\(?0\d{2}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}(?!\d)|(?<![\d+])\+\d(?:[\s-]?\d){9,13}(?!\d)""")
+    private val PHONE = Regex(
+        """(?<![\d+])(?:\+?38[\s-]?)?\(?0\d{2}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}(?!\d)""" +
+            """|(?<![\d+])\+?380[\s-]?\(?\d{2}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}(?!\d)""" +
+            """|(?<![\d+])\+\d(?:[\s-]?\d){9,13}(?!\d)""",
+    )
 
     private val EMAIL = Regex("""[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.\p{L}{2,}""")
 
@@ -26,7 +34,8 @@ object Sensitive {
 
     // Address: a street word, a name, and a house number.
     private val ADDRESS = Regex(
-        """(?iu)(?<!\p{L})(?:вул\.?|вулиця|просп\.?|проспект|пров\.?|провулок|бульв\.?|бульвар|пл\.|площа|наб\.|набережна|str\.?|street|st\.|ave\.?|avenue|ul\.)\s+[\p{L}'’.\- ]{2,40}?,?\s*\d+[\p{L}]?(?:/\d+)?""",
+        """(?iu)(?<!\p{L})(?:(?:вул|просп|пров|бульв|пл|наб|str|st|ave|ul)\.\s*|(?:вулиця|вул|проспект|провулок|бульвар|площа|набережна|street|avenue)\s+)""" +
+            """[\p{L}'’.\- ]{2,40}?,?\s*(?:буд\.\s*)?\d+[\p{L}]?(?:/\d+)?""",
     )
 
     fun find(text: String): List<Found> {
@@ -35,13 +44,51 @@ object Sensitive {
             if (out.none { it.range.first <= r.last && r.first <= it.range.last }) out += Found(kind, r)
         }
         // Most specific first, so a card number isn't also reported as a phone.
-        IBAN.findAll(text).forEach { m -> if (ibanValid(m.value)) add(Kind.IBAN, m.range) }
-        CARD.findAll(text).forEach { m -> if (luhn(m.value)) add(Kind.CARD, m.range) }
+        IBAN.findAll(text).forEach { m -> ibanIn(m.value)?.let { r -> add(Kind.IBAN, (m.range.first + r.first)..(m.range.first + r.last)) } }
+        // Recognition may read 0 as O or 1 as l: such letters between digits count as digits.
+        val digits = lookalikesAsDigits(text)
+        DIGIT_RUN.findAll(digits).forEach { m -> cardIn(m.value)?.let { r -> add(Kind.CARD, (m.range.first + r.first)..(m.range.first + r.last)) } }
+        CARD_4X4.findAll(digits).forEach { add(Kind.CARD, it.range) }
         EMAIL.findAll(text).forEach { add(Kind.EMAIL, it.range) }
         PHONE.findAll(text).forEach { add(Kind.PHONE, it.range) }
         PLATE.findAll(text).forEach { add(Kind.PLATE, it.range) }
         ADDRESS.findAll(text).forEach { add(Kind.ADDRESS, it.range) }
         return out.sortedBy { it.range.first }
+    }
+
+    /** The longest card number (13–19 digits passing Luhn) inside a run of digits, as a range in it. */
+    private fun cardIn(run: String): IntRange? {
+        val pos = run.indices.filter { run[it].isDigit() }
+        for (len in 19 downTo 13) {
+            for (start in 0..pos.size - len) {
+                val digits = String(CharArray(len) { run[pos[start + it]] })
+                if (luhn(digits)) return pos[start]..pos[start + len - 1]
+            }
+        }
+        return null
+    }
+
+    /** The IBAN at the start of a match, without anything stuck after it (like "UAH"). */
+    private fun ibanIn(m: String): IntRange? {
+        val pos = m.indices.filter { m[it] != ' ' }
+        for (len in minOf(34, pos.size) downTo 15) {
+            val candidate = String(CharArray(len) { m[pos[it]] })
+            if (ibanValid(candidate)) return pos[0]..pos[len - 1]
+        }
+        return null
+    }
+
+    private const val LOOKALIKES = "OoОоlI|"
+
+    /** Same length as [text]: O, o → 0 and l, I, | → 1 where a digit is right before or after. */
+    fun lookalikesAsDigits(text: String): String {
+        val c = text.toCharArray()
+        for (i in c.indices) {
+            if (c[i] !in LOOKALIKES) continue
+            val near = (i > 0 && text[i - 1].isDigit()) || (i + 1 < text.length && text[i + 1].isDigit())
+            if (near) c[i] = if (c[i] in "OoОо") '0' else '1'
+        }
+        return String(c)
     }
 
     fun luhn(s: String): Boolean {

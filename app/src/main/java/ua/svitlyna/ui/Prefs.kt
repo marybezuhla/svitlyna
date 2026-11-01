@@ -40,6 +40,11 @@ class Prefs(context: Context) {
         get() = p.getInt("temp_days", 30)
         set(v) = p.edit().putInt("temp_days", v).apply()
 
+    /** "Later" on the old-screenshots offer: not shown again until then (ms). */
+    var tempLaterUntil: Long
+        get() = p.getLong("temp_later_until", 0)
+        set(v) = p.edit().putLong("temp_later_until", v).apply()
+
     /** Screenshots marked "keep": never offered for the trash. */
     var keptScreenshots: Set<Long>
         get() = p.getStringSet("kept_screenshots", emptySet())!!.mapNotNull { it.toLongOrNull() }.toSet()
