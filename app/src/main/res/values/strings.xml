@@ -103,6 +103,16 @@
     <string name="keep">Keep</string>
     <string name="kept">Don\'t keep</string>
 
+    <string name="stitch">Stitch</string>
+    <string name="stitching">Stitching the screenshots…</string>
+    <string name="stitch_saved">Long screenshot saved next to the first one</string>
+    <string name="open">Open</string>
+    <string name="stitch_no_overlap_title">No common part found</string>
+    <string name="stitch_no_overlap">These screenshots don\'t seem to overlap (take each one so it shows a bit of the previous one). Put them simply one under the other?</string>
+    <string name="stitch_stack">One under the other</string>
+    <string name="stitch_too_tall">Too long for one picture: try fewer screenshots.</string>
+    <string name="stitch_failed">Couldn\'t make the long screenshot.</string>
+
     <string name="settings_language">Language</string>
     <string name="change_language">Change the app language</string>
 

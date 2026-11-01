@@ -58,6 +58,7 @@ import ua.svitlyna.R
 import ua.svitlyna.media.Folder
 import ua.svitlyna.media.MediaItem
 import ua.svitlyna.media.Share
+import ua.svitlyna.edit.StitchMaker
 import ua.svitlyna.media.Timeline
 import ua.svitlyna.screenshots.Screenshots
 
@@ -218,6 +219,35 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
         if (items.isNotEmpty()) confirmDelete = items
     }
 
+    // Stitching screenshots into one long one: runs in the background with a Stop button.
+    var stitching by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    var askStack by remember { mutableStateOf<List<MediaItem>?>(null) }
+    fun canStitch(items: List<MediaItem>) = items.size >= 2 && items.all { !it.isVideo } &&
+        items.map { it.width }.distinct().size == 1 && items.map { it.height }.distinct().size == 1
+    fun stitch(items: List<MediaItem>, stack: Boolean) {
+        stitching = scope.launch {
+            val result = StitchMaker.make(context, items, stack)
+            stitching = null
+            when (result) {
+                is StitchMaker.Result.Saved -> {
+                    selected = emptySet()
+                    val id = result.uri.lastPathSegment?.toLongOrNull()
+                    val open = snackbar.showSnackbar(
+                        context.getString(R.string.stitch_saved),
+                        actionLabel = context.getString(R.string.open),
+                        duration = androidx.compose.material3.SnackbarDuration.Long,
+                    )
+                    if (open == androidx.compose.material3.SnackbarResult.ActionPerformed && id != null) {
+                        openRequest?.value = OpenRequest(id, readText = false)
+                    }
+                }
+                StitchMaker.Result.NoOverlap -> askStack = items
+                StitchMaker.Result.TooTall -> snackbar.showSnackbar(context.getString(R.string.stitch_too_tall))
+                StitchMaker.Result.Failed -> snackbar.showSnackbar(context.getString(R.string.stitch_failed))
+            }
+        }
+    }
+
     fun doShare(items: List<MediaItem>, clean: Boolean) {
         scope.launch {
             val prepared = Share.prepare(context, items, clean)
@@ -292,6 +322,11 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                                 Icon(Icons.Filled.Delete, stringResource(R.string.delete_for_good))
                             }
                         } else {
+                            if (canStitch(selectedItems)) {
+                                TextButton(enabled = stitching == null, onClick = { stitch(selectedItems, stack = false) }) {
+                                    Text(stringResource(R.string.stitch))
+                                }
+                            }
                             IconButton(onClick = { share(selectedItems) }) { Icon(Icons.Filled.Share, stringResource(R.string.share)) }
                             IconButton(onClick = { trash(selectedItems, toTrash = true) }) {
                                 Icon(Icons.Filled.Delete, stringResource(R.string.move_to_trash))
@@ -480,6 +515,29 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                     Text(stringResource(R.string.share_as_is))
                 }
             },
+        )
+    }
+
+    stitching?.let { job ->
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text(stringResource(R.string.stitching)) },
+            text = { androidx.compose.material3.LinearProgressIndicator(Modifier.padding(top = 8.dp)) },
+            confirmButton = {
+                TextButton(onClick = { job.cancel(); stitching = null }) { Text(stringResource(R.string.stop)) }
+            },
+        )
+    }
+
+    askStack?.let { items ->
+        AlertDialog(
+            onDismissRequest = { askStack = null },
+            title = { Text(stringResource(R.string.stitch_no_overlap_title)) },
+            text = { Text(stringResource(R.string.stitch_no_overlap)) },
+            confirmButton = {
+                TextButton(onClick = { askStack = null; stitch(items, stack = true) }) { Text(stringResource(R.string.stitch_stack)) }
+            },
+            dismissButton = { TextButton(onClick = { askStack = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 
