@@ -115,4 +115,22 @@
     <string name="sv_widget_empty">Цього дня фото поки немає</string>
     <string name="widget_description">Фото, зроблені цього дня в минулі роки</string>
     <string name="sv_vault_with_confirm">Перенести, Android спитає</string>
+<string name="sv_temp_screenshots">Тимчасові скріншоти</string>
+    <string name="sv_temp_screenshots_explain">Пропонує перенести старі скріншоти в кошик (Android перепитає). «Залишити» в меню фото не дає пропонувати цей скріншот.</string>
+    <string name="sv_later">Пізніше</string>
+    <string name="sv_to_trash">У кошик</string>
+    <string name="sv_keep">Залишити</string>
+    <string name="sv_unkeep">Не залишати</string>
+    <plurals name="sv_old_screenshots">
+        <item quantity="one">%1$d скріншот старший за %2$d дн.</item>
+        <item quantity="few">%1$d скріншоти старші за %2$d дн.</item>
+        <item quantity="many">%1$d скріншотів старші за %2$d дн.</item>
+        <item quantity="other">%1$d скріншота старші за %2$d дн.</item>
+    </plurals>
+    <plurals name="sv_after_days">
+        <item quantity="one">%d день</item>
+        <item quantity="few">%d дні</item>
+        <item quantity="many">%d днів</item>
+        <item quantity="other">%d дня</item>
+    </plurals>
 </resources>

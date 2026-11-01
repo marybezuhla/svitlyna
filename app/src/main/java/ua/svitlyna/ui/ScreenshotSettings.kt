@@ -59,6 +59,21 @@ fun ScreenshotSettings() {
             cropNav = on
             prefs.cropNavigation = on
         }
+        remember { TempShots.load(context); true }
+        Toggle(stringResource(R.string.sv_temp_screenshots), stringResource(R.string.sv_temp_screenshots_explain), TempShots.enabled) { on ->
+            TempShots.setEnabled(context, on)
+        }
+        if (TempShots.enabled) {
+            Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                for (d in listOf(7, 30, 90)) {
+                    androidx.compose.material3.FilterChip(
+                        selected = TempShots.days == d,
+                        onClick = { TempShots.setDays(context, d) },
+                        label = { Text(androidx.compose.ui.res.pluralStringResource(R.plurals.sv_after_days, d, d)) },
+                    )
+                }
+            }
+        }
     }
 }
 
