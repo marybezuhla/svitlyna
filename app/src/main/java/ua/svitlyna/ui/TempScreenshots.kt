@@ -68,30 +68,29 @@ object TempShots {
         Prefs(context).tempLaterUntil = laterUntil
     }
 
-    /** Marks of screenshots that are gone are dropped, so the list does not only grow. */
-    fun forget(context: Context, present: Collection<MediaImage>) {
-        if (kept.isEmpty()) return
-        val ids = present.mapTo(HashSet()) { it.id }
-        val still = kept.filterTo(HashSet()) { it in ids }
-        if (still.size != kept.size) {
-            kept = still
-            Prefs(context).keptScreenshots = still
+    // "Keep" marks are a few numbers each; they are never pruned from a partial list (a filtered
+    // or still-loading one would wipe them and offer kept screenshots again).
+
+    /** Screenshots (not screen recordings, not favourites) older than the chosen days. */
+    fun old(images: List<MediaImage>, favorites: Set<Long>, now: Long = System.currentTimeMillis()): List<MediaImage> {
+        if (!enabled) return emptyList()
+        val limit = now - days * 86_400_000L
+        return images.filter {
+            it.id > 0 && !it.isVideo && it.isScreenshot && it.dateTaken in 1 until limit && it.id !in kept && it.id !in favorites
         }
     }
 
-    fun old(images: List<MediaImage>, now: Long = System.currentTimeMillis()): List<MediaImage> {
-        if (!enabled) return emptyList()
-        val limit = now - days * 86_400_000L
-        return images.filter { it.id > 0 && it.isScreenshot && it.dateTaken in 1 until limit && it.id !in kept }
-    }
-
     /** For the viewer: null when this is not a screenshot or the option is off. */
-    fun isKept(item: MediaImage): Boolean? = if (enabled && item.isScreenshot && item.id > 0) item.id in kept else null
+    fun isKept(context: Context, item: MediaImage): Boolean? {
+        load(context)
+        return if (enabled && !item.isVideo && item.isScreenshot && item.id > 0) item.id in kept else null
+    }
 }
 
 @Composable
 fun BoxScope.TempScreenshotsBanner(
     images: List<MediaImage>,
+    favorites: Set<Long>,
     visible: Boolean,
     padding: PaddingValues,
     onTrash: (List<MediaImage>) -> Unit,
@@ -101,10 +100,7 @@ fun BoxScope.TempScreenshotsBanner(
     val enabled = TempShots.enabled
     val days = TempShots.days
     val kept = TempShots.kept
-    val old = remember(images, enabled, days, kept) {
-        TempShots.forget(context, images)
-        TempShots.old(images)
-    }
+    val old = remember(images, favorites, enabled, days, kept) { TempShots.old(images, favorites) }
     var hidden by remember { mutableStateOf(false) }
     if (!visible || hidden || old.isEmpty() || System.currentTimeMillis() < TempShots.laterUntil) return
     Surface(

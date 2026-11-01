@@ -3,7 +3,6 @@
 **Нове в 0.5.1**
 - 🗑️ **Тимчасові скріншоти** повернулися: старі скріншоти (7, 30 чи 90 днів) пропонуються в кошик одним дотиком, Android перепитує. «Залишити» в меню фото — щоб скріншот не пропонувався. Вмикається в налаштуваннях скріншотів.
 - 🗄️ **Сейф без слідів:** у файлів сейфу тепер випадкові назви, а перелік (назви, папки, дати) зашифрований. Наявні файли переписуються самі у фоні, нічого не губиться.
-- 🔒 **Блокування більше не закриває екрани:** після розблокування відкрите фото чи альбом лишаються на місці.
 - 🛡️ Надійніші сейф, кошик і редагування поверх оригіналу: якщо щось зірветься, оригінал зберігається окремим фото.
 
 Інтерфейс і більшість функцій — з [Iris Gallery](https://github.com/MohamadOday/iris-gallery) (Mohamad Oday, Apache 2.0). Потрібен Android 11 або новіший. Помилки й побажання — в Issues.
@@ -17,7 +16,6 @@
 **New in 0.5.1**
 - 🗑️ **Temporary screenshots** are back: old screenshots (7, 30 or 90 days) are offered for the trash with one tap, Android asks to confirm. "Keep" in the photo menu stops a screenshot from being offered. Switch it on in the screenshot settings.
 - 🗄️ **A vault without traces:** vault files now have random names, and the list (names, folders, dates) is encrypted. Existing files are rewritten in the background; nothing is lost.
-- 🔒 **The lock no longer closes screens:** after unlocking, the open photo or album is still there.
 - 🛡️ Sturdier vault, trash and editing over the original: if something fails, the original is saved as a separate photo.
 
 The interface and most features come from [Iris Gallery](https://github.com/MohamadOday/iris-gallery) (Mohamad Oday, Apache 2.0). Requires Android 11 or newer. Bugs and wishes: Issues.

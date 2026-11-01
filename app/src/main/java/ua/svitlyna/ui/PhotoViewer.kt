@@ -868,7 +868,7 @@ internal fun PhotoViewer(
                             // Svitlyna: check before sending (card numbers, phones, addresses… blacked
                             // out), sizes for social networks, a copy without metadata.
                             // Svitlyna: "Keep" takes a screenshot out of the temporary-screenshots offer.
-                            TempShots.isKept(current)?.let { isKept ->
+                            TempShots.isKept(context, current)?.let { isKept ->
                                 DropdownMenuItem(
                                     text = { Text(stringResource(if (isKept) R.string.sv_unkeep else R.string.sv_keep)) },
                                     leadingIcon = { Icon(Icons.Outlined.PushPin, null) },
