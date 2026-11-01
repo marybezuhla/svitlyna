@@ -3,7 +3,7 @@ package ua.svitlyna.ui
 import android.os.Build
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -22,7 +22,7 @@ import ua.svitlyna.media.Share
 import ua.svitlyna.screenshots.Bars
 import ua.svitlyna.screenshots.Screenshots
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     companion object {
         const val EXTRA_OPEN_ID = "open_id"
         const val EXTRA_READ_TEXT = "read_text"
@@ -34,6 +34,10 @@ class MainActivity : ComponentActivity() {
     /** A photo to open (from a screenshot hint), and whether to read its text right away. */
     val openRequest = mutableStateOf<OpenRequest?>(null)
 
+    /** App lock: true while the fingerprint/PIN hasn't been given. */
+    val locked = mutableStateOf(false)
+    private var leftAt = 0L
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -43,7 +47,38 @@ class MainActivity : ComponentActivity() {
         // Reopened from the recent apps after the process was gone: the old request is not repeated.
         if (savedInstanceState == null && intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY == 0) takeRequest(intent)
         measureBars()
-        setContent { SvitlynaTheme { App(openRequest = openRequest) } }
+        val prefs = Prefs(this)
+        locked.value = prefs.appLock
+        AppLock.applyRecents(this, prefs.appLock)
+        setContent {
+            SvitlynaTheme(amoled = prefs.amoled) {
+                if (locked.value) {
+                    LockScreen(onUnlock = { AppLock.ask(this) { unlocked() } })
+                } else {
+                    App(openRequest = openRequest)
+                }
+            }
+        }
+    }
+
+    private fun unlocked() {
+        locked.value = false
+        // The PIN screen itself takes the app to the background: that doesn't count as leaving.
+        leftAt = 0
+    }
+
+    override fun onStop() {
+        super.onStop()
+        leftAt = android.os.SystemClock.elapsedRealtime()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val prefs = Prefs(this)
+        if (prefs.appLock && leftAt > 0 && android.os.SystemClock.elapsedRealtime() - leftAt > AppLock.GRACE_MS) {
+            locked.value = true
+        }
+        if (locked.value) AppLock.ask(this) { unlocked() }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -99,7 +134,7 @@ private val DarkColors = darkColorScheme(
 )
 
 @Composable
-fun SvitlynaTheme(content: @Composable () -> Unit) {
+fun SvitlynaTheme(amoled: Boolean = false, content: @Composable () -> Unit) {
     val dark = isSystemInDarkTheme()
     val context = LocalContext.current
     // Colours follow the wallpaper on Android 12+ (Material You), as in the other apps on the phone.
@@ -108,6 +143,6 @@ fun SvitlynaTheme(content: @Composable () -> Unit) {
         Build.VERSION.SDK_INT >= 31 -> dynamicLightColorScheme(context)
         dark -> DarkColors
         else -> LightColors
-    }
+    }.let { c -> if (dark && amoled) c.copy(background = Color.Black, surface = Color.Black) else c }
     MaterialTheme(colorScheme = colors, content = content)
 }

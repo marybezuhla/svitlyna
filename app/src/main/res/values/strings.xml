@@ -192,6 +192,39 @@
     <string name="folder_shown">"%1$s" is back in the timeline</string>
     <string name="folder_hidden_mark">hidden</string>
 
+    <string name="dupes">Duplicates</string>
+    <string name="dupes_explain">Finds files that are exactly the same (the same photo saved twice, from two messengers…). Only files of equal size are compared; nothing is changed until you choose.</string>
+    <string name="dupes_find">Look for duplicates</string>
+    <string name="dupes_checking">Checking %1$d of %2$d…</string>
+    <string name="dupes_none">No duplicates found.</string>
+    <string name="dupes_trash">Move the extra copies to the trash</string>
+    <string name="dupes_keep">Kept</string>
+    <string name="dupes_extra">Copy</string>
+    <string name="settings_look">Look</string>
+    <string name="amoled">Pure black in dark mode</string>
+    <string name="amoled_explain">Saves battery on OLED screens.</string>
+    <string name="start_tab">Open on</string>
+    <string name="settings_lock">Lock</string>
+    <string name="app_lock">Lock the app</string>
+    <string name="app_lock_explain">Opening Svitlyna asks for your fingerprint or the phone\'s PIN (Android checks it; Svitlyna never sees it). Within half a minute it doesn\'t ask again. The app is hidden in recent apps.</string>
+    <string name="app_lock_no_screen_lock">Set a PIN, pattern or fingerprint for the phone first.</string>
+    <string name="lock_title">Open Svitlyna</string>
+    <string name="lock_open">Unlock</string>
+    <string name="rename">Rename</string>
+    <string name="edit_elsewhere">Edit in another app</string>
+    <string name="to_folder">To folder</string>
+    <string name="new_folder">New folder</string>
+    <string name="copy_here">Copy</string>
+    <string name="move_here">Move</string>
+    <string name="folder_pin">Pin to the top</string>
+    <string name="folder_unpin">Unpin</string>
+    <string name="folder_hide">Hide from the timeline</string>
+    <string name="folder_show">Show in the timeline</string>
+    <string name="sort_newest">Newest</string>
+    <string name="sort_name">Name</string>
+    <string name="sort_biggest">Biggest</string>
+    <string name="filter_favorites">♥ Favourites</string>
+
     <string name="settings_language">Language</string>
     <string name="change_language">Change the app language</string>
 
@@ -233,6 +266,18 @@
     <plurals name="fix_dates_found">
         <item quantity="one">%d photo can get its date from its name.</item>
         <item quantity="other">%d photos can get their date from their name.</item>
+    </plurals>
+    <plurals name="dupes_found">
+        <item quantity="one">%1$d extra copy, %2$s.</item>
+        <item quantity="other">%1$d extra copies, %2$s.</item>
+    </plurals>
+    <plurals name="copied_n">
+        <item quantity="one">Copied %d</item>
+        <item quantity="other">Copied %d</item>
+    </plurals>
+    <plurals name="moved_n">
+        <item quantity="one">Moved %d</item>
+        <item quantity="other">Moved %d</item>
     </plurals>
     <plurals name="items">
         <item quantity="one">%d item</item>

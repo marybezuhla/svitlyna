@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.exifinterface.media.ExifInterface
 
 /** What kind of picture an item is, for the timeline filters (rules adapted from Iris Gallery). */
-enum class Filter { ALL, PHOTOS, VIDEOS, SCREENSHOTS, GIF, RAW, PANORAMAS }
+enum class Filter { ALL, FAVORITES, PHOTOS, VIDEOS, SCREENSHOTS, GIF, RAW, PANORAMAS }
 
 private val RAW_EXT = listOf(".dng", ".cr2", ".cr3", ".nef", ".arw", ".orf", ".raf", ".rw2", ".pef", ".srw")
 
@@ -21,6 +21,7 @@ val MediaItem.isPanorama: Boolean
 
 fun MediaItem.matches(filter: Filter): Boolean = when (filter) {
     Filter.ALL -> true
+    Filter.FAVORITES -> isFavorite
     Filter.PHOTOS -> !isVideo
     Filter.VIDEOS -> isVideo
     Filter.SCREENSHOTS -> isScreenshot

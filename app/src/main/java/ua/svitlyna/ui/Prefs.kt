@@ -50,6 +50,39 @@ class Prefs(context: Context) {
         get() = p.getStringSet("kept_screenshots", emptySet())!!.mapNotNull { it.toLongOrNull() }.toSet()
         set(v) = p.edit().putStringSet("kept_screenshots", v.map { it.toString() }.toSet()).apply()
 
+    /** Folders pinned to the top of Folders. */
+    var pinnedFolders: Set<Long>
+        get() = p.getStringSet("pinned_folders", emptySet())!!.mapNotNull { it.toLongOrNull() }.toSet()
+        set(v) = p.edit().putStringSet("pinned_folders", v.map { it.toString() }.toSet()).apply()
+
+    /** 0: newest first, 1: by name, 2: biggest first. */
+    var folderSort: Int
+        get() = p.getInt("folder_sort", 0)
+        set(v) = p.edit().putInt("folder_sort", v).apply()
+
+    /** Pure black backgrounds in the dark theme (saves power on OLED screens). */
+    var amoled: Boolean
+        get() = p.getBoolean("amoled", false)
+        set(v) = p.edit().putBoolean("amoled", v).apply()
+
+    /** Which tab opens first: 0 photos, 1 folders. */
+    var startTab: Int
+        get() = p.getInt("start_tab", 0)
+        set(v) = p.edit().putInt("start_tab", v).apply()
+
+    /** Ask for the fingerprint or the phone's PIN to open the app. */
+    var appLock: Boolean
+        get() = p.getBoolean("app_lock", false)
+        set(v) = p.edit().putBoolean("app_lock", v).apply()
+
+    /** Where each video was stopped (id → ms), for the last few videos. */
+    fun videoPosition(id: Long): Long = p.getLong("vpos_$id", 0)
+    fun setVideoPosition(id: Long, ms: Long) {
+        val e = p.edit()
+        if (ms <= 0) e.remove("vpos_$id") else e.putLong("vpos_$id", ms)
+        e.apply()
+    }
+
     /** Folders hidden from the timeline (still in Folders). */
     var hiddenFolders: Set<Long>
         get() = p.getStringSet("hidden_folders", emptySet())!!.mapNotNull { it.toLongOrNull() }.toSet()

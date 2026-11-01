@@ -80,6 +80,9 @@ fun AccessScreen(onRequest: () -> Unit, contentPadding: PaddingValues) {
 fun FoldersScreen(
     folders: List<Folder>,
     hidden: Set<Long>,
+    pinned: Set<Long>,
+    sort: Int,
+    onSort: (Int) -> Unit,
     onOpen: (Folder) -> Unit,
     onHide: (Folder) -> Unit,
     contentPadding: PaddingValues,
@@ -94,6 +97,13 @@ fun FoldersScreen(
         ),
         modifier = Modifier.fillMaxSize(),
     ) {
+        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(horizontal = 6.dp)) {
+                listOf(R.string.sort_newest, R.string.sort_name, R.string.sort_biggest).forEachIndexed { i, label ->
+                    androidx.compose.material3.FilterChip(selected = sort == i, onClick = { onSort(i) }, label = { Text(stringResource(label)) })
+                }
+            }
+        }
         items(folders, key = { it.id }) { folder ->
             Column(
                 Modifier
@@ -111,7 +121,7 @@ fun FoldersScreen(
                     modifier = Modifier.padding(top = 6.dp, start = 2.dp),
                 )
                 Text(
-                    pluralStringResource(R.plurals.items, folder.count, folder.count) +
+                    (if (folder.id in pinned) "📌 " else "") + pluralStringResource(R.plurals.items, folder.count, folder.count) +
                         if (folder.id in hidden) " · " + stringResource(R.string.folder_hidden_mark) else "",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(start = 2.dp, bottom = 4.dp),
@@ -200,6 +210,7 @@ fun SettingsScreen(
     screenshots: ScreenshotSettings,
     onFixDates: () -> Unit,
     fixDatesCount: Int,
+    onDuplicates: () -> Unit,
     contentPadding: PaddingValues,
 ) {
     val context = LocalContext.current
@@ -297,6 +308,44 @@ fun SettingsScreen(
         Text(pluralStringResource(R.plurals.fix_dates_found, fixDatesCount, fixDatesCount), style = MaterialTheme.typography.bodySmall)
         OutlinedButton(onClick = onFixDates) { Text(stringResource(R.string.fix_dates_open)) }
 
+        OutlinedButton(onClick = onDuplicates) { Text(stringResource(R.string.dupes)) }
+
+        HorizontalDivider()
+        Section(stringResource(R.string.settings_look))
+        val prefs = androidx.compose.runtime.remember { Prefs(context) }
+        var amoled by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(prefs.amoled) }
+        SwitchRow(stringResource(R.string.amoled), stringResource(R.string.amoled_explain), amoled, { on ->
+            amoled = on
+            prefs.amoled = on
+            (context as? android.app.Activity)?.recreate()
+        })
+        var startTab by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(prefs.startTab) }
+        Text(stringResource(R.string.start_tab), style = MaterialTheme.typography.bodyMedium)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(R.string.photos, R.string.folders).forEachIndexed { i, label ->
+                androidx.compose.material3.FilterChip(selected = startTab == i, onClick = { startTab = i; prefs.startTab = i }, label = { Text(stringResource(label)) })
+            }
+        }
+
+        HorizontalDivider()
+        Section(stringResource(R.string.settings_lock))
+        var lock by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(prefs.appLock) }
+        var noLockScreen by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+        SwitchRow(stringResource(R.string.app_lock), stringResource(R.string.app_lock_explain), lock, { on ->
+            val activity = context as? androidx.fragment.app.FragmentActivity ?: return@SwitchRow
+            if (on && !AppLock.deviceSecure(activity)) {
+                noLockScreen = true
+                return@SwitchRow
+            }
+            // Turning it on or off is confirmed with the fingerprint or PIN itself.
+            AppLock.ask(activity) {
+                lock = on
+                prefs.appLock = on
+                AppLock.applyRecents(activity, on)
+            }
+        })
+        if (noLockScreen) Text(stringResource(R.string.app_lock_no_screen_lock), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+
         Access.languageSettings(context)?.let { intent ->
             HorizontalDivider()
             Section(stringResource(R.string.settings_language))
@@ -324,3 +373,64 @@ private fun Section(title: String) {
 
 private const val SOURCE_URL = "https://github.com/Marybezu/svitlyna"
 private const val CERTIFICATE = "53027b1a87085eb9e40a74820ff2aa067dd3350a0e3010a8f6c559e04a628630"
+
+/**
+ * Where to move or copy photos: an existing folder or a new one (Pictures/<name>). Moving asks
+ * Android first; copying makes new files and keeps the originals where they are.
+ */
+@Composable
+fun FolderPickDialog(folders: List<Folder>, onDismiss: () -> Unit, onPick: (path: String, copy: Boolean) -> Unit) {
+    var chosen by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    var newName by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    val target = if (newName.isNotBlank()) ua.svitlyna.media.FileOps.newFolderPath(newName) else chosen
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.to_folder)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                androidx.compose.material3.OutlinedTextField(
+                    value = newName,
+                    onValueChange = { newName = it },
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.new_folder)) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                folders.forEach { f ->
+                    val path = f.cover.relativePath
+                    if (path.isBlank()) return@forEach
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { chosen = path; newName = "" }
+                            .padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        androidx.compose.material3.RadioButton(selected = newName.isBlank() && chosen == path, onClick = { chosen = path; newName = "" })
+                        Text(f.name.ifBlank { path }, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Row {
+                TextButton(enabled = target != null, onClick = { target?.let { onPick(it, true) } }) { Text(stringResource(R.string.copy_here)) }
+                TextButton(enabled = target != null, onClick = { target?.let { onPick(it, false) } }) { Text(stringResource(R.string.move_here)) }
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+/** Shown instead of the gallery while the app is locked. */
+@Composable
+fun LockScreen(onUnlock: () -> Unit) {
+    Column(
+        Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium)
+        Spacer(Modifier.height(24.dp))
+        Button(onClick = onUnlock) { Text(stringResource(R.string.lock_open)) }
+    }
+}
