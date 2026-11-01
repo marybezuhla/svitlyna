@@ -105,4 +105,18 @@
     <string name="sv_widget_header">SVITLYNA  ·  THIS DAY</string>
     <string name="sv_widget_empty">No photos from this day yet</string>
     <string name="sv_vault_with_confirm">Move, Android will ask</string>
+<string name="sv_temp_screenshots">Temporary screenshots</string>
+    <string name="sv_temp_screenshots_explain">Offers to move old screenshots to the trash (Android asks to confirm). "Keep" in the photo menu stops a screenshot from being offered.</string>
+    <string name="sv_later">Later</string>
+    <string name="sv_to_trash">To trash</string>
+    <string name="sv_keep">Keep</string>
+    <string name="sv_unkeep">Don\'t keep</string>
+    <plurals name="sv_old_screenshots">
+        <item quantity="one">%1$d screenshot older than %2$d days</item>
+        <item quantity="other">%1$d screenshots older than %2$d days</item>
+    </plurals>
+    <plurals name="sv_after_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
 </resources>

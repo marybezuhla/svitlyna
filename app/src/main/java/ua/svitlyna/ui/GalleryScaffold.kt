@@ -1313,6 +1313,13 @@ internal fun GalleryScaffold(
                       gridPadding
                   )
                 }
+                // Svitlyna: old screenshots offered for the trash (if switched on in the settings).
+                TempScreenshotsBanner(
+                    images = images,
+                    visible = onPick == null && selectedIds.isEmpty() && !loading && fileSearchQuery.isBlank(),
+                    padding = PaddingValues(bottom = gridPadding.calculateBottomPadding()),
+                    onTrash = { onTrash(it, null) },
+                )
               }
             }
             GalleryTab.ALBUMS -> {

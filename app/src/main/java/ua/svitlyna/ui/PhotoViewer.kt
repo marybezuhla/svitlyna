@@ -55,6 +55,7 @@ import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.RestoreFromTrash
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material.icons.outlined.Wallpaper
 import androidx.compose.material.icons.outlined.Edit
@@ -866,6 +867,17 @@ internal fun PhotoViewer(
                         if (!current.isVideo && !current.mimeType.equals("image/gif", true)) {
                             // Svitlyna: check before sending (card numbers, phones, addresses… blacked
                             // out), sizes for social networks, a copy without metadata.
+                            // Svitlyna: "Keep" takes a screenshot out of the temporary-screenshots offer.
+                            TempShots.isKept(current)?.let { isKept ->
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(if (isKept) R.string.sv_unkeep else R.string.sv_keep)) },
+                                    leadingIcon = { Icon(Icons.Outlined.PushPin, null) },
+                                    onClick = {
+                                        viewerMenuExpanded = false
+                                        TempShots.toggleKept(context, current.id)
+                                    }
+                                )
+                            }
                             if (current.isScreenshot) {
                                 // Svitlyna: a copy without the status bar, next to the screenshot.
                                 DropdownMenuItem(
