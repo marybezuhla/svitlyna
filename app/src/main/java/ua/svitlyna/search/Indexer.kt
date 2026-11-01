@@ -17,7 +17,7 @@ import ua.svitlyna.media.isRaw
 import ua.svitlyna.ocr.PhotoTextReader
 import ua.svitlyna.ocr.TextRecognizer
 import ua.svitlyna.ocr.joinedText
-import ua.svitlyna.ui.Prefs
+import ua.svitlyna.core.Prefs
 
 /**
  * Reading the text of every photo into the search index, newest first. Runs either in the
@@ -87,7 +87,7 @@ object Indexer {
                 // Gone from the gallery: gone from the index. Only with full access and a real list:
                 // an empty or partial list (storage not ready, "selected photos" access, permission
                 // taken away for a while) must not erase what was read.
-                if (photos.isNotEmpty() && ua.svitlyna.ui.Access.level(context) == ua.svitlyna.ui.AccessLevel.ALL) {
+                if (photos.isNotEmpty() && ua.svitlyna.core.Access.level(context) == ua.svitlyna.core.AccessLevel.ALL) {
                     val alive = photos.mapTo(HashSet()) { it.id }
                     index.remove(stamps.keys.filter { it !in alive })
                 }

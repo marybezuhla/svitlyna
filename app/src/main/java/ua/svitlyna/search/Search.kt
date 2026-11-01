@@ -41,7 +41,7 @@ object Search {
             if (keys.isEmpty()) {
                 return@withContext if (range == null) EMPTY else Result(inTime, emptyList(), 0, 0, true)
             }
-            val textIds = if (!ua.svitlyna.ui.Prefs(context).searchText) emptySet() else
+            val textIds = if (!ua.svitlyna.core.Prefs(context).searchText) emptySet() else
                 runCatching { withContext(Dispatchers.IO) { IndexDb.index(context).search(keys, typing) } }.getOrDefault(emptySet())
             val names = buildMutex.withLock { names(items) }
             var byText = 0

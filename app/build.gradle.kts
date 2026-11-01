@@ -28,9 +28,17 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // Unused code and resources are left out (the icon set alone is large), but names are
+            // kept as they are (no obfuscation): see proguard-rules.pro.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             // Built unsigned: CI signs it in a separate step with the Android SDK's apksigner.
         }
+    }
+
+    packaging {
+        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
 
     compileOptions {
@@ -63,6 +71,16 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-core")
+    implementation("androidx.compose.material:material-icons-extended")
+
+    // The interface comes from Iris Gallery (Apache 2.0): its image loading (Coil, Apache 2.0) without
+    // the network module, GIF and SVG support, AVIF photos on Android 11 (libavif, BSD), appcompat
+    // for the in-app language choice.
+    implementation("io.coil-kt.coil3:coil-compose:3.1.0")
+    implementation("io.coil-kt.coil3:coil-gif:3.1.0")
+    implementation("io.coil-kt.coil3:coil-svg:3.1.0")
+    implementation("org.aomedia.avif.android:avif:1.1.1.14d8e3c4")
+    implementation("androidx.appcompat:appcompat:1.7.0")
 
     implementation("androidx.core:core-ktx:1.16.0")
     implementation("androidx.activity:activity-compose:1.10.1")

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <files-path name="vault_files" path="vault/" />
+    <files-path name="internal_files" path="." />
+    <cache-path name="shared_cache" path="shared_media/" />
+    <!-- Copies without location made for sending -->
+    <cache-path name="share" path="share/" />
+</paths>

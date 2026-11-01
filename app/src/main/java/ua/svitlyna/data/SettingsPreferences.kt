@@ -1,0 +1,526 @@
+package ua.svitlyna.data
+
+import android.content.Context
+import android.os.Build
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+import ua.svitlyna.R
+
+enum class ThemeMode { SYSTEM, LIGHT, DARK }
+enum class AccentColor { MATERIAL_YOU, IRIS, LAPIS_MESOPOTAMIA, EMERALD, ISHTAR_AMBER, ROSE, MONOCHROME }
+enum class CornerStyle(val dp: Int) { SHARP(0), CLASSIC(4), ROUNDED(12), SQUIRCLE(18) }
+enum class GridSpacing(val dp: Int) { COMPACT(2), STANDARD(4), RELAXED(8) }
+enum class StartupTab(val pageIndex: Int) { MEDIA(0), ALBUMS(1), FAVORITES(2), LIBRARY(3) }
+enum class PreferredEditor { ALWAYS_ASK, BUILT_IN, EXTERNAL }
+enum class DeleteMode { TRASH, PERMANENT, ALWAYS_ASK }
+
+enum class TimelineDateFormat {
+    SYSTEM_DEFAULT,
+    DAY_MONTH_YEAR,
+    MONTH_DAY_YEAR,
+    YEAR_MONTH_DAY,
+    NUMERIC_DMY,
+    NUMERIC_MDY,
+    NUMERIC_YMD,
+    CUSTOM;
+
+    fun getDisplayNameRes(): Int = when (this) {
+        SYSTEM_DEFAULT -> R.string.settings_date_format_system
+        DAY_MONTH_YEAR -> R.string.settings_date_format_dmy
+        MONTH_DAY_YEAR -> R.string.settings_date_format_mdy
+        YEAR_MONTH_DAY -> R.string.settings_date_format_ymd
+        NUMERIC_DMY -> R.string.settings_date_format_num_dmy
+        NUMERIC_MDY -> R.string.settings_date_format_num_mdy
+        NUMERIC_YMD -> R.string.settings_date_format_num_ymd
+        CUSTOM -> R.string.settings_date_format_custom
+    }
+}
+
+enum class ViewerHeaderStyle {
+    DATE,
+    TITLE_OR_FILENAME,
+    FILENAME,
+    ADAPTIVE;
+
+    fun getDisplayNameRes(): Int = when (this) {
+        DATE -> R.string.settings_viewer_header_style_date
+        TITLE_OR_FILENAME -> R.string.settings_viewer_header_style_title
+        FILENAME -> R.string.settings_viewer_header_style_filename
+        ADAPTIVE -> R.string.settings_viewer_header_style_adaptive
+    }
+
+    fun getDescriptionRes(): Int = when (this) {
+        DATE -> R.string.settings_viewer_header_style_date_desc
+        TITLE_OR_FILENAME -> R.string.settings_viewer_header_style_title_desc
+        FILENAME -> R.string.settings_viewer_header_style_filename_desc
+        ADAPTIVE -> R.string.settings_viewer_header_style_adaptive_desc
+    }
+}
+
+enum class SecureSharingMode {
+    OFF,
+    STRIP_LOCATION,
+    STRIP_ALL;
+
+    fun getTitleRes(): Int = when (this) {
+        OFF -> R.string.settings_secure_sharing_off
+        STRIP_LOCATION -> R.string.settings_secure_sharing_strip_location
+        STRIP_ALL -> R.string.settings_secure_sharing_strip_all
+    }
+
+    fun getDescriptionRes(): Int = when (this) {
+        OFF -> R.string.settings_secure_sharing_off_desc
+        STRIP_LOCATION -> R.string.settings_secure_sharing_strip_location_desc
+        STRIP_ALL -> R.string.settings_secure_sharing_strip_all_desc
+    }
+}
+
+data class AppLanguage(
+    val code: String, // "" for system, or "en", "ar", "es", etc.
+    val displayName: String,
+    val nativeName: String,
+    val flag: String,
+)
+
+val SUPPORTED_LANGUAGES = listOf(
+    AppLanguage("", "System Default", "System Default", "🌐"),
+    AppLanguage("en", "English", "English", "🇺🇸"),
+    AppLanguage("ar", "Arabic", "العربية", "🇮🇶"),
+    AppLanguage("es", "Spanish", "Español", "🇪🇸"),
+    AppLanguage("fr", "French", "Français", "🇫🇷"),
+    AppLanguage("de", "German", "Deutsch", "🇩🇪"),
+    AppLanguage("zh", "Chinese (Simplified)", "简体中文", "🇨🇳"),
+    AppLanguage("pt", "Portuguese", "Português", "🇧🇷"),
+    AppLanguage("it", "Italian", "Italiano", "🇮🇹"),
+    AppLanguage("ja", "Japanese", "日本語", "🇯🇵"),
+    AppLanguage("pl", "Polish", "Polski", "🇵🇱"),
+    AppLanguage("ru", "Russian", "Русский", "🇷🇺"),
+    AppLanguage("tr", "Turkish", "Türkçe", "🇹🇷"),
+)
+
+fun getSystemDefaultLocale(context: Context? = null): java.util.Locale {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val appCtx = context ?: runCatching { ua.svitlyna.IrisApplication.instance }.getOrNull()
+        val lm = appCtx?.getSystemService(android.app.LocaleManager::class.java)
+        val sysLocales = lm?.systemLocales
+        if (sysLocales != null && !sysLocales.isEmpty) {
+            return sysLocales[0]
+        }
+    }
+    val config = android.content.res.Resources.getSystem().configuration
+    return if (Build.VERSION.SDK_INT >= 24) {
+        if (!config.locales.isEmpty) config.locales[0] else java.util.Locale.getDefault()
+    } else {
+        @Suppress("DEPRECATION")
+        config.locale ?: java.util.Locale.getDefault()
+    }
+}
+
+fun detectBestLanguage(): String {
+    val systemLang = getSystemDefaultLocale().language.lowercase()
+    val match = SUPPORTED_LANGUAGES.firstOrNull { it.code.isNotEmpty() && it.code == systemLang }
+    return match?.code ?: "en"
+}
+
+data class SettingsState(
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val amoledBlack: Boolean = false,
+    val accentColor: AccentColor = AccentColor.MATERIAL_YOU,
+    val cornerStyle: CornerStyle = CornerStyle.ROUNDED,
+    val gridSpacing: GridSpacing = GridSpacing.STANDARD,
+    val photoGridSize: Float = 105f,
+    val albumGridSize: Float = 156f,
+    val showTimelineHeaders: Boolean = true,
+    val timelineDateFormat: TimelineDateFormat = TimelineDateFormat.SYSTEM_DEFAULT,
+    val customTimelineDateFormat: String = "d. MMMM yyyy",
+    val useRelativeDates: Boolean = true,
+    val showDayOfWeek: Boolean = false,
+    val abbreviateDayOfWeek: Boolean = false,
+    val smartYearHiding: Boolean = true,
+    val showVideoDurationBadge: Boolean = true,
+    val showMediaFormatBadge: Boolean = true,
+    val showAlbumCount: Boolean = true,
+    val autoPlayVideo: Boolean = true,
+    val loopVideo: Boolean = true,
+    val videoDoubleTapToZoom: Boolean = false,
+    val videoGestureControls: Boolean = true,
+    val showViewerUserComments: Boolean = true,
+    val viewerHeaderStyle: ViewerHeaderStyle = ViewerHeaderStyle.DATE,
+    val showViewerPageCount: Boolean = true,
+    val showViewerTime: Boolean = true,
+    val showFilmstrip: Boolean = true,
+    val dismissedFilmstripTip: Boolean = false,
+    val pinchToRotate: Boolean = true,
+    val dismissedRotateTip: Boolean = false,
+    val doubleTapZoomLevel: Float = 2.5f,
+    val multiStageZoom: Boolean = true,
+    val startupTab: StartupTab = StartupTab.MEDIA,
+    val mediaFilter: Int = 0,
+    val showMediaTab: Boolean = true,
+    val showAlbumsTab: Boolean = true,
+    val showFavoritesTab: Boolean = true,
+    val showLibraryTab: Boolean = true,
+    val biometricLockEnabled: Boolean = true,
+    val vaultHideFromStorage: Boolean = true,
+    val appLockEnabled: Boolean = false,
+    val appLockPinHash: String = "",
+    val appLockPinSalt: String = "",
+    val appLockFailedAttempts: Int = 0,
+    val appLockLockoutUntil: Long = 0L,
+    val appLockBiometricsEnabled: Boolean = true,
+    val confirmDelete: Boolean = false,
+    val deleteMode: DeleteMode = DeleteMode.TRASH,
+    val useSystemTrash: Boolean = false,
+    val videoMuted: Boolean = false,
+    val preferredEditor: PreferredEditor = PreferredEditor.ALWAYS_ASK,
+    val editorOverwriteOriginal: Boolean = false,
+    val language: String = "",
+    val firstLaunchLanguageSetupDone: Boolean = false,
+    val memoriesNotificationEnabled: Boolean = true,
+    val memoriesNotificationHour: Int = 10,
+    val memoriesNotificationMinute: Int = 0,
+    val dismissedMemoriesTip: Boolean = false,
+    val secureSharingMode: SecureSharingMode = SecureSharingMode.OFF,
+    val dismissedSecureSharingTip: Boolean = false,
+) {
+    val hasPin: Boolean get() = appLockPinHash.isNotEmpty()
+}
+
+class SettingsPreferences(context: Context) {
+    private val prefs = context.getSharedPreferences("iris_gallery_settings", Context.MODE_PRIVATE)
+    private val _state = MutableStateFlow(read())
+    val state: StateFlow<SettingsState> = _state.asStateFlow()
+
+    fun setThemeMode(mode: ThemeMode) = update { copy(themeMode = mode) }
+    fun setLanguage(lang: String) = update { copy(language = lang) }
+    fun setFirstLaunchLanguageSetupDone(done: Boolean) = update { copy(firstLaunchLanguageSetupDone = done) }
+    fun setAmoledBlack(enabled: Boolean) = update { copy(amoledBlack = enabled) }
+    fun setAccentColor(color: AccentColor) = update { copy(accentColor = color) }
+    fun setCornerStyle(style: CornerStyle) = update { copy(cornerStyle = style) }
+    fun setGridSpacing(spacing: GridSpacing) = update { copy(gridSpacing = spacing) }
+    fun setPhotoGridSize(size: Float) = update { copy(photoGridSize = size.coerceIn(36f, 340f)) }
+    fun setAlbumGridSize(size: Float) = update { copy(albumGridSize = size.coerceIn(48f, 450f)) }
+    fun setShowTimelineHeaders(show: Boolean) = update { copy(showTimelineHeaders = show) }
+    fun setTimelineDateFormat(format: TimelineDateFormat) = update { copy(timelineDateFormat = format) }
+    fun setCustomTimelineDateFormat(pattern: String) = update {
+        val trimmed = pattern.trim().ifBlank { "d. MMMM yyyy" }
+        val safe = runCatching {
+            val f = java.time.format.DateTimeFormatter.ofPattern(trimmed, java.util.Locale.getDefault())
+            java.time.LocalDate.now().format(f)
+            trimmed
+        }.getOrDefault("d. MMMM yyyy")
+        copy(customTimelineDateFormat = safe)
+    }
+    fun setUseRelativeDates(use: Boolean) = update { copy(useRelativeDates = use) }
+    fun setShowDayOfWeek(show: Boolean) = update { copy(showDayOfWeek = show) }
+    fun setAbbreviateDayOfWeek(abbreviate: Boolean) = update { copy(abbreviateDayOfWeek = abbreviate) }
+    fun setSmartYearHiding(smart: Boolean) = update { copy(smartYearHiding = smart) }
+    fun setShowVideoDurationBadge(show: Boolean) = update { copy(showVideoDurationBadge = show) }
+    fun setShowMediaFormatBadge(show: Boolean) = update { copy(showMediaFormatBadge = show) }
+    fun setShowAlbumCount(show: Boolean) = update { copy(showAlbumCount = show) }
+    fun setAutoPlayVideo(autoPlay: Boolean) = update { copy(autoPlayVideo = autoPlay) }
+    fun setLoopVideo(loop: Boolean) = update { copy(loopVideo = loop) }
+    fun setVideoDoubleTapToZoom(enabled: Boolean) = update { copy(videoDoubleTapToZoom = enabled) }
+    fun setVideoGestureControls(enabled: Boolean) = update { copy(videoGestureControls = enabled) }
+    fun setShowViewerUserComments(show: Boolean) = update { copy(showViewerUserComments = show) }
+    fun setViewerHeaderStyle(style: ViewerHeaderStyle) = update { copy(viewerHeaderStyle = style) }
+    fun setShowViewerPageCount(show: Boolean) = update { copy(showViewerPageCount = show) }
+    fun setShowViewerTime(show: Boolean) = update { copy(showViewerTime = show) }
+    fun setShowFilmstrip(show: Boolean) = update { copy(showFilmstrip = show) }
+    fun setDismissedFilmstripTip(dismissed: Boolean) = update { copy(dismissedFilmstripTip = dismissed) }
+    fun setPinchToRotate(enabled: Boolean) = update { copy(pinchToRotate = enabled) }
+    fun setDismissedRotateTip(dismissed: Boolean) = update { copy(dismissedRotateTip = dismissed) }
+    fun setDoubleTapZoomLevel(level: Float) = update { copy(doubleTapZoomLevel = level) }
+    fun setMultiStageZoom(enabled: Boolean) = update { copy(multiStageZoom = enabled) }
+    fun setStartupTab(tab: StartupTab) = update { copy(startupTab = tab) }
+    fun setMediaFilter(filter: Int) = update { copy(mediaFilter = filter) }
+    fun setShowMediaTab(show: Boolean) = update {
+        if (!show && !showAlbumsTab && !showFavoritesTab && !showLibraryTab) this
+        else copy(showMediaTab = show)
+    }
+    fun setShowAlbumsTab(show: Boolean) = update {
+        if (!show && !showMediaTab && !showFavoritesTab && !showLibraryTab) this
+        else copy(showAlbumsTab = show)
+    }
+    fun setShowFavoritesTab(show: Boolean) = update {
+        if (!show && !showMediaTab && !showAlbumsTab && !showLibraryTab) this
+        else copy(showFavoritesTab = show)
+    }
+    fun setShowLibraryTab(show: Boolean) = update {
+        if (!show && !showMediaTab && !showAlbumsTab && !showFavoritesTab) this
+        else copy(showLibraryTab = show)
+    }
+    fun setBiometricLockEnabled(enabled: Boolean) = update { copy(biometricLockEnabled = enabled) }
+    fun setVaultHideFromStorage(enabled: Boolean) = update { copy(vaultHideFromStorage = enabled) }
+    fun setAppLockEnabled(enabled: Boolean) = update { copy(appLockEnabled = enabled) }
+    fun setAppLockBiometricsEnabled(enabled: Boolean) = update { copy(appLockBiometricsEnabled = enabled) }
+    fun setConfirmDelete(enabled: Boolean) = update { copy(confirmDelete = enabled) }
+    fun setDeleteMode(mode: DeleteMode) = update { copy(deleteMode = mode) }
+    fun setUseSystemTrash(enabled: Boolean) = update { copy(useSystemTrash = enabled) }
+    fun setVideoMuted(muted: Boolean) = update { copy(videoMuted = muted) }
+    fun setPreferredEditor(editor: PreferredEditor) = update { copy(preferredEditor = editor) }
+    fun setEditorOverwriteOriginal(enabled: Boolean) = update { copy(editorOverwriteOriginal = enabled) }
+    fun setMemoriesNotificationEnabled(enabled: Boolean) = update { copy(memoriesNotificationEnabled = enabled) }
+    fun setMemoriesNotificationTime(hour: Int, minute: Int) = update { copy(memoriesNotificationHour = hour, memoriesNotificationMinute = minute) }
+    fun setDismissedMemoriesTip(dismissed: Boolean) = update { copy(dismissedMemoriesTip = dismissed) }
+    fun setSecureSharingMode(mode: SecureSharingMode) = update { copy(secureSharingMode = mode) }
+    fun setDismissedSecureSharingTip(dismissed: Boolean) = update { copy(dismissedSecureSharingTip = dismissed) }
+
+    /** PBKDF2 iteration count for new PIN hashes. */
+    private val pinPbkdf2Iterations = 120_000
+
+    fun setPin(pin: String) {
+        val salt = java.util.UUID.randomUUID().toString()
+        val hash = hashPin(pin, salt) ?: legacyHashPin(pin, salt)
+        update {
+            copy(
+                appLockPinHash = hash,
+                appLockPinSalt = salt,
+                appLockEnabled = true,
+                appLockFailedAttempts = 0,
+                appLockLockoutUntil = 0L,
+            )
+        }
+    }
+
+    fun verifyPin(pin: String): Boolean {
+        val current = _state.value
+        val stored = current.appLockPinHash
+        if (stored.isEmpty()) return false
+        if (current.appLockLockoutUntil > System.currentTimeMillis()) return false
+        val verified = if (stored.startsWith("pbkdf2:")) {
+            val parts = stored.split(":")
+            val iterations = parts.getOrNull(1)?.toIntOrNull() ?: return false
+            hashPinWithIterations(pin, current.appLockPinSalt, iterations) == stored
+        } else {
+            legacyHashPin(pin, current.appLockPinSalt) == stored
+        }
+        if (verified) {
+            if (current.appLockFailedAttempts != 0 || current.appLockLockoutUntil != 0L || !stored.startsWith("pbkdf2:")) {
+                // Reset throttling and silently upgrade legacy hashes while the PIN is known.
+                val upgraded = if (stored.startsWith("pbkdf2:")) stored else (hashPin(pin, current.appLockPinSalt) ?: stored)
+                update {
+                    copy(
+                        appLockPinHash = upgraded,
+                        appLockFailedAttempts = 0,
+                        appLockLockoutUntil = 0L,
+                    )
+                }
+            }
+            return true
+        }
+        registerPinFailure(current)
+        return false
+    }
+
+    fun pinLockoutRemainingMs(): Long {
+        return (_state.value.appLockLockoutUntil - System.currentTimeMillis()).coerceAtLeast(0L)
+    }
+
+    private fun registerPinFailure(current: SettingsState) {
+        val attempts = current.appLockFailedAttempts + 1
+        val lockoutMs = when {
+            attempts < 5 -> 0L
+            attempts < 10 -> 30_000L
+            attempts < 15 -> 120_000L
+            else -> 600_000L
+        }
+        update {
+            copy(
+                appLockFailedAttempts = attempts,
+                appLockLockoutUntil = if (lockoutMs > 0L) System.currentTimeMillis() + lockoutMs else 0L,
+            )
+        }
+    }
+
+    fun removePin() {
+        update {
+            copy(
+                appLockPinHash = "",
+                appLockPinSalt = "",
+                appLockEnabled = false,
+                appLockFailedAttempts = 0,
+                appLockLockoutUntil = 0L,
+            )
+        }
+    }
+
+    private fun hashPin(pin: String, salt: String): String? {
+        return hashPinWithIterations(pin, salt, pinPbkdf2Iterations)
+    }
+
+    private fun hashPinWithIterations(pin: String, salt: String, iterations: Int): String? {
+        return runCatching {
+            val spec = javax.crypto.spec.PBEKeySpec(pin.toCharArray(), salt.toByteArray(Charsets.UTF_8), iterations, 256)
+            try {
+                val key = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
+                "pbkdf2:$iterations:" + key.joinToString("") { "%02x".format(it) }
+            } finally {
+                spec.clearPassword()
+            }
+        }.getOrNull()
+    }
+
+    private fun legacyHashPin(pin: String, salt: String): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        val bytes = digest.digest("$salt:$pin".toByteArray(Charsets.UTF_8))
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
+
+    fun resetToDefaults() {
+        val security = _state.value
+        _state.value = SettingsState().copy(
+            appLockPinHash = security.appLockPinHash,
+            appLockPinSalt = security.appLockPinSalt,
+            appLockEnabled = security.appLockEnabled,
+        )
+        write(_state.value)
+    }
+
+    private fun update(transform: SettingsState.() -> SettingsState) {
+        _state.value = _state.value.transform()
+        write(_state.value)
+    }
+
+    private fun read(): SettingsState {
+        val themeModeStr = prefs.getString("theme_mode", null)
+        val accentStr = prefs.getString("accent_color", null)
+        val cornerStr = prefs.getString("corner_style", null)
+        val spacingStr = prefs.getString("grid_spacing", null)
+        val startupStr = prefs.getString("startup_tab", null)
+        val dateFormatStr = prefs.getString("timeline_date_format", null)
+
+        return SettingsState(
+            themeMode = runCatching { ThemeMode.valueOf(themeModeStr.orEmpty()) }.getOrDefault(ThemeMode.SYSTEM),
+            amoledBlack = prefs.getBoolean("amoled_black", false),
+            accentColor = runCatching { AccentColor.valueOf(accentStr.orEmpty()) }.getOrDefault(AccentColor.MATERIAL_YOU),
+            cornerStyle = runCatching { CornerStyle.valueOf(cornerStr.orEmpty()) }.getOrDefault(CornerStyle.ROUNDED),
+            gridSpacing = runCatching { GridSpacing.valueOf(spacingStr.orEmpty()) }.getOrDefault(GridSpacing.STANDARD),
+            photoGridSize = prefs.getFloat("photo_grid_size", 105f),
+            albumGridSize = prefs.getFloat("album_grid_size", 156f),
+            showTimelineHeaders = prefs.getBoolean("show_timeline_headers", true),
+            timelineDateFormat = runCatching { TimelineDateFormat.valueOf(dateFormatStr.orEmpty()) }.getOrDefault(TimelineDateFormat.SYSTEM_DEFAULT),
+            customTimelineDateFormat = runCatching {
+                val raw = prefs.getString("custom_timeline_date_format", "d. MMMM yyyy").orEmpty().ifBlank { "d. MMMM yyyy" }
+                val f = java.time.format.DateTimeFormatter.ofPattern(raw, java.util.Locale.getDefault())
+                java.time.LocalDate.now().format(f)
+                raw
+            }.getOrDefault("d. MMMM yyyy"),
+            useRelativeDates = prefs.getBoolean("use_relative_dates", true),
+            showDayOfWeek = prefs.getBoolean("show_day_of_week", false),
+            abbreviateDayOfWeek = prefs.getBoolean("abbreviate_day_of_week", false),
+            smartYearHiding = prefs.getBoolean("smart_year_hiding", true),
+            showVideoDurationBadge = prefs.getBoolean("show_video_duration_badge", true),
+            showMediaFormatBadge = prefs.getBoolean("show_media_format_badge", true),
+            showAlbumCount = prefs.getBoolean("show_album_count", true),
+            autoPlayVideo = prefs.getBoolean("auto_play_video", true),
+            loopVideo = prefs.getBoolean("loop_video", true),
+            videoDoubleTapToZoom = prefs.getBoolean("video_double_tap_to_zoom", false),
+            videoGestureControls = prefs.getBoolean("video_gesture_controls", true),
+            showViewerUserComments = prefs.getBoolean("show_viewer_user_comments", true),
+            viewerHeaderStyle = runCatching { ViewerHeaderStyle.valueOf(prefs.getString("viewer_header_style", null).orEmpty()) }.getOrDefault(ViewerHeaderStyle.DATE),
+            showViewerPageCount = prefs.getBoolean("show_viewer_page_count", true),
+            showViewerTime = prefs.getBoolean("show_viewer_time", true),
+            showFilmstrip = prefs.getBoolean("show_filmstrip", true),
+            dismissedFilmstripTip = prefs.getBoolean("dismissed_filmstrip_tip", false),
+            pinchToRotate = prefs.getBoolean("pinch_to_rotate", true),
+            dismissedRotateTip = prefs.getBoolean("dismissed_rotate_tip", false),
+            doubleTapZoomLevel = prefs.getFloat("double_tap_zoom_level", 2.5f),
+            multiStageZoom = prefs.getBoolean("multi_stage_zoom_v2", true),
+            startupTab = runCatching { StartupTab.valueOf(startupStr.orEmpty()) }.getOrDefault(StartupTab.MEDIA),
+            mediaFilter = prefs.getInt("media_filter", if (prefs.getBoolean("photos_only", false)) 1 else 0),
+            showMediaTab = prefs.getBoolean("show_media_tab", prefs.getBoolean("show_photos_tab", true)),
+            showAlbumsTab = prefs.getBoolean("show_albums_tab", true),
+            showFavoritesTab = prefs.getBoolean("show_favorites_tab", true),
+            showLibraryTab = prefs.getBoolean("show_library_tab", true),
+            biometricLockEnabled = prefs.getBoolean("biometric_lock_enabled", true),
+            vaultHideFromStorage = prefs.getBoolean("vault_hide_from_storage", true),
+            appLockEnabled = prefs.getBoolean("app_lock_enabled", false),
+            appLockPinHash = prefs.getString("app_lock_pin_hash", "").orEmpty(),
+            appLockPinSalt = prefs.getString("app_lock_pin_salt", "").orEmpty(),
+            appLockFailedAttempts = prefs.getInt("app_lock_failed_attempts", 0),
+            appLockLockoutUntil = prefs.getLong("app_lock_lockout_until", 0L),
+            appLockBiometricsEnabled = prefs.getBoolean("app_lock_biometrics_enabled", true),
+            confirmDelete = prefs.getBoolean("confirm_delete", false),
+            deleteMode = runCatching { DeleteMode.valueOf(prefs.getString("delete_mode", null).orEmpty()) }.getOrDefault(DeleteMode.TRASH),
+            useSystemTrash = prefs.getBoolean("use_system_trash", false),
+            videoMuted = prefs.getBoolean("video_muted", false),
+            preferredEditor = runCatching { PreferredEditor.valueOf(prefs.getString("preferred_editor", null).orEmpty()) }.getOrDefault(PreferredEditor.ALWAYS_ASK),
+            editorOverwriteOriginal = prefs.getBoolean("editor_overwrite_original", false),
+            language = prefs.getString("app_language", "").orEmpty(),
+            firstLaunchLanguageSetupDone = prefs.getBoolean("first_launch_lang_done", false),
+            memoriesNotificationEnabled = prefs.getBoolean("memories_notification_enabled", true),
+            memoriesNotificationHour = prefs.getInt("memories_notification_hour", 10),
+            memoriesNotificationMinute = prefs.getInt("memories_notification_minute", 0),
+            dismissedMemoriesTip = prefs.getBoolean("dismissed_memories_tip", false),
+            secureSharingMode = runCatching { SecureSharingMode.valueOf(prefs.getString("secure_sharing_mode", null).orEmpty()) }.getOrDefault(SecureSharingMode.OFF),
+            dismissedSecureSharingTip = prefs.getBoolean("dismissed_secure_sharing_tip", false),
+        )
+    }
+
+    private fun write(state: SettingsState) {
+        prefs.edit()
+            .putString("theme_mode", state.themeMode.name)
+            .putBoolean("amoled_black", state.amoledBlack)
+            .putString("accent_color", state.accentColor.name)
+            .putString("corner_style", state.cornerStyle.name)
+            .putString("grid_spacing", state.gridSpacing.name)
+            .putFloat("photo_grid_size", state.photoGridSize)
+            .putFloat("album_grid_size", state.albumGridSize)
+            .putBoolean("show_timeline_headers", state.showTimelineHeaders)
+            .putString("timeline_date_format", state.timelineDateFormat.name)
+            .putString("custom_timeline_date_format", state.customTimelineDateFormat)
+            .putBoolean("use_relative_dates", state.useRelativeDates)
+            .putBoolean("show_day_of_week", state.showDayOfWeek)
+            .putBoolean("abbreviate_day_of_week", state.abbreviateDayOfWeek)
+            .putBoolean("smart_year_hiding", state.smartYearHiding)
+            .putBoolean("show_video_duration_badge", state.showVideoDurationBadge)
+            .putBoolean("show_media_format_badge", state.showMediaFormatBadge)
+            .putBoolean("show_album_count", state.showAlbumCount)
+            .putBoolean("auto_play_video", state.autoPlayVideo)
+            .putBoolean("loop_video", state.loopVideo)
+            .putBoolean("video_double_tap_to_zoom", state.videoDoubleTapToZoom)
+            .putBoolean("video_gesture_controls", state.videoGestureControls)
+            .putBoolean("show_viewer_user_comments", state.showViewerUserComments)
+            .putString("viewer_header_style", state.viewerHeaderStyle.name)
+            .putBoolean("show_viewer_page_count", state.showViewerPageCount)
+            .putBoolean("show_viewer_time", state.showViewerTime)
+            .putBoolean("show_filmstrip", state.showFilmstrip)
+            .putBoolean("dismissed_filmstrip_tip", state.dismissedFilmstripTip)
+            .putBoolean("pinch_to_rotate", state.pinchToRotate)
+            .putBoolean("dismissed_rotate_tip", state.dismissedRotateTip)
+            .putFloat("double_tap_zoom_level", state.doubleTapZoomLevel)
+            .putBoolean("multi_stage_zoom_v2", state.multiStageZoom)
+            .putString("startup_tab", state.startupTab.name)
+            .putInt("media_filter", state.mediaFilter)
+            .putBoolean("show_media_tab", state.showMediaTab)
+            .putBoolean("show_albums_tab", state.showAlbumsTab)
+            .putBoolean("show_favorites_tab", state.showFavoritesTab)
+            .putBoolean("show_library_tab", state.showLibraryTab)
+            .putBoolean("biometric_lock_enabled", state.biometricLockEnabled)
+            .putBoolean("vault_hide_from_storage", state.vaultHideFromStorage)
+            .putBoolean("app_lock_enabled", state.appLockEnabled)
+            .putString("app_lock_pin_hash", state.appLockPinHash)
+            .putString("app_lock_pin_salt", state.appLockPinSalt)
+            .putInt("app_lock_failed_attempts", state.appLockFailedAttempts)
+            .putLong("app_lock_lockout_until", state.appLockLockoutUntil)
+            .putBoolean("app_lock_biometrics_enabled", state.appLockBiometricsEnabled)
+            .putBoolean("confirm_delete", state.confirmDelete)
+            .putString("delete_mode", state.deleteMode.name)
+            .putBoolean("use_system_trash", state.useSystemTrash)
+            .putBoolean("video_muted", state.videoMuted)
+            .putString("preferred_editor", state.preferredEditor.name)
+            .putBoolean("editor_overwrite_original", state.editorOverwriteOriginal)
+            .putString("app_language", state.language)
+            .putBoolean("first_launch_lang_done", state.firstLaunchLanguageSetupDone)
+            .putBoolean("memories_notification_enabled", state.memoriesNotificationEnabled)
+            .putInt("memories_notification_hour", state.memoriesNotificationHour)
+            .putInt("memories_notification_minute", state.memoriesNotificationMinute)
+            .putBoolean("dismissed_memories_tip", state.dismissedMemoriesTip)
+            .putString("secure_sharing_mode", state.secureSharingMode.name)
+            .putBoolean("dismissed_secure_sharing_tip", state.dismissedSecureSharingTip)
+            .apply()
+    }
+}

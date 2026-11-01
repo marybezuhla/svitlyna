@@ -11,7 +11,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import ua.svitlyna.media.Metadata
 import ua.svitlyna.media.SaveCopy
-import ua.svitlyna.screenshots.Bars
+import ua.svitlyna.core.Bars
 import java.io.File
 
 /**
