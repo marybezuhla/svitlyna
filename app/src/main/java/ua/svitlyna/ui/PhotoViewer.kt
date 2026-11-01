@@ -67,6 +67,7 @@ import androidx.compose.material.icons.outlined.BlurOff
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.TextFields
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.DriveFileMove
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.AutoFixHigh
@@ -249,6 +250,7 @@ internal fun PhotoViewer(
 ) {
     val context = LocalContext.current
     var textFor by remember { mutableStateOf<MediaImage?>(images.getOrNull(initialPage)?.takeIf { openTextAtStart && !it.isVideo }) }
+    var prepareFor by remember { mutableStateOf<MediaImage?>(null) }
     val activity = remember(context) {
         generateSequence(context) { (it as? ContextWrapper)?.baseContext }
             .filterIsInstance<Activity>().firstOrNull()
@@ -859,6 +861,18 @@ internal fun PhotoViewer(
                                 showRenameDialog = true
                             }
                         )
+                        if (!current.isVideo && !current.mimeType.equals("image/gif", true)) {
+                            // Svitlyna: check before sending (card numbers, phones, addresses… blacked
+                            // out), sizes for social networks, a copy without metadata.
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.sv_prepare_title)) },
+                                leadingIcon = { Icon(Icons.Outlined.Shield, null) },
+                                onClick = {
+                                    viewerMenuExpanded = false
+                                    prepareFor = current
+                                }
+                            )
+                        }
                         if (!current.isVideo) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_copy_image)) },
@@ -1401,6 +1415,13 @@ internal fun PhotoViewer(
         }
 
         textFor?.let { image -> PhotoTextScreen(image, highlight = textHighlight) { textFor = null } }
+        prepareFor?.let { image ->
+            PrepareScreen(
+                image.asItem(),
+                onClose = { prepareFor = null },
+                onSendAsIs = { prepareFor = null; doShare(image) },
+            )
+        }
 
         // Floating popup preview card when holding an item in the filmstrip
         AnimatedVisibility(
