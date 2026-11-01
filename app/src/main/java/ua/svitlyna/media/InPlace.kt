@@ -59,6 +59,8 @@ object InPlace {
         val b = ExifInterface(after)
         for (tag in Metadata.COPYABLE_TAGS + listOf(ExifInterface.TAG_ORIENTATION)) {
             if (tag in changed) continue
+            // ExifInterface fills an empty "DateTime" when the date taken is written: that is all it adds.
+            if (tag == ExifInterface.TAG_DATETIME && a.getAttribute(tag) == null && ExifInterface.TAG_DATETIME_ORIGINAL in changed) continue
             if (a.getAttribute(tag) != b.getAttribute(tag)) return "tag $tag: ${a.getAttribute(tag)} → ${b.getAttribute(tag)}"
         }
         val partsA = kept(before)
