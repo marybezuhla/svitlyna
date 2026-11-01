@@ -50,6 +50,11 @@ class Prefs(context: Context) {
         get() = p.getStringSet("kept_screenshots", emptySet())!!.mapNotNull { it.toLongOrNull() }.toSet()
         set(v) = p.edit().putStringSet("kept_screenshots", v.map { it.toString() }.toSet()).apply()
 
+    /** Folders hidden from the timeline (still in Folders). */
+    var hiddenFolders: Set<Long>
+        get() = p.getStringSet("hidden_folders", emptySet())!!.mapNotNull { it.toLongOrNull() }.toSet()
+        set(v) = p.edit().putStringSet("hidden_folders", v.map { it.toString() }.toSet()).apply()
+
     /** "Media location" was asked for once after an update; not asked again if refused. */
     var askedMediaLocation: Boolean
         get() = p.getBoolean("asked_media_location", false)
