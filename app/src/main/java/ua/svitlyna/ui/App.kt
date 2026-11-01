@@ -92,7 +92,7 @@ private class Shown(val items: List<MediaItem>, val timeline: List<ua.svitlyna.m
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = viewModel()) {
+fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = null, vm: GalleryViewModel = viewModel()) {
     val context = LocalContext.current
     val resolver = context.contentResolver
     val prefs = remember { Prefs(context) }
@@ -113,7 +113,16 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
     var prepare by remember { mutableStateOf<MediaItem?>(null) }
     var editing by remember { mutableStateOf<MediaItem?>(null) }
     // Timeline filter (photos, videos, screenshots…) and folders hidden from the timeline.
-    var filter by remember { mutableStateOf(Filter.ALL) }
+    var filter by remember {
+        mutableStateOf(
+            when {
+                pick == null -> Filter.ALL
+                pick.photos && !pick.videos -> Filter.PHOTOS
+                pick.videos && !pick.photos -> Filter.VIDEOS
+                else -> Filter.ALL
+            },
+        )
+    }
     var hidden by remember { mutableStateOf(prefs.hiddenFolders) }
     var shown by remember { mutableStateOf<Shown?>(null) }
     LaunchedEffect(state.items, state.timeline, filter, hidden) {
@@ -424,12 +433,24 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
     }
 
     fun toggle(item: MediaItem) {
+        if (pick != null) {
+            // Choosing for another app: only the kinds it asked for; one photo is handed over at once.
+            if (!pick.accepts(item)) {
+                scope.launch { snackbar.showSnackbar(context.getString(R.string.pick_not_this_kind)) }
+                return
+            }
+            if (!pick.multiple) {
+                pick.onPicked(listOf(item))
+                return
+            }
+        }
         selected = if (item.id in selected) selected - item.id else selected + item.id
     }
 
     fun toggleDay(date: java.time.LocalDate) {
+        if (pick != null && !pick.multiple) return
         val zone = java.time.ZoneId.systemDefault()
-        val ids = visibleItems.filter { Timeline.dayOf(it.dateMs, zone) == date }.map { it.id }.toSet()
+        val ids = visibleItems.filter { Timeline.dayOf(it.dateMs, zone) == date && (pick == null || pick.accepts(it)) }.map { it.id }.toSet()
         selected = if (selected.containsAll(ids)) selected - ids else selected + ids
     }
 
@@ -461,7 +482,9 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                         IconButton(onClick = { selected = emptySet() }) { Icon(Icons.Filled.Close, stringResource(R.string.cancel)) }
                     },
                     actions = {
-                        if (page == Page.Trash) {
+                        if (pick != null) {
+                            TextButton(onClick = { pick.onPicked(selectedItems.filter(pick::accepts)) }) { Text(stringResource(R.string.pick_done)) }
+                        } else if (page == Page.Trash) {
                             IconButton(onClick = { trash(selectedItems, toTrash = false) }) {
                                 Icon(Icons.Filled.Refresh, stringResource(R.string.restore))
                             }
@@ -487,7 +510,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                 )
             } else {
                 val title = when (val p = page) {
-                    Page.Photos -> stringResource(R.string.app_name)
+                    Page.Photos -> stringResource(if (pick != null) R.string.pick_title else R.string.app_name)
                     Page.Folders -> stringResource(R.string.folders)
                     is Page.InFolder -> p.folder.name.ifBlank { stringResource(R.string.no_folder_name) }
                     Page.Trash -> stringResource(R.string.trash)
@@ -513,7 +536,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                         }
                     },
                     actions = {
-                        if (page == Page.Photos || page == Page.Folders) {
+                        if (pick == null && (page == Page.Photos || page == Page.Folders)) {
                             IconButton(onClick = { goTo(Page.Trash) }) { Icon(Icons.Filled.Delete, stringResource(R.string.trash)) }
                             IconButton(onClick = { goTo(Page.Settings) }) { Icon(Icons.Filled.Settings, stringResource(R.string.settings)) }
                         }
@@ -559,7 +582,10 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                     selected = selected,
                     onToggle = ::toggle,
                     onToggleDay = ::toggleDay,
-                    onOpen = { index -> viewer = ViewerAt((page as? Page.InFolder)?.folder?.id, index) },
+                    onOpen = { index ->
+                        if (pick != null) visibleItems.getOrNull(index)?.let(::toggle)
+                        else viewer = ViewerAt((page as? Page.InFolder)?.folder?.id, index)
+                    },
                     onOpenFolder = { goTo(Page.InFolder(it)) },
                     access = access,
                     canManageMedia = canManageMedia,
@@ -610,7 +636,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                     ),
                 )
             }
-            if (page == Page.Photos && selected.isEmpty() && oldShots.isNotEmpty() && !tempLater && !state.loading) {
+            if (pick == null && page == Page.Photos && selected.isEmpty() && oldShots.isNotEmpty() && !tempLater && !state.loading) {
                 androidx.compose.material3.Surface(
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                     color = androidx.compose.material3.MaterialTheme.colorScheme.secondaryContainer,

@@ -38,7 +38,8 @@ object SaveCopy {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, copyName(original.name, suffix, ext))
                 put(MediaStore.MediaColumns.MIME_TYPE, mime)
                 put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath(context, original) ?: "Pictures/Svitlyna/")
-                put(MediaStore.MediaColumns.DATE_TAKEN, original.dateMs)
+                // A file from another app may have no date at all: then Android dates the copy itself.
+                if (original.dateMs > 0) put(MediaStore.MediaColumns.DATE_TAKEN, original.dateMs)
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
             uri = try {
@@ -52,7 +53,9 @@ object SaveCopy {
             resolver.openOutputStream(uri)!!.use { out -> temp.inputStream().use { it.copyTo(out) } }
             // The system re-reads the file when it stops being pending: the date taken is set again after.
             resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
-            resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.DATE_TAKEN, original.dateMs) }, null, null)
+            if (original.dateMs > 0) {
+                resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.DATE_TAKEN, original.dateMs) }, null, null)
+            }
             uri
         } catch (e: Exception) {
             uri?.let { runCatching { resolver.delete(it, null, null) } }
@@ -75,9 +78,11 @@ object SaveCopy {
         exif.saveAttributes()
     }
 
-    private fun relativePath(context: Context, item: MediaItem): String? =
+    /** A file from another app has no folder in the gallery: its copy goes to Pictures/Svitlyna. */
+    private fun relativePath(context: Context, item: MediaItem): String? = if (item.external != null) null else runCatching {
         context.contentResolver.query(item.uri, arrayOf(MediaStore.MediaColumns.RELATIVE_PATH), null, null, null)
             ?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+    }.getOrNull()
 
     /** "Screenshot_2026.png" + "no-bars" → "Screenshot_2026_no-bars.png". */
     fun copyName(name: String, suffix: String, ext: String): String {

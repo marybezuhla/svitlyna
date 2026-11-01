@@ -23,7 +23,7 @@ import ua.svitlyna.media.Share
 import ua.svitlyna.screenshots.Bars
 import ua.svitlyna.screenshots.Screenshots
 
-class MainActivity : FragmentActivity() {
+open class MainActivity : FragmentActivity() {
     companion object {
         const val EXTRA_OPEN_ID = "open_id"
         const val EXTRA_READ_TEXT = "read_text"
@@ -56,11 +56,15 @@ class MainActivity : FragmentActivity() {
                 if (locked.value) {
                     LockScreen(onUnlock = { AppLock.ask(this, onNoScreenLock = ::lockImpossible) { unlocked() } })
                 } else {
-                    App(openRequest = openRequest)
+                    App(openRequest = openRequest, pick = pick)
                 }
             }
         }
     }
+
+    /** Set by [PickActivity]: another app asked for photos to be chosen. */
+    protected open fun pickRequest(): PickRequest? = null
+    private val pick by lazy { pickRequest() }
 
     private fun unlocked() {
         locked.value = false

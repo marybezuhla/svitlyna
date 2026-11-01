@@ -207,6 +207,10 @@
     <string name="settings_lock">Блокування</string>
     <string name="app_lock">Блокувати застосунок</string>
     <string name="app_lock_explain">Для входу у Світлину потрібен відбиток або PIN-код телефона (перевіряє Android; Світлина його не бачить). Протягом пів хвилини повторно не питає. У недавніх застосунках вміст сховано (на Android 11–12 також заборонено знімки екрана застосунку).</string>
+    <string name="pick_title">Виберіть</string>
+    <string name="pick_done">Готово</string>
+    <string name="pick_not_this_kind">Застосунок просив файл іншого типу.</string>
+    <string name="outside_failed">Світлина не може відкрити цей файл.</string>
     <string name="app_lock_turned_off">На телефоні більше немає блокування екрана, тож блокування застосунку вимкнено.</string>
     <string name="too_many_selected">Щонайбільше %d за раз: виберіть менше.</string>
     <string name="live_failed">Відео цього живого фото не відтворюється.</string>

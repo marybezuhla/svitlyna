@@ -109,6 +109,8 @@ fun Viewer(
     onEdit: (MediaItem) -> Unit = {},
     onFavorite: (MediaItem) -> Unit = {},
     onRename: (MediaItem) -> Unit = {},
+    /** Opened for another app: only looking, sharing and editing a copy; nothing in the gallery changes. */
+    outside: Boolean = false,
 ) {
     BackHandler(onBack = onClose)
     if (items.isEmpty()) {
@@ -278,8 +280,10 @@ fun Viewer(
                         .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TextButton(onClick = { onFavorite(item) }) {
-                        Text(if (item.isFavorite) "♥" else "♡", color = if (item.isFavorite) Color(0xFFE57373) else Color.White)
+                    if (!outside) {
+                        TextButton(onClick = { onFavorite(item) }) {
+                            Text(if (item.isFavorite) "♥" else "♡", color = if (item.isFavorite) Color(0xFFE57373) else Color.White)
+                        }
                     }
                     IconButton(onClick = { onShare(item) }) {
                         Icon(Icons.Filled.Share, stringResource(R.string.share), tint = Color.White)
@@ -312,8 +316,10 @@ fun Viewer(
                     IconButton(onClick = { info = item }) {
                         Icon(Icons.Filled.Info, stringResource(R.string.details), tint = Color.White)
                     }
-                    IconButton(onClick = { onTrash(item) }) {
-                        Icon(Icons.Filled.Delete, stringResource(R.string.move_to_trash), tint = Color.White)
+                    if (!outside) {
+                        IconButton(onClick = { onTrash(item) }) {
+                            Icon(Icons.Filled.Delete, stringResource(R.string.move_to_trash), tint = Color.White)
+                        }
                     }
                 }
             }
@@ -332,7 +338,7 @@ fun Viewer(
             )
         }
     }
-    info?.let { InfoDialog(it, onRename = { r -> info = null; onRename(r) }) { info = null } }
+    info?.let { InfoDialog(it, canRename = !outside, onRename = { r -> info = null; onRename(r) }) { info = null } }
 }
 
 /** The bar while choosing text: what is chosen, all or none, copy, share, done. */
@@ -630,7 +636,8 @@ private fun VideoPlayer(item: MediaItem, uri: Uri = item.uri, onEnded: (() -> Un
         }
     }
     // A video (not a live photo) continues where it was stopped last time.
-    val isVideo = item.isVideo && uri == item.uri
+    // (A file from another app has no lasting number to remember a position by.)
+    val isVideo = item.isVideo && uri == item.uri && item.external == null
     val prefs = remember { Prefs(context) }
     LaunchedEffect(player) {
         if (isVideo) prefs.videoPosition(item.id).takeIf { it > 0 }?.let { player.seekTo(it) }
@@ -673,7 +680,7 @@ private fun VideoPlayer(item: MediaItem, uri: Uri = item.uri, onEnded: (() -> Un
 }
 
 @Composable
-private fun InfoDialog(item: MediaItem, onRename: (MediaItem) -> Unit, onDismiss: () -> Unit) {
+private fun InfoDialog(item: MediaItem, canRename: Boolean, onRename: (MediaItem) -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
     var exif by remember(item.id) { mutableStateOf<PhotoDetails?>(null) }
     LaunchedEffect(item.id) { exif = PhotoDetails.read(context, item) }
@@ -713,7 +720,7 @@ private fun InfoDialog(item: MediaItem, onRename: (MediaItem) -> Unit, onDismiss
                         Text(stringResource(R.string.details_no_location), style = MaterialTheme.typography.bodySmall)
                     }
                 }
-                TextButton(onClick = { onRename(item) }) { Text(stringResource(R.string.rename)) }
+                if (canRename) TextButton(onClick = { onRename(item) }) { Text(stringResource(R.string.rename)) }
                 TextButton(onClick = {
                     // Another editor (Snapseed, Image Toolbox…): the phone shows the choice.
                     val edit = Intent(Intent.ACTION_EDIT).setDataAndType(item.uri, item.mime.ifBlank { "image/*" })
