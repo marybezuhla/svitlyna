@@ -29,6 +29,8 @@ data class Edits(
     val contrast: Float = 1f,
     val saturation: Float = 1f,
     val warmth: Float = 0f,
+    /** The longest side of the saved copy in pixels; 0: as large as the photo (the edit's own size). */
+    val maxSide: Int = 0,
 ) {
     val turned: Boolean get() = rotation != 0 || flipH || flipV
 
@@ -110,7 +112,17 @@ object EditorRender {
         source.recycle()
         renderBrushes(out, session.strokes.map { if (factor > 1f) it.copy(strength = (it.strength * factor).toInt()) else it }, crop)
         renderTextOverlays(out, session.textOverlays, crop)
-        out
+        smaller(out, edits.maxSide)
+    }
+
+    /** Scaled down so the longer side is [maxSide] (never up), smoothly. */
+    private fun smaller(picture: Bitmap, maxSide: Int): Bitmap {
+        val longer = maxOf(picture.width, picture.height)
+        if (maxSide <= 0 || longer <= maxSide) return picture
+        val s = maxSide.toFloat() / longer
+        val out = Bitmap.createScaledBitmap(picture, (picture.width * s).toInt().coerceAtLeast(1), (picture.height * s).toInt().coerceAtLeast(1), true)
+        if (out !== picture) picture.recycle()
+        return out
     }
 
     private fun decode(context: Context, item: MediaItem, maxSide: Int): Bitmap? = runCatching {
