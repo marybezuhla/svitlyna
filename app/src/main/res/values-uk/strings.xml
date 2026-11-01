@@ -172,6 +172,26 @@
     <string name="edit_leave">Зміни буде втрачено. Оригінал лишається як є.</string>
     <string name="edit_discard">Вийти</string>
 
+    <string name="live_play">▶ Живе</string>
+    <string name="live_stop">■ Живе</string>
+    <string name="details_no_date">У самому файлі немає дати зйомки: це дата, коли його збережено.</string>
+    <string name="details_description">Опис: %1$s</string>
+    <string name="details_author">Автор: %1$s</string>
+    <string name="details_location">Місце: %1$s</string>
+    <string name="details_open_map">Відкрити в застосунку карт</string>
+    <string name="details_no_location">У цьому фото немає геолокації.</string>
+    <string name="details_set_as">Використати як… (шпалери, контакт)</string>
+    <string name="filter_all">Усе</string>
+    <string name="filter_photos">Фото</string>
+    <string name="filter_videos">Відео</string>
+    <string name="filter_screenshots">Скріншоти</string>
+    <string name="filter_gif">GIF</string>
+    <string name="filter_raw">RAW</string>
+    <string name="filter_panoramas">Панорами</string>
+    <string name="folder_hidden">«%1$s» сховано зі шкали (довге натискання — показати знову)</string>
+    <string name="folder_shown">«%1$s» знову в шкалі</string>
+    <string name="folder_hidden_mark">сховано</string>
+
     <string name="settings_language">Мова</string>
     <string name="change_language">Змінити мову застосунку</string>
 

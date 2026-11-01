@@ -75,8 +75,15 @@ fun AccessScreen(onRequest: () -> Unit, contentPadding: PaddingValues) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FoldersScreen(folders: List<Folder>, onOpen: (Folder) -> Unit, contentPadding: PaddingValues) {
+fun FoldersScreen(
+    folders: List<Folder>,
+    hidden: Set<Long>,
+    onOpen: (Folder) -> Unit,
+    onHide: (Folder) -> Unit,
+    contentPadding: PaddingValues,
+) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(150.dp),
         contentPadding = PaddingValues(
@@ -92,7 +99,8 @@ fun FoldersScreen(folders: List<Folder>, onOpen: (Folder) -> Unit, contentPaddin
                 Modifier
                     .padding(6.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .clickable { onOpen(folder) },
+                    // Long press: hide the folder from the timeline (or show it again).
+                    .combinedClickable(onClick = { onOpen(folder) }, onLongClick = { onHide(folder) }),
             ) {
                 Thumbnail(folder.cover, 384, Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp)))
                 Text(
@@ -103,7 +111,8 @@ fun FoldersScreen(folders: List<Folder>, onOpen: (Folder) -> Unit, contentPaddin
                     modifier = Modifier.padding(top = 6.dp, start = 2.dp),
                 )
                 Text(
-                    pluralStringResource(R.plurals.items, folder.count, folder.count),
+                    pluralStringResource(R.plurals.items, folder.count, folder.count) +
+                        if (folder.id in hidden) " · " + stringResource(R.string.folder_hidden_mark) else "",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(start = 2.dp, bottom = 4.dp),
                 )

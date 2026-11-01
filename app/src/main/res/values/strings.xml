@@ -172,6 +172,26 @@
     <string name="edit_leave">Your changes will be lost. The original stays as it is.</string>
     <string name="edit_discard">Leave</string>
 
+    <string name="live_play">▶ Live</string>
+    <string name="live_stop">■ Live</string>
+    <string name="details_no_date">The file itself has no date taken: this is the date it was saved.</string>
+    <string name="details_description">Description: %1$s</string>
+    <string name="details_author">Author: %1$s</string>
+    <string name="details_location">Location: %1$s</string>
+    <string name="details_open_map">Open in a maps app</string>
+    <string name="details_no_location">No location in this photo.</string>
+    <string name="details_set_as">Use as… (wallpaper, contact)</string>
+    <string name="filter_all">All</string>
+    <string name="filter_photos">Photos</string>
+    <string name="filter_videos">Videos</string>
+    <string name="filter_screenshots">Screenshots</string>
+    <string name="filter_gif">GIF</string>
+    <string name="filter_raw">RAW</string>
+    <string name="filter_panoramas">Panoramas</string>
+    <string name="folder_hidden">"%1$s" is hidden from the timeline (long press to show it again)</string>
+    <string name="folder_shown">"%1$s" is back in the timeline</string>
+    <string name="folder_hidden_mark">hidden</string>
+
     <string name="settings_language">Language</string>
     <string name="change_language">Change the app language</string>
 

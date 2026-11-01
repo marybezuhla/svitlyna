@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
@@ -60,7 +63,9 @@ import ua.svitlyna.media.MediaItem
 import ua.svitlyna.media.Share
 import ua.svitlyna.edit.FixDates
 import ua.svitlyna.edit.StitchMaker
+import ua.svitlyna.media.Filter
 import ua.svitlyna.media.Timeline
+import ua.svitlyna.media.matches
 import ua.svitlyna.screenshots.Screenshots
 
 private sealed interface Page {
@@ -78,7 +83,10 @@ private enum class RequestKind { TRASH, RESTORE, DELETE }
 private const val REQUEST_CHUNK = 500
 
 /** Which photos the open viewer swipes through: all of them, or one folder. */
-private data class ViewerAt(val bucketId: Long?, val index: Int, val readText: Boolean = false)
+private data class ViewerAt(val bucketId: Long?, val index: Int, val readText: Boolean = false, val unfiltered: Boolean = false)
+
+/** The timeline as shown: filtered by kind and without hidden folders. */
+private class Shown(val items: List<MediaItem>, val timeline: List<ua.svitlyna.media.TimelineEntry>)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,6 +110,24 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
     // One photo is sent through "Before sending" (check, black out, size); several go as before.
     var prepare by remember { mutableStateOf<MediaItem?>(null) }
     var editing by remember { mutableStateOf<MediaItem?>(null) }
+    // Timeline filter (photos, videos, screenshots…) and folders hidden from the timeline.
+    var filter by remember { mutableStateOf(Filter.ALL) }
+    var hidden by remember { mutableStateOf(prefs.hiddenFolders) }
+    var shown by remember { mutableStateOf<Shown?>(null) }
+    LaunchedEffect(state.items, state.timeline, filter, hidden) {
+        shown = if (filter == Filter.ALL && hidden.isEmpty()) {
+            Shown(state.items, state.timeline)
+        } else {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                val list = state.items.filter { it.bucketId !in hidden && it.matches(filter) }
+                Shown(list, Timeline.byDay(list))
+            }
+        }
+    }
+    fun toggleHidden(folder: Folder) {
+        hidden = if (folder.id in hidden) hidden - folder.id else hidden + folder.id
+        prefs.hiddenFolders = hidden
+    }
     // Temporary screenshots: an offer to move old ones to the trash (Android asks to confirm).
     var tempOn by remember { mutableStateOf(prefs.tempScreenshots) }
     var tempDays by remember { mutableIntStateOf(prefs.tempDays) }
@@ -308,7 +334,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
     val folderId = (page as? Page.InFolder)?.folder?.id
     val folderContent = folderId?.let { state.byFolder[it] }
     val folderTimeline = folderContent?.timeline
-    val visibleItems = folderContent?.items ?: state.items
+    val visibleItems = folderContent?.items ?: shown?.items ?: state.items
     val selectedItems = remember(selected, state.items, state.trash, page) {
         (if (page == Page.Trash) state.trash else state.items).filter { it.id in selected }
     }
@@ -458,6 +484,16 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                     onFixChosen = { fixChosen = it },
                     onFix = ::fixDates,
                     fixing = fixing,
+                    filter = filter,
+                    onFilter = { filter = it },
+                    shownTimeline = shown?.timeline ?: state.timeline,
+                    hidden = hidden,
+                    onHideFolder = { f ->
+                        toggleHidden(f)
+                        scope.launch {
+                            snackbar.showSnackbar(context.getString(if (f.id in hidden) R.string.folder_hidden else R.string.folder_shown, f.name))
+                        }
+                    },
                     screenshotSettings = ScreenshotSettings(
                         hints = hints,
                         cropNavigation = cropNavigation,
@@ -515,7 +551,8 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
         val index = state.items.indexOfFirst { it.id == wanted.id }
         if (index >= 0) {
             selected = emptySet()
-            viewer = ViewerAt(null, index, wanted.readText)
+            // Opened from outside the timeline's filter: swipes through everything.
+            viewer = ViewerAt(null, index, wanted.readText, unfiltered = true)
             openRequest.value = null
         } else if (!state.loading) {
             vm.start(accessChanged = false)
@@ -523,7 +560,11 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
     }
 
     viewer?.let { at ->
-        val list = if (at.bucketId == null) state.items else state.byFolder[at.bucketId]?.items.orEmpty()
+        val list = when {
+            at.bucketId != null -> state.byFolder[at.bucketId]?.items.orEmpty()
+            at.unfiltered -> state.items
+            else -> shown?.items ?: state.items
+        }
         // A new request (a hint tapped while a photo is open) starts the viewer afresh at its photo.
         androidx.compose.runtime.key(at) {
         Viewer(
@@ -662,14 +703,25 @@ private fun Content(
     onFix: () -> Unit,
     fixing: Boolean,
     screenshotSettings: ScreenshotSettings,
+    filter: Filter,
+    onFilter: (Filter) -> Unit,
+    shownTimeline: List<ua.svitlyna.media.TimelineEntry>,
+    hidden: Set<Long>,
+    onHideFolder: (Folder) -> Unit,
 ) {
     when (page) {
         Page.Photos -> if (state.items.isEmpty()) {
             EmptyNote(stringResource(R.string.no_photos))
         } else {
-            MediaGrid(state.timeline, columns, onColumns, selected, onOpen, onToggle, onToggleDay, contentPadding = padding)
+            Column(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) {
+                FilterRow(filter, onFilter)
+                MediaGrid(
+                    shownTimeline, columns, onColumns, selected, onOpen, onToggle, onToggleDay,
+                    contentPadding = PaddingValues(bottom = padding.calculateBottomPadding()),
+                )
+            }
         }
-        Page.Folders -> FoldersScreen(state.folders, onOpenFolder, padding)
+        Page.Folders -> FoldersScreen(state.folders, hidden, onOpenFolder, onHideFolder, padding)
         is Page.InFolder -> MediaGrid(
             folderTimeline.orEmpty(), columns, onColumns, selected, onOpen, onToggle, onToggleDay, contentPadding = padding,
         )
@@ -678,6 +730,39 @@ private fun Content(
             access, canManageMedia, removeLocation, onRemoveLocation, onPickMore, screenshotSettings, onFixDates, fixDatesCount, padding,
         )
         Page.FixDates -> FixDatesScreen(fixes, fixChosen, onFixChosen, onFix, fixing, padding)
+    }
+}
+
+@Composable
+private fun FilterRow(filter: Filter, onFilter: (Filter) -> Unit) {
+    androidx.compose.foundation.layout.Row(
+        Modifier
+            .fillMaxWidth()
+            .horizontalScroll(androidx.compose.foundation.rememberScrollState())
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp),
+    ) {
+        Filter.entries.forEach { f ->
+            androidx.compose.material3.FilterChip(
+                selected = filter == f,
+                onClick = { onFilter(f) },
+                label = {
+                    Text(
+                        stringResource(
+                            when (f) {
+                                Filter.ALL -> R.string.filter_all
+                                Filter.PHOTOS -> R.string.filter_photos
+                                Filter.VIDEOS -> R.string.filter_videos
+                                Filter.SCREENSHOTS -> R.string.filter_screenshots
+                                Filter.GIF -> R.string.filter_gif
+                                Filter.RAW -> R.string.filter_raw
+                                Filter.PANORAMAS -> R.string.filter_panoramas
+                            },
+                        ),
+                    )
+                },
+            )
+        }
     }
 }
 

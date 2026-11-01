@@ -5,6 +5,11 @@ import android.content.ClipboardManager
 import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Build
+import ua.svitlyna.media.LivePhoto
+import ua.svitlyna.media.PhotoDetails
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import android.net.Uri
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
@@ -143,6 +148,19 @@ fun Viewer(
     var chosen by remember { mutableStateOf(emptySet<Int>()) }
     var notice by remember { mutableStateOf<Int?>(null) }
     val textMode = textFor != null
+
+    // Live photos: the video inside the photo (or beside it, iPhone style), played on request.
+    var livePlaying by remember { mutableStateOf<Pair<Long, Uri>?>(null) }
+    var liveUriFor by remember { mutableStateOf<Pair<Long, Uri?>?>(null) }
+    val currentItem = items.getOrNull(pager.currentPage)
+    LaunchedEffect(currentItem?.id) {
+        livePlaying = null
+        val it = currentItem ?: return@LaunchedEffect
+        val uri = kotlinx.coroutines.withContext(Dispatchers.IO) {
+            LivePhoto.pairedVideo(it, items)?.uri ?: if (LivePhoto.hasEmbeddedVideo(context, it)) it.uri else null
+        }
+        liveUriFor = it.id to uri
+    }
     DisposableEffect(Unit) {
         val recognizer = TextRecognizer.get(context)
         recognizer.hold()
@@ -199,14 +217,18 @@ fun Viewer(
             if (item.isVideo) {
                 VideoPage(item, current, onTap = { chrome = !chrome })
             } else {
-                ZoomableImage(
-                    item = item,
-                    onTap = { chrome = !chrome },
-                    onZoomChanged = { if (current) zoomed = it },
-                    text = photoText.takeIf { textFor == item.id },
-                    chosen = chosen,
-                    onChosen = { chosen = it },
-                )
+                Box(Modifier.fillMaxSize()) {
+                    ZoomableImage(
+                        item = item,
+                        onTap = { chrome = !chrome },
+                        onZoomChanged = { if (current) zoomed = it },
+                        text = photoText.takeIf { textFor == item.id },
+                        chosen = chosen,
+                        onChosen = { chosen = it },
+                    )
+                    val liveUri = livePlaying?.takeIf { current && it.first == item.id }?.second
+                    if (liveUri != null) VideoPlayer(item, liveUri, onEnded = { livePlaying = null })
+                }
             }
         }
         val item = items.getOrNull(pager.currentPage)
@@ -256,6 +278,12 @@ fun Viewer(
                 ) {
                     IconButton(onClick = { onShare(item) }) {
                         Icon(Icons.Filled.Share, stringResource(R.string.share), tint = Color.White)
+                    }
+                    val live = liveUriFor?.takeIf { it.first == item.id }?.second
+                    if (live != null) {
+                        TextButton(onClick = { livePlaying = if (livePlaying == null) item.id to live else null }) {
+                            Text(stringResource(if (livePlaying == null) R.string.live_play else R.string.live_stop), color = Color.White)
+                        }
                     }
                     if (!item.isVideo) {
                         TextButton(onClick = { onEdit(item) }) {
@@ -573,13 +601,24 @@ private fun VideoPage(item: MediaItem, current: Boolean, onTap: () -> Unit) {
 }
 
 @Composable
-private fun VideoPlayer(item: MediaItem) {
+private fun VideoPlayer(item: MediaItem, uri: Uri = item.uri, onEnded: (() -> Unit)? = null) {
     val context = LocalContext.current
-    val player = remember(item.id) {
+    val ended by rememberUpdatedState(onEnded)
+    val player = remember(item.id, uri) {
         ExoPlayer.Builder(context).build().apply {
             // Pauses other players (music) while this video plays, and pauses itself for a call.
             setAudioAttributes(AudioAttributes.DEFAULT, true)
-            setMediaItem(androidx.media3.common.MediaItem.fromUri(item.uri))
+            // A live photo's video is read straight from inside the photo: nothing is copied out.
+            setMediaItem(androidx.media3.common.MediaItem.fromUri(uri))
+            addListener(object : androidx.media3.common.Player.Listener {
+                override fun onPlaybackStateChanged(state: Int) {
+                    if (state == androidx.media3.common.Player.STATE_ENDED) ended?.invoke()
+                }
+
+                override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                    ended?.invoke()
+                }
+            })
             prepare()
             playWhenReady = true
         }
@@ -596,18 +635,54 @@ private fun VideoPlayer(item: MediaItem) {
 @Composable
 private fun InfoDialog(item: MediaItem, onDismiss: () -> Unit) {
     val context = LocalContext.current
+    var exif by remember(item.id) { mutableStateOf<PhotoDetails?>(null) }
+    LaunchedEffect(item.id) { exif = PhotoDetails.read(context, item) }
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
         title = { Text(item.name) },
         text = {
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.SHORT).format(Date(item.dateMs)))
-                if (item.width > 0 && item.height > 0) Text("${item.width} × ${item.height}")
-                Text(android.text.format.Formatter.formatShortFileSize(context, item.sizeBytes))
+                if (!item.isVideo && item.takenMs == 0L) {
+                    Text(stringResource(R.string.details_no_date), style = MaterialTheme.typography.bodySmall)
+                }
+                if (item.width > 0 && item.height > 0) {
+                    Text("${item.width} × ${item.height} · ${"%.1f".format(item.width * item.height / 1_000_000f)} MP")
+                }
+                Text(android.text.format.Formatter.formatShortFileSize(context, item.sizeBytes) + " · " + item.mime)
                 if (item.isVideo) Text(duration(item.durationMs))
-                Text(stringResource(R.string.folder_named, item.bucketName))
-                Text(item.mime)
+                Text(stringResource(R.string.folder_named, item.relativePath.ifBlank { item.bucketName }))
+                exif?.let { d ->
+                    d.camera?.let { Text(it) }
+                    d.lens?.let { Text(it) }
+                    d.exposure?.let { Text(it) }
+                    d.description?.let { Text(stringResource(R.string.details_description, it)) }
+                    d.author?.let { Text(stringResource(R.string.details_author, it)) }
+                    if (d.lat != null && d.lon != null) {
+                        Text(
+                            stringResource(R.string.details_location, "%.5f, %.5f".format(d.lat, d.lon)),
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                        TextButton(onClick = {
+                            // Opens the phone's own maps app with the point; Svitlyna itself has no internet.
+                            val geo = Uri.parse("geo:${d.lat},${d.lon}?q=${d.lat},${d.lon}")
+                            runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, geo)) }
+                        }) { Text(stringResource(R.string.details_open_map)) }
+                    } else if (!item.isVideo) {
+                        Text(stringResource(R.string.details_no_location), style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                if (!item.isVideo) {
+                    TextButton(onClick = {
+                        // Android's own "use as": wallpaper, contact photo… No permission needed.
+                        val use = Intent(Intent.ACTION_ATTACH_DATA)
+                            .setDataAndType(item.uri, item.mime.ifBlank { "image/*" })
+                            .putExtra("mimeType", item.mime)
+                            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        runCatching { context.startActivity(Intent.createChooser(use, null)) }
+                    }) { Text(stringResource(R.string.details_set_as)) }
+                }
             }
         },
     )
