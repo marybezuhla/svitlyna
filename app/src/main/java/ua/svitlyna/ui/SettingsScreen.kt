@@ -1318,6 +1318,7 @@ fun SettingsScreen(
                                         if (isChecked) ua.svitlyna.core.AppLock.unlocked = true
                                         preferences.setAppLockEnabled(isChecked)
                                         ua.svitlyna.core.AppLock.applyRecents(activity, isChecked)
+                                        ua.svitlyna.IrisPhotoWidget.refreshAll(context)
                                     }
                                 }
                             }

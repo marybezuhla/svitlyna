@@ -84,4 +84,5 @@
     <string name="sv_stitch_too_tall">Too long for one picture: try fewer screenshots.</string>
     <string name="sv_stitch_no_overlap">These screenshots don\'t seem to overlap (take each one so it shows a bit of the previous one). Put them simply one under the other?</string>
     <string name="sv_stitch_stack">One under the other</string>
+    <string name="sv_pick_not_cleaned">A file that can\'t be cleaned of its location was not handed over (turn secure sharing off to send it as is).</string>
 </resources>

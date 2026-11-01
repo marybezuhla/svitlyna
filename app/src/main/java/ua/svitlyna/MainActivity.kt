@@ -8,6 +8,8 @@ import android.content.ClipData
 import android.os.Bundle
 import android.provider.MediaStore
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
@@ -15,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ua.svitlyna.R
 import ua.svitlyna.data.SettingsPreferences
 import ua.svitlyna.data.ThemeMode
 import ua.svitlyna.ui.theme.IrisTheme
@@ -87,13 +90,24 @@ class MainActivity : FragmentActivity() {
                     initialOpenLatest = shouldOpenLatest,
                     initialIntentGeneration = intentGeneration,
                     onPick = if (pickerMode) {{ media ->
-                        val result = Intent().apply {
-                            data = media.uri
-                            clipData = ClipData.newUri(contentResolver, media.name, media.uri)
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        // Svitlyna: with secure sharing on, the other app gets a cleaned copy (as when
+                        // sharing); a file that can't be cleaned is not handed over.
+                        val mode = settingsPreferences.state.value.secureSharingMode
+                        lifecycleScope.launch {
+                            val uri = if (mode == ua.svitlyna.data.SecureSharingMode.OFF) media.uri
+                                else ua.svitlyna.ui.prepareShareUris(this@MainActivity, listOf(media), mode).firstOrNull()
+                            if (uri == null) {
+                                android.widget.Toast.makeText(this@MainActivity, R.string.sv_pick_not_cleaned, android.widget.Toast.LENGTH_LONG).show()
+                                return@launch
+                            }
+                            val result = Intent().apply {
+                                data = uri
+                                clipData = ClipData.newUri(contentResolver, media.name, uri)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            setResult(Activity.RESULT_OK, result)
+                            finish()
                         }
-                        setResult(Activity.RESULT_OK, result)
-                        finish()
                     }} else null,
                 )
             }

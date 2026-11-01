@@ -46,55 +46,26 @@ class DuplicateDetector(private val context: Context) {
             onProgress(index + 1, remaining.size)
         }
 
-        // Union visually close fingerprints. A strict threshold limits false positives.
-        val parent = IntArray(fingerprints.size) { it }
-        fun root(value: Int): Int {
-            var i = value
-            while (parent[i] != i) { parent[i] = parent[parent[i]]; i = parent[i] }
-            return i
+        // Svitlyna: photos are grouped around the first of each group (not chained, so look-alike
+        // series don't grow into one huge group), screenshots are left out (screens of one chat look
+        // alike without being the same). See media/Similar.kt.
+        val candidates = fingerprints.filterNot { it.first.isScreenshot }
+        val similarGroups = ua.svitlyna.media.Similar.group(
+            candidates.map { it.second },
+            candidates.map { it.first.width.toFloat() / it.first.height.coerceAtLeast(1) },
+        ).map { indexes ->
+            DuplicateGroup(indexes.map { candidates[it].first }
+                .sortedWith(compareByDescending<MediaImage> { it.width.toLong() * it.height }.thenByDescending { it.dateTaken }), exact = false)
         }
-        fun union(a: Int, b: Int) { val ra = root(a); val rb = root(b); if (ra != rb) parent[rb] = ra }
-        // Six independent bands guarantee that fingerprints within five bit
-        // changes share at least one band (pigeonhole principle), avoiding O(n²).
-        val bands = HashMap<Long, MutableList<Int>>()
-        for (i in fingerprints.indices) {
-            val candidates = hashSetOf<Int>()
-            for (band in 0 until 6) {
-                val start = band * 11
-                val width = if (band == 5) 9 else 11
-                val mask = (1L shl width) - 1
-                val key = (band.toLong() shl 56) or ((fingerprints[i].second ushr start) and mask)
-                bands[key]?.let(candidates::addAll)
-            }
-            for (j in candidates) {
-                val a = fingerprints[i].first
-                val b = fingerprints[j].first
-                val sameShape = kotlin.math.abs(a.width.toFloat() / a.height.coerceAtLeast(1) -
-                    b.width.toFloat() / b.height.coerceAtLeast(1)) < 0.035f
-                if (sameShape && java.lang.Long.bitCount(fingerprints[i].second xor fingerprints[j].second) <= 5) {
-                    union(i, j)
-                }
-            }
-            for (band in 0 until 6) {
-                val start = band * 11
-                val width = if (band == 5) 9 else 11
-                val mask = (1L shl width) - 1
-                val key = (band.toLong() shl 56) or ((fingerprints[i].second ushr start) and mask)
-                bands.getOrPut(key) { mutableListOf() }.add(i)
-            }
-        }
-        val similarGroups = fingerprints.indices.groupBy { root(it) }.values
-            .filter { it.size > 1 }
-            .map { indexes ->
-                DuplicateGroup(indexes.map { fingerprints[it].first }
-                    .sortedWith(compareByDescending<MediaImage> { it.width.toLong() * it.height }.thenByDescending { it.dateTaken }), exact = false)
-            }
         (exactGroups + similarGroups).sortedByDescending { it.reclaimableBytes }
     }
 
     private fun checksum(item: MediaImage): String? = runCatching {
         val digest = MessageDigest.getInstance("SHA-256")
-        context.contentResolver.openInputStream(item.uri)?.use { input ->
+        // Read as the original: otherwise Android may blank the place, and photos that differ only
+        // in where they were taken would look the same.
+        (runCatching { context.contentResolver.openInputStream(android.provider.MediaStore.setRequireOriginal(item.uri)) }.getOrNull()
+            ?: context.contentResolver.openInputStream(item.uri))?.use { input ->
             val buffer = ByteArray(64 * 1024)
             while (true) {
                 val count = input.read(buffer)

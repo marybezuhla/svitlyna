@@ -91,7 +91,9 @@ class IrisPhotoWidget : AppWidgetProvider() {
         val shortestSide = minOf(widthDp, heightDp).toFloat()
         val buttonSize = (shortestSide * .22f).coerceIn(36f, 58f)
         val buttonMargin = (shortestSide * .065f).coerceIn(8f, 17f)
-        val allMemories = loadMemories(context)
+        // Svitlyna: with the app lock on, no photo on the home screen (anyone holding the phone sees it).
+        val locked = ua.svitlyna.data.SettingsPreferences(context).state.value.appLockEnabled
+        val allMemories = if (locked) emptyList() else loadMemories(context)
         val slot = (System.currentTimeMillis() / 1_800_000L).toInt()
         val offset = context.getSharedPreferences("iris_widget", Context.MODE_PRIVATE).getInt("offset_$id", 0)
         val memories = if (allMemories.isEmpty()) emptyList()
