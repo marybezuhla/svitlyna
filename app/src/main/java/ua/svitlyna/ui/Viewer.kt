@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.os.Build
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CircularProgressIndicator
@@ -244,8 +245,13 @@ fun Viewer(
                     .background(Color(0x88000000))
                     .navigationBarsPadding(),
             ) {
+                // Scrolls sideways on a narrow screen rather than squeezing the buttons.
                 androidx.compose.foundation.layout.Row(
-                    Modifier.align(Alignment.Center).padding(vertical = 4.dp),
+                    Modifier
+                        .align(Alignment.Center)
+                        .horizontalScroll(androidx.compose.foundation.rememberScrollState())
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     IconButton(onClick = { onShare(item) }) {
                         Icon(Icons.Filled.Share, stringResource(R.string.share), tint = Color.White)
