@@ -126,6 +126,12 @@
             android:name=".search.IndexJob"
             android:exported="false"
             android:permission="android.permission.BIND_JOB_SERVICE" />
+        <!-- The encrypted vault, shown to the app (and to an app it shares one file with) decrypted in memory -->
+        <provider
+            android:name=".data.VaultProvider"
+            android:authorities="${applicationId}.vault"
+            android:exported="false"
+            android:grantUriPermissions="true" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

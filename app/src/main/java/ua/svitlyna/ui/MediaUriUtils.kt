@@ -94,7 +94,7 @@ internal fun canonicalMediaUri(item: MediaImage): Uri {
 }
 
 internal fun getShareUri(context: android.content.Context, item: MediaImage): Uri {
-    return if (item.path.startsWith(context.filesDir.absolutePath)) {
+    return if (item.uri.scheme == "file") {
         androidx.core.content.FileProvider.getUriForFile(
             context,
             "${context.packageName}.fileprovider",
@@ -242,7 +242,7 @@ internal suspend fun prepareShareUris(
             }.getOrNull() ?: return@mapNotNull null
 
             val copySuccess = runCatching {
-                val inputStream = if (item.path.startsWith(context.filesDir.absolutePath)) {
+                val inputStream = if (item.uri.scheme == "file") {
                     File(item.path).inputStream()
                 } else {
                     context.contentResolver.openInputStream(item.uri)
@@ -309,7 +309,7 @@ private fun shareVideo(
     }.getOrNull() ?: return null
 
     val stripped = runCatching {
-        val source = if (item.path.startsWith(context.filesDir.absolutePath)) {
+        val source = if (item.uri.scheme == "file") {
             File(item.path).inputStream()
         } else {
             context.contentResolver.openInputStream(item.uri)
