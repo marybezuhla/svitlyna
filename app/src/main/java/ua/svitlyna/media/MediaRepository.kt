@@ -17,18 +17,23 @@ class MediaRepository(private val resolver: ContentResolver) {
     /** Items in the system trash, newest first. */
     fun loadTrash(): List<MediaItem> = query(trashed = true)
 
-    private fun query(trashed: Boolean): List<MediaItem> {
+    /** One item by its id, or null if it is gone (or the app can't see it). */
+    fun loadOne(id: Long): MediaItem? = query(trashed = false, id = id).firstOrNull()
+
+    private fun query(trashed: Boolean, id: Long? = null): List<MediaItem> {
         val args = Bundle().apply {
+            val types = "${MediaStore.Files.FileColumns.MEDIA_TYPE} IN (?, ?)"
             putString(
                 ContentResolver.QUERY_ARG_SQL_SELECTION,
-                "${MediaStore.Files.FileColumns.MEDIA_TYPE} IN (?, ?)",
+                if (id != null) "$types AND ${MediaStore.MediaColumns._ID} = ?" else types,
             )
             putStringArray(
                 ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS,
-                arrayOf(
+                listOfNotNull(
                     MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString(),
                     MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString(),
-                ),
+                    id?.toString(),
+                ).toTypedArray(),
             )
             if (trashed) putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_ONLY)
         }

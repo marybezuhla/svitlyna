@@ -19,26 +19,6 @@ import java.io.File
 object Share {
     private val CLEANABLE = setOf("image/jpeg", "image/png", "image/webp")
 
-    private val LOCATION_TAGS = listOf(
-        ExifInterface.TAG_GPS_LATITUDE, ExifInterface.TAG_GPS_LATITUDE_REF,
-        ExifInterface.TAG_GPS_LONGITUDE, ExifInterface.TAG_GPS_LONGITUDE_REF,
-        ExifInterface.TAG_GPS_ALTITUDE, ExifInterface.TAG_GPS_ALTITUDE_REF,
-        ExifInterface.TAG_GPS_TIMESTAMP, ExifInterface.TAG_GPS_DATESTAMP,
-        ExifInterface.TAG_GPS_PROCESSING_METHOD, ExifInterface.TAG_GPS_AREA_INFORMATION,
-        ExifInterface.TAG_GPS_SPEED, ExifInterface.TAG_GPS_SPEED_REF,
-        ExifInterface.TAG_GPS_TRACK, ExifInterface.TAG_GPS_TRACK_REF,
-        ExifInterface.TAG_GPS_IMG_DIRECTION, ExifInterface.TAG_GPS_IMG_DIRECTION_REF,
-        ExifInterface.TAG_GPS_DEST_LATITUDE, ExifInterface.TAG_GPS_DEST_LATITUDE_REF,
-        ExifInterface.TAG_GPS_DEST_LONGITUDE, ExifInterface.TAG_GPS_DEST_LONGITUDE_REF,
-        ExifInterface.TAG_GPS_DEST_BEARING, ExifInterface.TAG_GPS_DEST_BEARING_REF,
-        ExifInterface.TAG_GPS_DEST_DISTANCE, ExifInterface.TAG_GPS_DEST_DISTANCE_REF,
-        ExifInterface.TAG_GPS_H_POSITIONING_ERROR, ExifInterface.TAG_GPS_DOP,
-        ExifInterface.TAG_GPS_MEASURE_MODE, ExifInterface.TAG_GPS_SATELLITES,
-        ExifInterface.TAG_GPS_STATUS, ExifInterface.TAG_GPS_MAP_DATUM,
-        ExifInterface.TAG_GPS_DIFFERENTIAL, ExifInterface.TAG_GPS_VERSION_ID,
-        // XMP can repeat the location (and other programs' notes); the shared copy goes without it.
-        ExifInterface.TAG_XMP,
-    )
 
     fun canClean(item: MediaItem) = !item.isVideo && item.mime.lowercase() in CLEANABLE
 
@@ -83,7 +63,7 @@ object Share {
             target.outputStream().use { input.copyTo(it) }
         }
         val exif = ExifInterface(target)
-        LOCATION_TAGS.forEach { exif.setAttribute(it, null) }
+        Metadata.removeLocation(exif)
         exif.saveAttributes()
         FileProvider.getUriForFile(context, "${context.packageName}.share", target)
     }.getOrElse {

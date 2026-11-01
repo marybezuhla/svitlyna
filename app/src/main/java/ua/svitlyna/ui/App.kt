@@ -1,5 +1,8 @@
 package ua.svitlyna.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.provider.MediaStore
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -31,6 +34,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -52,6 +57,7 @@ import ua.svitlyna.media.Folder
 import ua.svitlyna.media.MediaItem
 import ua.svitlyna.media.Share
 import ua.svitlyna.media.Timeline
+import ua.svitlyna.screenshots.Screenshots
 
 private sealed interface Page {
     data object Photos : Page
@@ -67,11 +73,11 @@ private enum class RequestKind { TRASH, RESTORE, DELETE }
 private const val REQUEST_CHUNK = 500
 
 /** Which photos the open viewer swipes through: all of them, or one folder. */
-private data class ViewerAt(val bucketId: Long?, val index: Int)
+private data class ViewerAt(val bucketId: Long?, val index: Int, val readText: Boolean = false)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun App(vm: GalleryViewModel = viewModel()) {
+fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = viewModel()) {
     val context = LocalContext.current
     val resolver = context.contentResolver
     val prefs = remember { Prefs(context) }
@@ -88,6 +94,25 @@ fun App(vm: GalleryViewModel = viewModel()) {
     var columns by remember { mutableIntStateOf(prefs.columns) }
     var removeLocation by remember { mutableStateOf(prefs.removeLocation) }
     var askShare by remember { mutableStateOf<List<MediaItem>?>(null) }
+    var hints by remember { mutableStateOf(prefs.screenshotHints) }
+    var cropNavigation by remember { mutableStateOf(prefs.cropNavigation) }
+    var autoCrop by remember { mutableStateOf(prefs.autoCrop) }
+    val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        hints = granted
+        prefs.screenshotHints = granted
+        Screenshots.schedule(context)
+    }
+    fun setHints(on: Boolean) {
+        if (on && Build.VERSION.SDK_INT >= 33 &&
+            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            return
+        }
+        hints = on
+        prefs.screenshotHints = on
+        Screenshots.schedule(context)
+    }
     var confirmDelete by remember { mutableStateOf<List<MediaItem>?>(null) }
     // Big requests go to Android in parts, one confirmation window after another.
     var pendingRequests by remember { mutableStateOf(emptyList<List<MediaItem>>()) }
@@ -106,6 +131,17 @@ fun App(vm: GalleryViewModel = viewModel()) {
         access = Access.level(context)
         if (access != AccessLevel.NONE) vm.start(accessChanged = true)
     }
+    // Updated from a version without "media location": asked once, so saved copies keep the location.
+    LaunchedEffect(access) {
+        if (access != AccessLevel.NONE &&
+            context.checkSelfPermission(Manifest.permission.ACCESS_MEDIA_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            !prefs.askedMediaLocation
+        ) {
+            prefs.askedMediaLocation = true
+            permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_MEDIA_LOCATION))
+        }
+    }
+
     // Moving to the trash, restoring and deleting for good: Android asks the person itself
     // (no window when "Media management" is switched on).
     lateinit var launchNext: () -> Unit
@@ -297,8 +333,30 @@ fun App(vm: GalleryViewModel = viewModel()) {
                     removeLocation = removeLocation,
                     onRemoveLocation = { removeLocation = it; prefs.removeLocation = it },
                     onPickMore = { permissionLauncher.launch(Access.permissionsToRequest()) },
+                    screenshotSettings = ScreenshotSettings(
+                        hints = hints,
+                        cropNavigation = cropNavigation,
+                        autoCrop = autoCrop,
+                        onHints = ::setHints,
+                        onCropNavigation = { cropNavigation = it; prefs.cropNavigation = it },
+                        onAutoCrop = { autoCrop = it; prefs.autoCrop = it },
+                    ),
                 )
             }
+        }
+    }
+
+    // A photo asked for from a screenshot hint: opened as soon as the gallery has it.
+    val wanted = openRequest?.value
+    LaunchedEffect(wanted, state.items) {
+        if (wanted == null || access == AccessLevel.NONE) return@LaunchedEffect
+        val index = state.items.indexOfFirst { it.id == wanted.id }
+        if (index >= 0) {
+            selected = emptySet()
+            viewer = ViewerAt(null, index, wanted.readText)
+            openRequest.value = null
+        } else if (!state.loading) {
+            vm.start(accessChanged = false)
         }
     }
 
@@ -307,6 +365,7 @@ fun App(vm: GalleryViewModel = viewModel()) {
         Viewer(
             items = list,
             startIndex = at.index,
+            readTextAtStart = at.readText,
             onClose = { viewer = null },
             onShare = { share(listOf(it)) },
             onTrash = { trash(listOf(it), toTrash = true) },
@@ -371,6 +430,7 @@ private fun Content(
     removeLocation: Boolean,
     onRemoveLocation: (Boolean) -> Unit,
     onPickMore: () -> Unit,
+    screenshotSettings: ScreenshotSettings,
 ) {
     when (page) {
         Page.Photos -> if (state.items.isEmpty()) {
@@ -383,7 +443,7 @@ private fun Content(
             folderTimeline.orEmpty(), columns, onColumns, selected, onOpen, onToggle, onToggleDay, contentPadding = padding,
         )
         Page.Trash -> TrashScreen(state.trash, selected, onToggle, padding)
-        Page.Settings -> SettingsScreen(access, canManageMedia, removeLocation, onRemoveLocation, onPickMore, padding)
+        Page.Settings -> SettingsScreen(access, canManageMedia, removeLocation, onRemoveLocation, onPickMore, screenshotSettings, padding)
     }
 }
 

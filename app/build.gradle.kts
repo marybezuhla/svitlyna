@@ -43,6 +43,12 @@ android {
         buildConfig = true
     }
 
+    testOptions {
+        // Metadata tests run ExifInterface on real files; Android's own helpers it touches (logging)
+        // do nothing in tests instead of failing.
+        unitTests.isReturnDefaultValues = true
+    }
+
     androidResources {
         generateLocaleConfig = true
         // The OCR models are read as they are; compressing them only slows loading.
