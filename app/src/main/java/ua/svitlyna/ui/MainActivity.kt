@@ -69,7 +69,7 @@ open class MainActivity : FragmentActivity() {
                         // An opaque surface that also takes every touch meant for the gallery.
                         androidx.compose.material3.Surface(androidx.compose.ui.Modifier.fillMaxSize()) {
                             androidx.activity.compose.BackHandler { finish() }
-                            LockScreen(onUnlock = { AppLock.ask(this, onNoScreenLock = ::lockImpossible) { unlocked() } })
+                            LockScreen(onUnlock = { AppLock.ask(this@MainActivity, onNoScreenLock = ::lockImpossible) { unlocked() } })
                         }
                     }
                 }
