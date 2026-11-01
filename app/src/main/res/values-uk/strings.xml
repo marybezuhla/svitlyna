@@ -82,9 +82,12 @@
     <string name="prepare_nothing_found">У тексті не знайдено номерів карток і телефонів, email, IBAN, номерів авто чи адрес. Обличчя й місця перевірте самі.</string>
     <string name="prepare_hint">Торкніться знайденого, щоб показати чи затерти. Проведіть пальцем, щоб затерти будь-яку іншу ділянку; торкніться її, щоб прибрати.</string>
     <string name="prepare_clear_manual">Прибрати мої ділянки</string>
+    <string name="prepare_not_checked">Текст не перевірено (зупинено, довше хвилини або не вдалося прочитати). Перегляньте фото самі чи затріть ділянки вручну.</string>
+    <string name="prepare_partial">Перевірено лише верхню частину цього дуже довгого скріншота.</string>
+    <string name="prepare_as_is">Надіслати як є</string>
     <string name="kind_card">номер картки</string>
     <string name="kind_phone">телефон</string>
-    <string name="kind_email">email</string>
+    <string name="kind_email">ел. пошта</string>
     <string name="kind_iban">IBAN</string>
     <string name="kind_plate">номер авто</string>
     <string name="kind_address">адреса</string>
@@ -95,10 +98,10 @@
     <string name="preset_telegram">Telegram</string>
 
     <string name="temp_screenshots">Тимчасові скріншоти</string>
-    <string name="temp_screenshots_explain">Пропонує перенести старі скріншоти в кошик (Android перепитає; відновити можна ще близько 30 днів). «Залишити» в перегляді береже скріншот від цього.</string>
+    <string name="temp_screenshots_explain">Пропонує перенести старі скріншоти в кошик (Android перепитає; відновити можна ще близько 30 днів). «Залишити» в перегляді не дає пропонувати цей скріншот для кошика.</string>
     <string name="later">Пізніше</string>
     <string name="keep">Залишити</string>
-    <string name="kept">Залишено</string>
+    <string name="kept">Не залишати</string>
 
     <string name="settings_language">Мова</string>
     <string name="change_language">Змінити мову застосунку</string>

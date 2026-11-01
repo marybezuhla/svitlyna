@@ -102,7 +102,17 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
     var tempOn by remember { mutableStateOf(prefs.tempScreenshots) }
     var tempDays by remember { mutableIntStateOf(prefs.tempDays) }
     var kept by remember { mutableStateOf(prefs.keptScreenshots) }
-    var tempLater by remember { mutableStateOf(false) }
+    var tempLater by remember { mutableStateOf(System.currentTimeMillis() < prefs.tempLaterUntil) }
+    // "Keep" marks of screenshots that are gone are dropped, so the list doesn't only grow.
+    LaunchedEffect(state.items) {
+        if (state.loading || kept.isEmpty()) return@LaunchedEffect
+        val present = state.items.mapTo(HashSet()) { it.id }
+        val still = kept.filterTo(HashSet()) { it in present }
+        if (still.size != kept.size) {
+            kept = still
+            prefs.keptScreenshots = still
+        }
+    }
     val oldShots = remember(state.items, tempOn, tempDays, kept) {
         if (!tempOn) {
             emptyList()
@@ -221,7 +231,8 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
     fun share(items: List<MediaItem>) {
         if (items.isEmpty()) return
         val one = items.singleOrNull()
-        if (one != null && !one.isVideo) {
+        // GIFs would lose their movement in a fresh copy: they go the usual way.
+        if (one != null && !one.isVideo && !one.mime.equals("image/gif", ignoreCase = true)) {
             prepare = one
             return
         }
@@ -391,7 +402,11 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                             pluralStringResource(R.plurals.old_screenshots, oldShots.size, oldShots.size, tempDays),
                             modifier = Modifier.weight(1f),
                         )
-                        TextButton(onClick = { tempLater = true }) { Text(stringResource(R.string.later)) }
+                        TextButton(onClick = {
+                            tempLater = true
+                            // Asked again in a week, not at every start.
+                            prefs.tempLaterUntil = System.currentTimeMillis() + 7 * 86_400_000L
+                        }) { Text(stringResource(R.string.later)) }
                         TextButton(onClick = { tempLater = true; trash(oldShots, toTrash = true) }) {
                             Text(stringResource(R.string.move_to_trash))
                         }
@@ -433,7 +448,14 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
     }
 
     prepare?.let { item ->
-        PrepareScreen(item, onClose = { prepare = null })
+        PrepareScreen(
+            item,
+            onClose = { prepare = null },
+            onSendAsIs = {
+                prepare = null
+                if (removeLocation && !Share.canClean(item)) askShare = listOf(item) else doShare(listOf(item), removeLocation)
+            },
+        )
     }
 
     askShare?.let { items ->

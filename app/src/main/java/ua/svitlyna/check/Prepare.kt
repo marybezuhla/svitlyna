@@ -66,6 +66,17 @@ object Prepare {
      */
     suspend fun share(context: Context, item: MediaItem, preset: Preset, blackOut: List<RectF>): Intent? =
         withContext(Dispatchers.IO) {
+            try {
+                render(context, item, preset, blackOut)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                // Not enough memory or an unusual file: nothing is sent rather than a crash.
+                null
+            }
+        }
+
+    private fun render(context: Context, item: MediaItem, preset: Preset, blackOut: List<RectF>): Intent? {
             val bitmap = runCatching {
                 ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, item.uri)) { d, info, _ ->
                     val longer = max(info.size.width, info.size.height)
@@ -76,7 +87,10 @@ object Prepare {
                     d.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
                     d.isMutableRequired = true
                 }
-            }.getOrNull() ?: return@withContext null
+            }.getOrNull() ?: return null
+            // Ultra HDR photos carry a second, smaller picture (the gain map) that is saved with the
+            // copy: it would still show what is blacked out here. The copy goes without it.
+            if (android.os.Build.VERSION.SDK_INT >= 34) bitmap.gainmap = null
 
             val w = bitmap.width
             val h = bitmap.height
@@ -89,12 +103,14 @@ object Prepare {
             }
 
             val k = preset.keep(w, h)
+            val x = (k.left * w).roundToInt().coerceIn(0, w - 1)
+            val y = (k.top * h).roundToInt().coerceIn(0, h - 1)
             var out = Bitmap.createBitmap(
                 bitmap,
-                (k.left * w).roundToInt(),
-                (k.top * h).roundToInt(),
-                ((k.right - k.left) * w).roundToInt().coerceIn(1, w),
-                ((k.bottom - k.top) * h).roundToInt().coerceIn(1, h),
+                x,
+                y,
+                ((k.right - k.left) * w).roundToInt().coerceIn(1, w - x),
+                ((k.bottom - k.top) * h).roundToInt().coerceIn(1, h - y),
             )
             val targetW = when {
                 preset.width > 0 -> preset.width
@@ -113,11 +129,15 @@ object Prepare {
             val dir = File(File(context.cacheDir, "share"), System.currentTimeMillis().toString()).apply { mkdirs() }
             val png = item.mime.equals("image/png", ignoreCase = true)
             val file = File(dir, "svitlyna-${System.currentTimeMillis()}.${if (png) "png" else "jpg"}")
-            file.outputStream().use {
+            val written = file.outputStream().use {
                 out.compress(if (png) Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG, 92, it)
             }
             if (out !== bitmap) out.recycle()
             bitmap.recycle()
+            if (!written) {
+                file.delete()
+                return null
+            }
 
             val uri = FileProvider.getUriForFile(context, "${context.packageName}.share", file)
             val send = Intent(Intent.ACTION_SEND)
@@ -125,6 +145,6 @@ object Prepare {
                 .putExtra(Intent.EXTRA_STREAM, uri)
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             send.clipData = android.content.ClipData.newRawUri(null, uri)
-            Intent.createChooser(send, null)
-        }
+            return Intent.createChooser(send, null)
+    }
 }
