@@ -20,7 +20,13 @@ data class MediaItem(
     val durationMs: Long,
     /** For items in the trash: when the system will delete them for good (ms), else 0. */
     val expiresMs: Long = 0,
+    /** The folder path on the phone, e.g. "DCIM/Screenshots/". */
+    val relativePath: String = "",
 ) {
+    /** Screenshots live in a folder called Screenshots on every phone we know of. */
+    val isScreenshot: Boolean
+        get() = !isVideo && (relativePath.contains("Screenshot", ignoreCase = true) || bucketName.contains("Screenshot", ignoreCase = true))
+
     val uri: Uri
         get() = ContentUris.withAppendedId(
             if (isVideo) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI,

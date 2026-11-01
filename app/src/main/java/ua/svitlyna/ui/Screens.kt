@@ -164,6 +164,10 @@ class ScreenshotSettings(
     val onHints: (Boolean) -> Unit,
     val onCropNavigation: (Boolean) -> Unit,
     val onAutoCrop: (Boolean) -> Unit,
+    val temporary: Boolean,
+    val days: Int,
+    val onTemporary: (Boolean) -> Unit,
+    val onDays: (Int) -> Unit,
 )
 
 @Composable
@@ -260,6 +264,23 @@ fun SettingsScreen(
             screenshots.onAutoCrop,
             enabled = screenshots.hints,
         )
+        SwitchRow(
+            stringResource(R.string.temp_screenshots),
+            stringResource(R.string.temp_screenshots_explain),
+            screenshots.temporary,
+            screenshots.onTemporary,
+        )
+        if (screenshots.temporary) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (d in listOf(7, 30, 90)) {
+                    androidx.compose.material3.FilterChip(
+                        selected = screenshots.days == d,
+                        onClick = { screenshots.onDays(d) },
+                        label = { Text(pluralStringResource(R.plurals.after_days, d, d)) },
+                    )
+                }
+            }
+        }
 
         Access.languageSettings(context)?.let { intent ->
             HorizontalDivider()

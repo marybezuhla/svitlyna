@@ -57,7 +57,7 @@
     <string name="media_management_change">Змінити</string>
 
     <string name="settings_sharing">Надсилання</string>
-    <string name="remove_location">Надсилати без геолокації</string>
+    <string name="remove_location">Кілька фото: надсилати без геолокації</string>
     <string name="remove_location_explain">Фото надсилаються копіями без геолокації, ваші оригінали лишаються як є. Відео й деякі формати (HEIC, GIF…) поки очистити не вдається: перед надсиланням ми спитаємо.</string>
 
     <string name="settings_screenshots">Після скріншота</string>
@@ -75,6 +75,31 @@
     <string name="screenshot_cropped_text">Поруч зі скріншотом, з тією самою датою. Торкніться, щоб відкрити.</string>
     <string name="screenshot_crop_failed">Не вдалося зберегти копію без панелей</string>
 
+    <string name="prepare_title">Перед надсиланням</string>
+    <string name="prepare_location_removed">У цьому фото є геолокація: у копії, яку ви надішлете, її не буде. Інших метаданих теж.</string>
+    <string name="prepare_no_metadata">Копія, яку ви надішлете, без метаданих (без геолокації, камери й дат).</string>
+    <string name="prepare_checking">Шукаю особисті дані в тексті…</string>
+    <string name="prepare_nothing_found">У тексті не знайдено номерів карток і телефонів, email, IBAN, номерів авто чи адрес. Обличчя й місця перевірте самі.</string>
+    <string name="prepare_hint">Торкніться знайденого, щоб показати чи затерти. Проведіть пальцем, щоб затерти будь-яку іншу ділянку; торкніться її, щоб прибрати.</string>
+    <string name="prepare_clear_manual">Прибрати мої ділянки</string>
+    <string name="kind_card">номер картки</string>
+    <string name="kind_phone">телефон</string>
+    <string name="kind_email">email</string>
+    <string name="kind_iban">IBAN</string>
+    <string name="kind_plate">номер авто</string>
+    <string name="kind_address">адреса</string>
+    <string name="preset_original">Як є</string>
+    <string name="preset_post">Пост 4:5</string>
+    <string name="preset_square">Квадрат</string>
+    <string name="preset_story">Сторіз 9:16</string>
+    <string name="preset_telegram">Telegram</string>
+
+    <string name="temp_screenshots">Тимчасові скріншоти</string>
+    <string name="temp_screenshots_explain">Пропонує перенести старі скріншоти в кошик (Android перепитає; відновити можна ще близько 30 днів). «Залишити» в перегляді береже скріншот від цього.</string>
+    <string name="later">Пізніше</string>
+    <string name="keep">Залишити</string>
+    <string name="kept">Залишено</string>
+
     <string name="settings_language">Мова</string>
     <string name="change_language">Змінити мову застосунку</string>
 
@@ -90,6 +115,30 @@
         <item quantity="few">%1$d з %2$d слів</item>
         <item quantity="many">%1$d з %2$d слів</item>
         <item quantity="other">%1$d з %2$d слова</item>
+    </plurals>
+    <plurals name="prepare_found">
+        <item quantity="one">Знайдено %1$d: %2$s.</item>
+        <item quantity="few">Знайдено %1$d: %2$s.</item>
+        <item quantity="many">Знайдено %1$d: %2$s.</item>
+        <item quantity="other">Знайдено %1$d: %2$s.</item>
+    </plurals>
+    <plurals name="prepare_hidden">
+        <item quantity="one">Затерто %d.</item>
+        <item quantity="few">Затерто %d.</item>
+        <item quantity="many">Затерто %d.</item>
+        <item quantity="other">Затерто %d.</item>
+    </plurals>
+    <plurals name="old_screenshots">
+        <item quantity="one">%1$d скріншот старший за %2$d дн.</item>
+        <item quantity="few">%1$d скріншоти старші за %2$d дн.</item>
+        <item quantity="many">%1$d скріншотів старші за %2$d дн.</item>
+        <item quantity="other">%1$d скріншота старші за %2$d дн.</item>
+    </plurals>
+    <plurals name="after_days">
+        <item quantity="one">%d день</item>
+        <item quantity="few">%d дні</item>
+        <item quantity="many">%d днів</item>
+        <item quantity="other">%d дня</item>
     </plurals>
     <plurals name="items">
         <item quantity="one">%d елемент</item>

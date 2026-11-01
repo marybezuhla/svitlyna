@@ -9,6 +9,7 @@ import android.graphics.ImageDecoder
 import android.graphics.Rect
 import androidx.exifinterface.media.ExifInterface
 import kotlinx.coroutines.CancellationException
+import ua.svitlyna.check.Sensitive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -24,6 +25,31 @@ import kotlin.math.min
 class PhotoText(val width: Int, val height: Int, val lines: List<OcrLine>) {
     /** Every word with its line, in reading order. */
     val words: List<Pair<OcrLine, OcrWord>> = lines.flatMap { l -> l.words.map { l to it } }
+
+    /**
+     * Personal details found in the text (card, phone, e-mail…), each with the words it covers.
+     * Each line is checked as its words joined with spaces, so a match maps back to the words.
+     */
+    fun sensitive(): List<Pair<Sensitive.Kind, List<Int>>> {
+        val out = ArrayList<Pair<Sensitive.Kind, List<Int>>>()
+        val byGroup = LinkedHashMap<Int, MutableList<Int>>()
+        words.forEachIndexed { i, (line, _) -> byGroup.getOrPut(line.group) { mutableListOf() } += i }
+        for (indices in byGroup.values) {
+            val sb = StringBuilder()
+            val spans = ArrayList<IntRange>()
+            for (i in indices) {
+                if (sb.isNotEmpty()) sb.append(' ')
+                val start = sb.length
+                sb.append(words[i].second.text)
+                spans += start until sb.length
+            }
+            for (f in Sensitive.find(sb.toString())) {
+                val covered = indices.filterIndexed { k, _ -> spans[k].first <= f.range.last && f.range.first <= spans[k].last }
+                if (covered.isNotEmpty()) out += f.kind to covered
+            }
+        }
+        return out
+    }
 
     /** The chosen words as text: words of one line with spaces, lines with line breaks. */
     fun text(chosen: Set<Int>): String {

@@ -45,6 +45,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -94,6 +95,25 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
     var columns by remember { mutableIntStateOf(prefs.columns) }
     var removeLocation by remember { mutableStateOf(prefs.removeLocation) }
     var askShare by remember { mutableStateOf<List<MediaItem>?>(null) }
+    // One photo is sent through "Before sending" (check, black out, size); several go as before.
+    var prepare by remember { mutableStateOf<MediaItem?>(null) }
+    // Temporary screenshots: an offer to move old ones to the trash (Android asks to confirm).
+    var tempOn by remember { mutableStateOf(prefs.tempScreenshots) }
+    var tempDays by remember { mutableIntStateOf(prefs.tempDays) }
+    var kept by remember { mutableStateOf(prefs.keptScreenshots) }
+    var tempLater by remember { mutableStateOf(false) }
+    val oldShots = remember(state.items, tempOn, tempDays, kept) {
+        if (!tempOn) {
+            emptyList()
+        } else {
+            val limit = System.currentTimeMillis() - tempDays * 86_400_000L
+            state.items.filter { it.isScreenshot && it.dateMs < limit && it.id !in kept }
+        }
+    }
+    fun toggleKept(item: MediaItem) {
+        kept = if (item.id in kept) kept - item.id else kept + item.id
+        prefs.keptScreenshots = kept
+    }
     var hints by remember { mutableStateOf(prefs.screenshotHints) }
     var cropNavigation by remember { mutableStateOf(prefs.cropNavigation) }
     var autoCrop by remember { mutableStateOf(prefs.autoCrop) }
@@ -199,6 +219,11 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
 
     fun share(items: List<MediaItem>) {
         if (items.isEmpty()) return
+        val one = items.singleOrNull()
+        if (one != null && !one.isVideo) {
+            prepare = one
+            return
+        }
         if (removeLocation && items.any { !Share.canClean(it) }) askShare = items else doShare(items, removeLocation)
     }
 
@@ -340,8 +365,37 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                         onHints = ::setHints,
                         onCropNavigation = { cropNavigation = it; prefs.cropNavigation = it },
                         onAutoCrop = { autoCrop = it; prefs.autoCrop = it },
+                        temporary = tempOn,
+                        days = tempDays,
+                        onTemporary = { tempOn = it; prefs.tempScreenshots = it },
+                        onDays = { tempDays = it; prefs.tempDays = it },
                     ),
                 )
+            }
+            if (page == Page.Photos && selected.isEmpty() && oldShots.isNotEmpty() && !tempLater && !state.loading) {
+                androidx.compose.material3.Surface(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.secondaryContainer,
+                    tonalElevation = 4.dp,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(padding)
+                        .padding(12.dp),
+                ) {
+                    androidx.compose.foundation.layout.Row(
+                        Modifier.padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            pluralStringResource(R.plurals.old_screenshots, oldShots.size, oldShots.size, tempDays),
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = { tempLater = true }) { Text(stringResource(R.string.later)) }
+                        TextButton(onClick = { tempLater = true; trash(oldShots, toTrash = true) }) {
+                            Text(stringResource(R.string.move_to_trash))
+                        }
+                    }
+                }
             }
         }
     }
@@ -371,8 +425,14 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
             onClose = { viewer = null },
             onShare = { share(listOf(it)) },
             onTrash = { trash(listOf(it), toTrash = true) },
+            keep = { if (tempOn && it.isScreenshot) it.id in kept else null },
+            onKeep = ::toggleKept,
         )
         }
+    }
+
+    prepare?.let { item ->
+        PrepareScreen(item, onClose = { prepare = null })
     }
 
     askShare?.let { items ->
