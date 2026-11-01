@@ -21,7 +21,7 @@ class MetadataTest {
 
     private fun sample(name: String): File {
         val ext = name.substringAfterLast('.')
-        val f = File.createTempFile("m", ".$ext")
+        val f = File.createTempFile("meta", ".$ext")
         javaClass.classLoader!!.getResourceAsStream(name)!!.use { input -> f.outputStream().use { input.copyTo(it) } }
         return f
     }
