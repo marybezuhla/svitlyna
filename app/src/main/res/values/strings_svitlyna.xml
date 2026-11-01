@@ -85,7 +85,7 @@
     <string name="sv_stitch_stack">One under the other</string>
     <string name="sv_pick_not_cleaned">A file that can\'t be cleaned of its location was not handed over (turn secure sharing off to send it as is).</string>
     <string name="sv_fix_dates">Fix date taken</string>
-    <string name="sv_fix_dates_explain">Photos from messengers often lose the date they were taken and jump to the day they were saved. Svitlyna reads the date from the file name and writes it into the photo (only the date: the picture and everything else stay). Android asks you first (unless Media management is on).</string>
+    <string name="sv_fix_dates_explain">Photos from messengers often lose the date they were taken and jump to the day they were saved. Svitlyna reads the date from the file name and writes it into the photo (only the date: the picture and everything else stay). Android asks you first.</string>
     <string name="sv_fix_dates_none">Every photo already has its date, or its name doesn\'t say one.</string>
     <plurals name="sv_fix_dates_button">
         <item quantity="one">Fix %d</item>
