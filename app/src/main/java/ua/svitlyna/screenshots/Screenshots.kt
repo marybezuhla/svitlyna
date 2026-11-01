@@ -47,7 +47,8 @@ object Screenshots {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    fun enabled(context: Context) = Prefs(context).screenshotHints
+    /** The job is needed for hints, for automatic cropping, or both. */
+    fun enabled(context: Context) = Prefs(context).let { it.screenshotHints || it.autoCrop }
 
     /** Asks Android to wake the app up on the next change in the photos; done again after each one. */
     fun schedule(context: Context) {
@@ -109,7 +110,7 @@ object Screenshots {
         val keep = prefs.bars?.keep(shot.width, shot.height, prefs.cropNavigation)
         if (keep != null && prefs.autoCrop) {
             crop(context, shot)
-        } else {
+        } else if (prefs.screenshotHints) {
             notify(context, shot, canCrop = keep != null)
         }
     }

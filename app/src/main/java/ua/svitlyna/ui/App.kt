@@ -463,7 +463,11 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                         autoCrop = autoCrop,
                         onHints = ::setHints,
                         onCropNavigation = { cropNavigation = it; prefs.cropNavigation = it },
-                        onAutoCrop = { autoCrop = it; prefs.autoCrop = it },
+                        onAutoCrop = {
+                            autoCrop = it
+                            prefs.autoCrop = it
+                            Screenshots.schedule(context)
+                        },
                         temporary = tempOn,
                         days = tempDays,
                         onTemporary = { tempOn = it; prefs.tempScreenshots = it },

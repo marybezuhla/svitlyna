@@ -257,14 +257,13 @@ fun SettingsScreen(
             null,
             screenshots.cropNavigation,
             screenshots.onCropNavigation,
-            enabled = screenshots.hints,
+            enabled = screenshots.hints || screenshots.autoCrop,
         )
         SwitchRow(
             stringResource(R.string.auto_crop),
             stringResource(R.string.auto_crop_explain),
             screenshots.autoCrop,
             screenshots.onAutoCrop,
-            enabled = screenshots.hints,
         )
         SwitchRow(
             stringResource(R.string.temp_screenshots),
