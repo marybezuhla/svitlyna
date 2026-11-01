@@ -113,6 +113,14 @@
     <string name="stitch_too_tall">Too long for one picture: try fewer screenshots.</string>
     <string name="stitch_failed">Couldn\'t make the long screenshot.</string>
 
+    <string name="fix_dates">Fix date taken</string>
+    <string name="fix_dates_open">Review and fix</string>
+    <string name="fix_dates_explain">Photos from messengers often lose the date they were taken and jump to the day they were saved. Svitlyna reads the date from the file name and writes it into the photo (only the date: the picture and everything else stay). Android asks you first.</string>
+    <string name="fix_dates_none">Every photo already has its date, or its name doesn\'t say one.</string>
+    <string name="fix_dates_was">Now: %1$s</string>
+    <string name="fix_dates_will">Will be: %1$s</string>
+    <string name="fix_dates_will_date_only">Will be: %1$s (date only, noon)</string>
+
     <string name="settings_language">Language</string>
     <string name="change_language">Change the app language</string>
 
@@ -142,6 +150,18 @@
     <plurals name="after_days">
         <item quantity="one">%d day</item>
         <item quantity="other">%d days</item>
+    </plurals>
+    <plurals name="fix_dates_button">
+        <item quantity="one">Fix %d</item>
+        <item quantity="other">Fix %d</item>
+    </plurals>
+    <plurals name="fix_dates_done">
+        <item quantity="one">Fixed %d photo</item>
+        <item quantity="other">Fixed %d photos</item>
+    </plurals>
+    <plurals name="fix_dates_found">
+        <item quantity="one">%d photo can get its date from its name.</item>
+        <item quantity="other">%d photos can get their date from their name.</item>
     </plurals>
     <plurals name="items">
         <item quantity="one">%d item</item>

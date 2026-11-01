@@ -189,6 +189,8 @@ fun SettingsScreen(
     onRemoveLocation: (Boolean) -> Unit,
     onPickMore: () -> Unit,
     screenshots: ScreenshotSettings,
+    onFixDates: () -> Unit,
+    fixDatesCount: Int,
     contentPadding: PaddingValues,
 ) {
     val context = LocalContext.current
@@ -281,6 +283,11 @@ fun SettingsScreen(
                 }
             }
         }
+
+        HorizontalDivider()
+        Section(stringResource(R.string.fix_dates))
+        Text(pluralStringResource(R.plurals.fix_dates_found, fixDatesCount, fixDatesCount), style = MaterialTheme.typography.bodySmall)
+        OutlinedButton(onClick = onFixDates) { Text(stringResource(R.string.fix_dates_open)) }
 
         Access.languageSettings(context)?.let { intent ->
             HorizontalDivider()

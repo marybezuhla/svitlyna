@@ -58,6 +58,7 @@ import ua.svitlyna.R
 import ua.svitlyna.media.Folder
 import ua.svitlyna.media.MediaItem
 import ua.svitlyna.media.Share
+import ua.svitlyna.edit.FixDates
 import ua.svitlyna.edit.StitchMaker
 import ua.svitlyna.media.Timeline
 import ua.svitlyna.screenshots.Screenshots
@@ -68,6 +69,7 @@ private sealed interface Page {
     data class InFolder(val folder: Folder) : Page
     data object Trash : Page
     data object Settings : Page
+    data object FixDates : Page
 }
 
 private enum class RequestKind { TRASH, RESTORE, DELETE }
@@ -219,6 +221,39 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
         if (items.isNotEmpty()) confirmDelete = items
     }
 
+    // Fix date taken: candidates, the chosen ones, Android's write permission, then the writing.
+    val fixes = remember(state.items) { FixDates.candidates(state.items) }
+    var fixChosen by remember(fixes) { mutableStateOf(fixes.map { it.item.id }.toSet()) }
+    var fixing by remember { mutableStateOf(false) }
+    var pendingFix by remember { mutableStateOf(emptyList<FixDates.Fix>()) }
+    val fixLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        val todo = pendingFix
+        pendingFix = emptyList()
+        if (result.resultCode != android.app.Activity.RESULT_OK || todo.isEmpty()) {
+            fixing = false
+            return@rememberLauncherForActivityResult
+        }
+        scope.launch {
+            val done = FixDates.apply(context, todo)
+            fixing = false
+            snackbar.showSnackbar(context.resources.getQuantityString(R.plurals.fix_dates_done, done, done))
+        }
+    }
+    fun fixDates() {
+        val todo = fixes.filter { it.item.id in fixChosen }.take(REQUEST_CHUNK)
+        if (todo.isEmpty()) return
+        fixing = true
+        pendingFix = todo
+        try {
+            val pi = MediaStore.createWriteRequest(resolver, todo.map { it.item.uri })
+            fixLauncher.launch(IntentSenderRequest.Builder(pi.intentSender).build())
+        } catch (e: Exception) {
+            fixing = false
+            pendingFix = emptyList()
+            scope.launch { snackbar.showSnackbar(context.getString(R.string.request_failed)) }
+        }
+    }
+
     // Stitching screenshots into one long one: runs in the background with a Stop button.
     var stitching by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     var askStack by remember { mutableStateOf<List<MediaItem>?>(null) }
@@ -298,6 +333,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
             selected.isNotEmpty() -> selected = emptySet()
             page is Page.InFolder -> goTo(Page.Folders)
             page == Page.Trash || page == Page.Settings -> goTo(lastTab)
+            page == Page.FixDates -> goTo(Page.Settings)
             else -> goTo(Page.Photos)
         }
     }
@@ -341,12 +377,21 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                     is Page.InFolder -> p.folder.name.ifBlank { stringResource(R.string.no_folder_name) }
                     Page.Trash -> stringResource(R.string.trash)
                     Page.Settings -> stringResource(R.string.settings)
+                    Page.FixDates -> stringResource(R.string.fix_dates)
                 }
                 TopAppBar(
                     title = { Text(title) },
                     navigationIcon = {
-                        if (page is Page.InFolder || page == Page.Trash || page == Page.Settings) {
-                            IconButton(onClick = { goTo(if (page is Page.InFolder) Page.Folders else lastTab) }) {
+                        if (page is Page.InFolder || page == Page.Trash || page == Page.Settings || page == Page.FixDates) {
+                            IconButton(onClick = {
+                                goTo(
+                                    when (page) {
+                                        is Page.InFolder -> Page.Folders
+                                        Page.FixDates -> Page.Settings
+                                        else -> lastTab
+                                    },
+                                )
+                            }) {
                                 Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
                             }
                         }
@@ -405,6 +450,13 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
                     removeLocation = removeLocation,
                     onRemoveLocation = { removeLocation = it; prefs.removeLocation = it },
                     onPickMore = { permissionLauncher.launch(Access.permissionsToRequest()) },
+                    onFixDates = { goTo(Page.FixDates) },
+                    fixDatesCount = fixes.size,
+                    fixes = fixes,
+                    fixChosen = fixChosen,
+                    onFixChosen = { fixChosen = it },
+                    onFix = ::fixDates,
+                    fixing = fixing,
                     screenshotSettings = ScreenshotSettings(
                         hints = hints,
                         cropNavigation = cropNavigation,
@@ -574,6 +626,13 @@ private fun Content(
     removeLocation: Boolean,
     onRemoveLocation: (Boolean) -> Unit,
     onPickMore: () -> Unit,
+    onFixDates: () -> Unit,
+    fixDatesCount: Int,
+    fixes: List<FixDates.Fix>,
+    fixChosen: Set<Long>,
+    onFixChosen: (Set<Long>) -> Unit,
+    onFix: () -> Unit,
+    fixing: Boolean,
     screenshotSettings: ScreenshotSettings,
 ) {
     when (page) {
@@ -587,7 +646,10 @@ private fun Content(
             folderTimeline.orEmpty(), columns, onColumns, selected, onOpen, onToggle, onToggleDay, contentPadding = padding,
         )
         Page.Trash -> TrashScreen(state.trash, selected, onToggle, padding)
-        Page.Settings -> SettingsScreen(access, canManageMedia, removeLocation, onRemoveLocation, onPickMore, screenshotSettings, padding)
+        Page.Settings -> SettingsScreen(
+            access, canManageMedia, removeLocation, onRemoveLocation, onPickMore, screenshotSettings, onFixDates, fixDatesCount, padding,
+        )
+        Page.FixDates -> FixDatesScreen(fixes, fixChosen, onFixChosen, onFix, fixing, padding)
     }
 }
 
