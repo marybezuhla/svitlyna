@@ -1292,6 +1292,10 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
+                    SearchSettings()
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
                     SettingsSwitchRow(
                         title = stringResource(R.string.settings_app_lock_title),
                         subtitle = stringResource(R.string.sv_app_lock_desc),

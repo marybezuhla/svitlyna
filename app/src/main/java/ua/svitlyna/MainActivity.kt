@@ -28,6 +28,8 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         currentIntentState.value = intent
         IrisPhotoWidget.refreshAll(this)
+        // Svitlyna: reading photos' text for search, in the background while charging.
+        ua.svitlyna.search.IndexJob.schedule(this)
         enableEdgeToEdge()
         val settingsPreferences = SettingsPreferences(this)
         val initialSettings = settingsPreferences.state.value

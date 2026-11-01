@@ -518,11 +518,26 @@ internal fun GalleryScaffold(
         }
     }
 
+    // Svitlyna's search joins Iris's: the text read on photos (Ukrainian word forms, Latin letters),
+    // word-aware names and folders, and dates in words («травень 2024», «вчора»).
+    val searchItems = remember(images) { images.map { it.asItem() } }
+    var smart by remember { mutableStateOf(ua.svitlyna.search.Search.EMPTY) }
+    LaunchedEffect(fileSearchQuery, searchItems) {
+        if (fileSearchQuery.isBlank()) {
+            smart = ua.svitlyna.search.Search.EMPTY
+            return@LaunchedEffect
+        }
+        kotlinx.coroutines.delay(250)
+        smart = ua.svitlyna.search.Search.find(context, fileSearchQuery, searchItems)
+    }
+    val smartIds = remember(smart) { smart.items.mapTo(HashSet()) { it.id } }
+
     fun filterMediaList(list: List<MediaImage>, query: String): List<MediaImage> {
         if (query.isBlank()) return list
         val q = query.trim()
         val qLower = q.lowercase()
         return list.filter { item ->
+            item.id in smartIds ||
             item.name.contains(q, ignoreCase = true) ||
             item.title.contains(q, ignoreCase = true) ||
             item.bucketName.contains(q, ignoreCase = true) ||
@@ -536,13 +551,13 @@ internal fun GalleryScaffold(
         }
     }
 
-    val displayedFavoritePhotos = remember(favoriteImages, fileSearchQuery) { filterMediaList(favoriteImages, fileSearchQuery) }
-    val displayedMedia = remember(images, fileSearchQuery) { filterMediaList(images, fileSearchQuery) }
-    val displayedPhotos = remember(images, fileSearchQuery) {
+    val displayedFavoritePhotos = remember(favoriteImages, fileSearchQuery, smartIds) { filterMediaList(favoriteImages, fileSearchQuery) }
+    val displayedMedia = remember(images, fileSearchQuery, smartIds) { filterMediaList(images, fileSearchQuery) }
+    val displayedPhotos = remember(images, fileSearchQuery, smartIds) {
         val allPhotos = images.filterNot { it.isVideo }
         filterMediaList(allPhotos, fileSearchQuery)
     }
-    val displayedVideos = remember(images, fileSearchQuery) {
+    val displayedVideos = remember(images, fileSearchQuery, smartIds) {
         val allVideos = images.filter { it.isVideo }
         filterMediaList(allVideos, fileSearchQuery)
     }
@@ -555,7 +570,7 @@ internal fun GalleryScaffold(
         }
     }
     val effectiveAlbumMediaSort = selectedAlbum?.id?.let { albumMediaSortOverrides[it] } ?: albumMediaSort
-    val displayedAlbumPhotos = remember(selectedAlbum, fileSearchQuery, effectiveAlbumMediaSort) {
+    val displayedAlbumPhotos = remember(selectedAlbum, fileSearchQuery, effectiveAlbumMediaSort, smartIds) {
         selectedAlbum?.let { album ->
             val filtered = filterMediaList(album.images, fileSearchQuery)
             when (effectiveAlbumMediaSort) {
@@ -2185,6 +2200,9 @@ internal fun GalleryScaffold(
         if (index >= 0 && activeImages.isNotEmpty()) PhotoViewer(
             images = activeImages,
             initialPage = index,
+            // Opened from a search: the words looked for are highlighted on the photo's text.
+            textHighlight = if (fileSearchQuery.isNotBlank()) smart.keys else emptyList(),
+            openTextAtStart = fileSearchQuery.isNotBlank() && id in smart.textIds,
             favorites = favorites,
             autoPlay = settings.autoPlayVideo,
             loop = settings.loopVideo,
