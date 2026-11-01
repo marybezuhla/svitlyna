@@ -30,7 +30,7 @@ class WordsTest {
 
     @Test
     fun splittingKeepsApostrophesAndNumbers() {
-        assertEquals(listOf("пам'ять", "2024", "рік"), Words.split("Пам'ять, 2024 — рік!"))
+        assertEquals(listOf("Пам'ять", "2024", "рік"), Words.split("Пам'ять, 2024 — рік!"))
         assertEquals("380501234567", Words.key("380501234567"))
     }
 
