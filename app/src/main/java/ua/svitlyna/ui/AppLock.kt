@@ -18,13 +18,22 @@ import ua.svitlyna.R
 object AppLock {
     const val GRACE_MS = 30_000L
 
-    /** Unlocked until this moment (process memory only: gone when the process is, so the lock stays). */
+    /*
+     * Process memory only: when Android ends the process, both are gone and the app is locked again.
+     * Kept here, not in the window, so a closed and reopened window (Back on Android 11, a theme
+     * change) still knows when the person left.
+     */
     @Volatile
-    var unlockedUntil = 0L
+    var unlocked = false
 
-    /** One prompt at a time: the PIN screen sends the app to the background and back. */
     @Volatile
-    private var asking = false
+    var leftAt = 0L
+
+    fun shouldLock(lockOn: Boolean): Boolean =
+        lockOn && (!unlocked || (leftAt > 0 && android.os.SystemClock.elapsedRealtime() - leftAt > GRACE_MS))
+
+    /** The window with a prompt open: one prompt at a time (the PIN screen sends the app away and back). */
+    private var askingIn: java.lang.ref.WeakReference<FragmentActivity>? = null
 
     fun deviceSecure(activity: FragmentActivity): Boolean =
         activity.getSystemService(KeyguardManager::class.java)?.isDeviceSecure == true
@@ -49,20 +58,22 @@ object AppLock {
             onNoScreenLock()
             return
         }
-        if (asking) return
-        asking = true
+        // A prompt of a window that is gone never reports back: only a live, same window counts.
+        val open = askingIn?.get()
+        if (open === activity && !activity.isDestroyed) return
+        askingIn = java.lang.ref.WeakReference(activity)
         val prompt = BiometricPrompt(
             activity,
             ContextCompat.getMainExecutor(activity),
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                    asking = false
+                    askingIn = null
                     onOk()
                 }
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     // Cancelled or failed: the lock screen's button asks again.
-                    asking = false
+                    askingIn = null
                 }
             },
         )
@@ -70,6 +81,6 @@ object AppLock {
             .setTitle(activity.getString(R.string.lock_title))
             .setAllowedAuthenticators(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)
             .build()
-        runCatching { prompt.authenticate(info) }.onFailure { asking = false }
+        runCatching { prompt.authenticate(info) }.onFailure { askingIn = null }
     }
 }

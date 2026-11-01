@@ -225,7 +225,7 @@
     <string name="folder_show">Show in the timeline</string>
     <string name="sort_newest">Newest</string>
     <string name="sort_name">Name</string>
-    <string name="sort_biggest">Most photos</string>
+    <string name="sort_biggest">Most items</string>
     <string name="filter_favorites">♥ Favourites</string>
 
     <string name="settings_language">Language</string>
