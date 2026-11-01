@@ -2527,9 +2527,10 @@ private suspend fun performOverwriteWrite(
         val backup = File.createTempFile("orig", ".img", dir)
         val fresh = File.createTempFile("new", ".img", dir)
         try {
+            // Read as the original only: without "media location" access the place would be lost
+            // from the photo; then nothing is overwritten.
             val read = runCatching {
-                (runCatching { context.contentResolver.openInputStream(MediaStore.setRequireOriginal(targetUri)) }.getOrNull()
-                    ?: context.contentResolver.openInputStream(targetUri))!!.use { input -> backup.outputStream().use { input.copyTo(it) } }
+                context.contentResolver.openInputStream(MediaStore.setRequireOriginal(targetUri))!!.use { input -> backup.outputStream().use { input.copyTo(it) } }
                 true
             }.getOrDefault(false)
             if (!read) return@withContext false
@@ -2539,13 +2540,27 @@ private suspend fun performOverwriteWrite(
                 ua.svitlyna.media.Metadata.copy(ExifInterface(backup), dst, image.dateTaken)
                 dst.saveAttributes()
             }
+            // Opened outside the safety net: a missing permission goes up to the editor, which asks
+            // Android for it (nothing has been cut yet at this point).
+            val out = context.contentResolver.openOutputStream(targetUri, "wt") ?: return@withContext false
             val written = runCatching {
-                context.contentResolver.openOutputStream(targetUri, "wt")!!.use { out -> fresh.inputStream().use { it.copyTo(out) } }
+                out.use { o -> fresh.inputStream().use { it.copyTo(o) } }
                 true
             }.getOrDefault(false)
             if (!written) {
-                runCatching {
-                    context.contentResolver.openOutputStream(targetUri, "wt")!!.use { out -> backup.inputStream().use { it.copyTo(out) } }
+                val restored = runCatching {
+                    context.contentResolver.openOutputStream(targetUri, "wt")!!.use { o -> backup.inputStream().use { it.copyTo(o) } }
+                    true
+                }.getOrDefault(false)
+                // Even that failed: the original is saved as a new photo, never lost.
+                if (!restored) runCatching {
+                    val values = ContentValues().apply {
+                        put(MediaStore.MediaColumns.DISPLAY_NAME, image.name.substringBeforeLast('.') + "_original." + image.name.substringAfterLast('.', "jpg"))
+                        put(MediaStore.MediaColumns.RELATIVE_PATH, "Pictures/Svitlyna/")
+                    }
+                    context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)?.let { u ->
+                        context.contentResolver.openOutputStream(u)!!.use { o -> backup.inputStream().use { it.copyTo(o) } }
+                    }
                 }
                 return@withContext false
             }

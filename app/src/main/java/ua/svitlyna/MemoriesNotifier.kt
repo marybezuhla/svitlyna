@@ -82,6 +82,8 @@ class MemoriesReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val settings = SettingsPreferences(context).state.value
         if (!settings.memoriesNotificationEnabled) return
+        // Svitlyna: with the app lock on, no photo goes into a notification.
+        if (settings.appLockEnabled) return
 
         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context,
                 Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
