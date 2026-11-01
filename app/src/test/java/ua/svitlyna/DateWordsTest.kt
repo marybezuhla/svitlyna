@@ -48,6 +48,10 @@ class DateWordsTest {
         check("01.05.2024", LocalDate.of(2024, 5, 1), LocalDate.of(2024, 5, 1))
         check("чек 2024-05-01", LocalDate.of(2024, 5, 1), LocalDate.of(2024, 5, 1), listOf("чек"))
         check("1.5.24", LocalDate.of(2024, 5, 1), LocalDate.of(2024, 5, 1))
+        check("1.5.99", LocalDate.of(1999, 5, 1), LocalDate.of(1999, 5, 1))
+        // Not about time: stays a word to look for.
+        assertEquals(listOf("last", "supper"), DateWords.parse("Last Supper", today).rest)
+        assertEquals(listOf("літа"), DateWords.parse("минулого літа", today).rest)
     }
 
     @Test

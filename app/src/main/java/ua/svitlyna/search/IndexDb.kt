@@ -70,13 +70,16 @@ object IndexDb {
         runCatching { db.query("PRAGMA secure_delete = ON").use { it.moveToFirst() } }
     }
 
-    /** The wrapped key can never be opened again (as opposed to Keystore being busy for a moment). */
-    private fun lost(e: Exception): Boolean = e is javax.crypto.AEADBadTagException ||
-        e is java.security.UnrecoverableKeyException ||
-        e is android.security.keystore.KeyPermanentlyInvalidatedException ||
-        e is java.security.InvalidKeyException ||
-        e is javax.crypto.BadPaddingException ||
-        e is IndexOutOfBoundsException
+    /** The key file is damaged, or the Keystore key that wraps it is gone. */
+    private class LostKey(why: String) : Exception(why)
+
+    /**
+     * The wrapped key can never be opened again, as opposed to Keystore failing for a moment (it
+     * reports many passing troubles as general key errors, so those are NOT taken as lost).
+     */
+    private fun lost(e: Exception): Boolean = e is LostKey ||
+        e is javax.crypto.AEADBadTagException ||
+        e is android.security.keystore.KeyPermanentlyInvalidatedException
 
     private fun build(context: Context, key: ByteArray): SupportSQLiteOpenHelper {
         val config = SupportSQLiteOpenHelper.Configuration.builder(context)
@@ -128,8 +131,11 @@ object IndexDb {
         val file = File(context.noBackupFilesDir, KEY_FILE)
         if (!file.exists()) return null
         val bytes = file.readBytes()
+        if (bytes.isEmpty()) throw LostKey("empty key file")
         val ivSize = bytes[0].toInt()
-        if (ivSize <= 0 || bytes.size < 1 + ivSize + 16) throw IndexOutOfBoundsException("damaged key file")
+        if (ivSize <= 0 || bytes.size < 1 + ivSize + 16) throw LostKey("damaged key file")
+        // The wrapping key is gone (e.g. the app's data in Keystore was cleared): the file can't be opened.
+        if (!KeyStore.getInstance("AndroidKeyStore").apply { load(null) }.containsAlias(ALIAS)) throw LostKey("no wrapping key")
         val iv = bytes.copyOfRange(1, 1 + ivSize)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply { init(Cipher.DECRYPT_MODE, wrapping(), GCMParameterSpec(128, iv)) }
         return cipher.doFinal(bytes, 1 + ivSize, bytes.size - 1 - ivSize)

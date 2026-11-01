@@ -177,7 +177,7 @@ fun SearchScreen(
                     on = false
                     prefs.searchText = false
                     ua.svitlyna.search.IndexJob.schedule(context)
-                    scope.launch { Indexer.erase(context) }
+                    Indexer.eraseSoon(context)
                 }) { Text(stringResource(R.string.search_off_erase)) }
             },
             dismissButton = { TextButton(onClick = { askErase = false }) { Text(stringResource(R.string.cancel)) } },
