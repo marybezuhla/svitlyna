@@ -79,6 +79,10 @@ dependencies {
     // Text on photos: PP-OCRv5 models (in assets/ocr) run with ONNX Runtime (MIT), as in Pysanka
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
 
+    // Search: the text found on photos is kept in an encrypted SQLite database (SQLCipher, BSD-style)
+    implementation("net.zetetic:sqlcipher-android:4.6.1")
+    implementation("androidx.sqlite:sqlite:2.4.0")
+
     // Video playback (Apache 2.0); no network module
     implementation("androidx.media3:media3-exoplayer:1.5.1")
     implementation("androidx.media3:media3-ui:1.5.1")
@@ -86,4 +90,6 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     // Real Android classes for tests that write photo metadata with ExifInterface (tests only)
     testImplementation("org.robolectric:robolectric:4.14.1")
+    // The search database's queries, checked on plain SQLite in tests (the encrypted one needs the phone)
+    testImplementation("androidx.sqlite:sqlite-framework:2.4.0")
 }
