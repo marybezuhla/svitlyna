@@ -51,7 +51,7 @@
     <string name="pick_more">Pick more photos</string>
     <string name="change_access">Change in Android settings</string>
     <string name="media_management">Media management</string>
-    <string name="media_management_explain">Optional. With it, moving to the trash, deleting for good and future edits happen without Android\'s confirmation window each time (Svitlyna still asks before deleting for good). It is still access to photos and videos only.</string>
+    <string name="media_management_explain">Optional. With it, moving to the trash, deleting for good, moving to another folder, renaming, favourites and fixing dates happen without Android\'s confirmation window each time (Svitlyna still asks before deleting for good). It is still access to photos and videos only.</string>
     <string name="media_management_on">On</string>
     <string name="media_management_off">Off</string>
     <string name="media_management_change">Change</string>
@@ -193,7 +193,7 @@
     <string name="folder_hidden_mark">hidden</string>
 
     <string name="dupes">Duplicates</string>
-    <string name="dupes_explain">Finds files that are exactly the same (the same photo saved twice, from two messengers…). Only files of equal size are compared; nothing is changed until you choose.</string>
+    <string name="dupes_explain">Finds files that are exactly the same (the same photo saved twice, from two messengers…). Only files of equal size are compared; nothing is changed until you tap the button.</string>
     <string name="dupes_find">Look for duplicates</string>
     <string name="dupes_checking">Checking %1$d of %2$d…</string>
     <string name="dupes_none">No duplicates found.</string>
@@ -206,7 +206,10 @@
     <string name="start_tab">Open on</string>
     <string name="settings_lock">Lock</string>
     <string name="app_lock">Lock the app</string>
-    <string name="app_lock_explain">Opening Svitlyna asks for your fingerprint or the phone\'s PIN (Android checks it; Svitlyna never sees it). Within half a minute it doesn\'t ask again. The app is hidden in recent apps.</string>
+    <string name="app_lock_explain">Opening Svitlyna asks for your fingerprint or the phone\'s PIN (Android checks it; Svitlyna never sees it). Within half a minute it doesn\'t ask again. The app is hidden in recent apps (on Android 11–12 screenshots of the app are also blocked).</string>
+    <string name="app_lock_turned_off">The phone has no screen lock any more, so the app lock was turned off.</string>
+    <string name="too_many_selected">At most %d at a time: select fewer.</string>
+    <string name="live_failed">This live photo's video can't be played.</string>
     <string name="app_lock_no_screen_lock">Set a PIN, pattern or fingerprint for the phone first.</string>
     <string name="lock_title">Open Svitlyna</string>
     <string name="lock_open">Unlock</string>
@@ -222,7 +225,7 @@
     <string name="folder_show">Show in the timeline</string>
     <string name="sort_newest">Newest</string>
     <string name="sort_name">Name</string>
-    <string name="sort_biggest">Biggest</string>
+    <string name="sort_biggest">Most photos</string>
     <string name="filter_favorites">♥ Favourites</string>
 
     <string name="settings_language">Language</string>
@@ -272,12 +275,12 @@
         <item quantity="other">%1$d extra copies, %2$s.</item>
     </plurals>
     <plurals name="copied_n">
-        <item quantity="one">Copied %d</item>
-        <item quantity="other">Copied %d</item>
+        <item quantity="one">Copied %1$d of %2$d</item>
+        <item quantity="other">Copied %1$d of %2$d</item>
     </plurals>
     <plurals name="moved_n">
-        <item quantity="one">Moved %d</item>
-        <item quantity="other">Moved %d</item>
+        <item quantity="one">Moved %1$d of %2$d</item>
+        <item quantity="other">Moved %1$d of %2$d</item>
     </plurals>
     <plurals name="items">
         <item quantity="one">%d item</item>

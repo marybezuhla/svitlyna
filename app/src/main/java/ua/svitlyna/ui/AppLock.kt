@@ -18,6 +18,14 @@ import ua.svitlyna.R
 object AppLock {
     const val GRACE_MS = 30_000L
 
+    /** Unlocked until this moment (process memory only: gone when the process is, so the lock stays). */
+    @Volatile
+    var unlockedUntil = 0L
+
+    /** One prompt at a time: the PIN screen sends the app to the background and back. */
+    @Volatile
+    private var asking = false
+
     fun deviceSecure(activity: FragmentActivity): Boolean =
         activity.getSystemService(KeyguardManager::class.java)?.isDeviceSecure == true
 
@@ -32,18 +40,36 @@ object AppLock {
         }
     }
 
-    fun ask(activity: FragmentActivity, onOk: () -> Unit) {
+    /**
+     * Asks for the fingerprint or PIN. If the phone has no screen lock any more (removed in Android
+     * settings), the lock can't work: [onNoScreenLock] turns it off instead of locking the person out.
+     */
+    fun ask(activity: FragmentActivity, onNoScreenLock: () -> Unit = {}, onOk: () -> Unit) {
+        if (!deviceSecure(activity)) {
+            onNoScreenLock()
+            return
+        }
+        if (asking) return
+        asking = true
         val prompt = BiometricPrompt(
             activity,
             ContextCompat.getMainExecutor(activity),
             object : BiometricPrompt.AuthenticationCallback() {
-                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) = onOk()
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    asking = false
+                    onOk()
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    // Cancelled or failed: the lock screen's button asks again.
+                    asking = false
+                }
             },
         )
         val info = BiometricPrompt.PromptInfo.Builder()
             .setTitle(activity.getString(R.string.lock_title))
             .setAllowedAuthenticators(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)
             .build()
-        runCatching { prompt.authenticate(info) }
+        runCatching { prompt.authenticate(info) }.onFailure { asking = false }
     }
 }

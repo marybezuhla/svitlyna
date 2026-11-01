@@ -75,11 +75,19 @@ class Prefs(context: Context) {
         get() = p.getBoolean("app_lock", false)
         set(v) = p.edit().putBoolean("app_lock", v).apply()
 
-    /** Where each video was stopped (id → ms), for the last few videos. */
+    /** Where each video was stopped (id → ms), for the last [VIDEO_POSITIONS] videos only. */
     fun videoPosition(id: Long): Long = p.getLong("vpos_$id", 0)
     fun setVideoPosition(id: Long, ms: Long) {
+        val order = p.getString("vpos_order", "")!!.split(',').filter { it.isNotBlank() && it != id.toString() }.toMutableList()
         val e = p.edit()
-        if (ms <= 0) e.remove("vpos_$id") else e.putLong("vpos_$id", ms)
+        if (ms <= 0) {
+            e.remove("vpos_$id")
+        } else {
+            e.putLong("vpos_$id", ms)
+            order += id.toString()
+        }
+        while (order.size > VIDEO_POSITIONS) e.remove("vpos_" + order.removeAt(0))
+        e.putString("vpos_order", order.joinToString(","))
         e.apply()
     }
 
@@ -111,3 +119,5 @@ class Prefs(context: Context) {
                 .putInt("bars_top", v.top).putInt("bars_bottom", v.bottom).apply()
         }
 }
+
+private const val VIDEO_POSITIONS = 20

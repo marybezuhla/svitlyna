@@ -1,6 +1,7 @@
 package ua.svitlyna.media
 
 import android.content.Context
+import android.provider.MediaStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -45,7 +46,10 @@ object Duplicates {
 
     private suspend fun hash(context: Context, item: MediaItem): String? = runCatching {
         val md = MessageDigest.getInstance("SHA-256")
-        context.contentResolver.openInputStream(item.uri)!!.use { input ->
+        // The original bytes: without this Android may blank the location, and photos that differ only
+        // in where they were taken would look the same.
+        (runCatching { context.contentResolver.openInputStream(MediaStore.setRequireOriginal(item.uri)) }.getOrNull()
+            ?: context.contentResolver.openInputStream(item.uri))!!.use { input ->
             val buf = ByteArray(256 * 1024)
             while (true) {
                 coroutineContext.ensureActive()

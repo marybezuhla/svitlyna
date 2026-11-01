@@ -282,26 +282,32 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
             scope.launch { snackbar.showSnackbar(context.getString(R.string.request_failed)) }
         }
     }
+    fun tooMany(items: List<MediaItem>): Boolean {
+        if (items.size <= REQUEST_CHUNK) return false
+        scope.launch { snackbar.showSnackbar(context.getString(R.string.too_many_selected, REQUEST_CHUNK)) }
+        return true
+    }
     fun favorite(items: List<MediaItem>, on: Boolean) {
-        if (items.isEmpty()) return
+        if (items.isEmpty() || tooMany(items)) return
         runCatching { MediaStore.createFavoriteRequest(resolver, items.take(REQUEST_CHUNK).map { it.uri }, on) }
             .onSuccess { askToWrite(it) { selected = emptySet() } }
     }
     var moveItems by remember { mutableStateOf<List<MediaItem>?>(null) }
     fun moveOrCopy(items: List<MediaItem>, path: String, copy: Boolean) {
-        val todo = items.take(REQUEST_CHUNK)
+        if (tooMany(items)) return
+        val todo = items
         if (copy) {
             scope.launch {
                 val n = FileOps.copy(context, todo, path)
                 selected = emptySet()
-                snackbar.showSnackbar(context.resources.getQuantityString(R.plurals.copied_n, n, n))
+                snackbar.showSnackbar(context.resources.getQuantityString(R.plurals.copied_n, n, n, todo.size))
             }
         } else {
             runCatching { MediaStore.createWriteRequest(resolver, todo.map { it.uri }) }.onSuccess { pi ->
                 askToWrite(pi) {
                     val n = FileOps.move(context, todo, path)
                     selected = emptySet()
-                    snackbar.showSnackbar(context.resources.getQuantityString(R.plurals.moved_n, n, n))
+                    snackbar.showSnackbar(context.resources.getQuantityString(R.plurals.moved_n, n, n, todo.size))
                 }
             }
         }
@@ -760,6 +766,8 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, vm: GalleryViewModel = 
     moveItems?.let { items ->
         FolderPickDialog(
             folders = state.folders,
+            videos = items.any { it.isVideo },
+            photos = items.any { !it.isVideo },
             onDismiss = { moveItems = null },
             onPick = { path, copy ->
                 moveItems = null

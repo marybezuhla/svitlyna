@@ -18,6 +18,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import ua.svitlyna.R
 import ua.svitlyna.media.Share
 import ua.svitlyna.screenshots.Bars
 import ua.svitlyna.screenshots.Screenshots
@@ -48,12 +49,13 @@ class MainActivity : FragmentActivity() {
         if (savedInstanceState == null && intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY == 0) takeRequest(intent)
         measureBars()
         val prefs = Prefs(this)
-        locked.value = prefs.appLock
+        // Recreated (theme change, process kept): still unlocked. A new process: locked.
+        locked.value = prefs.appLock && AppLock.unlockedUntil == 0L
         AppLock.applyRecents(this, prefs.appLock)
         setContent {
             SvitlynaTheme(amoled = prefs.amoled) {
                 if (locked.value) {
-                    LockScreen(onUnlock = { AppLock.ask(this) { unlocked() } })
+                    LockScreen(onUnlock = { AppLock.ask(this, onNoScreenLock = ::lockImpossible) { unlocked() } })
                 } else {
                     App(openRequest = openRequest)
                 }
@@ -65,6 +67,15 @@ class MainActivity : FragmentActivity() {
         locked.value = false
         // The PIN screen itself takes the app to the background: that doesn't count as leaving.
         leftAt = 0
+        AppLock.unlockedUntil = Long.MAX_VALUE
+    }
+
+    /** The phone's screen lock was removed: the app lock can't work, so it is switched off. */
+    private fun lockImpossible() {
+        Prefs(this).appLock = false
+        AppLock.applyRecents(this, false)
+        locked.value = false
+        android.widget.Toast.makeText(this, R.string.app_lock_turned_off, android.widget.Toast.LENGTH_LONG).show()
     }
 
     override fun onStop() {
@@ -77,8 +88,9 @@ class MainActivity : FragmentActivity() {
         val prefs = Prefs(this)
         if (prefs.appLock && leftAt > 0 && android.os.SystemClock.elapsedRealtime() - leftAt > AppLock.GRACE_MS) {
             locked.value = true
+            AppLock.unlockedUntil = 0L
         }
-        if (locked.value) AppLock.ask(this) { unlocked() }
+        if (locked.value) AppLock.ask(this, onNoScreenLock = ::lockImpossible) { unlocked() }
     }
 
     override fun onNewIntent(intent: Intent) {
