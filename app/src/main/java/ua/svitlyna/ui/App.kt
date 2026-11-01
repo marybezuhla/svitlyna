@@ -322,6 +322,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
         }
     }
     var renaming by remember { mutableStateOf<MediaItem?>(null) }
+    var metaEditing by remember { mutableStateOf<Pair<MediaItem, ua.svitlyna.media.PhotoDetails?>?>(null) }
 
     // Duplicates: found on request, in the background, with Stop.
     var dupGroups by remember { mutableStateOf<List<ua.svitlyna.media.Duplicates.Group>?>(null) }
@@ -712,6 +713,7 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
             onEdit = { editing = it },
             onFavorite = { favorite(listOf(it), !it.isFavorite) },
             onRename = { renaming = it },
+            onEditMeta = { item, details -> metaEditing = item to details },
             onKeep = ::toggleKept,
         )
         }
@@ -810,6 +812,17 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
                 moveOrCopy(items, path, copy)
             },
         )
+    }
+    metaEditing?.let { (item, details) ->
+        MetaEditDialog(item, details, onDismiss = { metaEditing = null }) { change ->
+            metaEditing = null
+            runCatching { MediaStore.createWriteRequest(resolver, listOf(item.uri)) }.onSuccess { pi ->
+                askToWrite(pi) {
+                    val ok = ua.svitlyna.edit.MetaEdit.apply(context, item, change)
+                    snackbar.showSnackbar(context.getString(if (ok) R.string.meta_saved else R.string.meta_failed))
+                }
+            }
+        }
     }
     renaming?.let { item ->
         var name by remember(item.id) { mutableStateOf(item.name.substringBeforeLast('.')) }

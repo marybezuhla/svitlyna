@@ -111,6 +111,8 @@ fun Viewer(
     onRename: (MediaItem) -> Unit = {},
     /** Opened for another app: only looking, sharing and editing a copy; nothing in the gallery changes. */
     outside: Boolean = false,
+    /** Changing the date taken or the place written in the photo (given: what the photo says now). */
+    onEditMeta: (MediaItem, PhotoDetails?) -> Unit = { _, _ -> },
 ) {
     BackHandler(onBack = onClose)
     if (items.isEmpty()) {
@@ -338,7 +340,7 @@ fun Viewer(
             )
         }
     }
-    info?.let { InfoDialog(it, canRename = !outside, onRename = { r -> info = null; onRename(r) }) { info = null } }
+    info?.let { InfoDialog(it, canRename = !outside, onRename = { r -> info = null; onRename(r) }, onEditMeta = { r, d -> info = null; onEditMeta(r, d) }) { info = null } }
 }
 
 /** The bar while choosing text: what is chosen, all or none, copy, share, done. */
@@ -680,7 +682,7 @@ private fun VideoPlayer(item: MediaItem, uri: Uri = item.uri, onEnded: (() -> Un
 }
 
 @Composable
-private fun InfoDialog(item: MediaItem, canRename: Boolean, onRename: (MediaItem) -> Unit, onDismiss: () -> Unit) {
+private fun InfoDialog(item: MediaItem, canRename: Boolean, onRename: (MediaItem) -> Unit, onEditMeta: (MediaItem, PhotoDetails?) -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
     var exif by remember(item.id) { mutableStateOf<PhotoDetails?>(null) }
     LaunchedEffect(item.id) { exif = PhotoDetails.read(context, item) }
@@ -721,6 +723,9 @@ private fun InfoDialog(item: MediaItem, canRename: Boolean, onRename: (MediaItem
                     }
                 }
                 if (canRename) TextButton(onClick = { onRename(item) }) { Text(stringResource(R.string.rename)) }
+                if (canRename && !item.isVideo && item.mime.lowercase() in ua.svitlyna.edit.MetaEdit.WRITABLE) {
+                    TextButton(onClick = { onEditMeta(item, exif) }) { Text(stringResource(R.string.meta_edit)) }
+                }
                 TextButton(onClick = {
                     // Another editor (Snapseed, Image Toolbox…): the phone shows the choice.
                     val edit = Intent(Intent.ACTION_EDIT).setDataAndType(item.uri, item.mime.ifBlank { "image/*" })

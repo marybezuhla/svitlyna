@@ -213,6 +213,15 @@
     <string name="settings_lock">Блокування</string>
     <string name="app_lock">Блокувати застосунок</string>
     <string name="app_lock_explain">Для входу у Світлину потрібен відбиток або PIN-код телефона (перевіряє Android; Світлина його не бачить). Протягом пів хвилини повторно не питає. У недавніх застосунках вміст сховано (на Android 11–12 також заборонено знімки екрана застосунку).</string>
+    <string name="save">Зберегти</string>
+    <string name="meta_edit">Змінити дату чи місце</string>
+    <string name="meta_date">Дата зйомки</string>
+    <string name="meta_place">Місце: широта, довгота</string>
+    <string name="meta_place_hint">Як копіює застосунок карт, напр. 50.45010, 30.52340</string>
+    <string name="meta_remove_place">Прибрати місце</string>
+    <string name="meta_explain">Записується в саме фото, після запиту Android. Інше у файлі не змінюється.</string>
+    <string name="meta_saved">Збережено у фото.</string>
+    <string name="meta_failed">Не вдалося змінити фото (може знадобитися доступ до місця у фото).</string>
     <string name="pick_title">Виберіть</string>
     <string name="pick_done">Готово</string>
     <string name="pick_not_this_kind">Застосунок просив файл іншого типу.</string>
