@@ -115,7 +115,7 @@
 
     <string name="fix_dates">Виправити дату зйомки</string>
     <string name="fix_dates_open">Переглянути й виправити</string>
-    <string name="fix_dates_explain">Фото з месенджерів часто втрачають дату зйомки й стрибають на день збереження. Світлина бере дату з назви файлу й записує її у фото (лише дату: картинка й усе інше лишаються). Android спершу спитає.</string>
+    <string name="fix_dates_explain">Фото з месенджерів часто втрачають дату зйомки й стрибають на день збереження. Світлина бере дату з назви файлу й записує її у фото (лише дату: картинка й усе інше лишаються). Android спершу спитає дозволу (окрім випадку, коли ввімкнено «Керування медіафайлами»).</string>
     <string name="fix_dates_none">Усі фото вже мають дату, або в їхній назві її немає.</string>
     <string name="fix_dates_was">Зараз: %1$s</string>
     <string name="fix_dates_will">Стане: %1$s</string>
@@ -163,7 +163,7 @@
     <string name="edit_add_text">Додати текст</string>
     <string name="edit_size">Розмір</string>
     <string name="edit_black_brush">Затерти</string>
-    <string name="edit_black_box">Чорна рамка</string>
+    <string name="edit_black_box">Чорний прямокутник</string>
     <string name="edit_blur">Розмити</string>
     <string name="edit_pixels">Пікселі</string>
     <string name="edit_black_hint">Суцільний чорний: те, що під ним, не відновити. Найкраще для номерів, імен і облич.</string>

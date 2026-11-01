@@ -51,10 +51,11 @@ object Stitch {
     fun find(a: Rows, b: Rows): Join? {
         if (a.height != b.height || a.height < 100) return null
         val h = a.height
-        var header = 0
-        while (header < h / 3 && a.same(header, b, header)) header++
-        var footer = 0
-        while (footer < h / 3 && a.same(h - 1 - footer, b, h - 1 - footer)) footer++
+        val limit = h / 3
+        // The fixed top and bottom, allowing a few rows that differ (a clock, a status icon, a
+        // shadow under the app bar that appears after scrolling).
+        val header = fixedPart(limit, { i -> a.same(i, b, i) }, { i -> a.busy(i) })
+        val footer = fixedPart(limit, { i -> a.same(h - 1 - i, b, h - 1 - i) }, { i -> a.busy(h - 1 - i) })
         val start = header
         val end = h - footer
         val content = end - start
@@ -62,28 +63,55 @@ object Stitch {
         if (content < 60) return null
         val minOverlap = maxOf(40, content / 10)
 
+        // Every shift is tried; the one where the most rows match wins (not the first that fits),
+        // so look-alike list rows don't produce a wrong, too small shift.
+        var bestShift = -1
+        var bestRatio = 0f
         for (shift in 1..content - minOverlap) {
             val overlap = content - shift
+            val sampled = (overlap + 1) / 2
+            val allowedBad = (sampled * 0.06f).toInt() + 1
             var busy = 0
             var bad = 0
             var row = 0
-            val allowedBad = overlap / 200 + 1
             while (row < overlap) {
                 // Row `row` of B's page is row `row + shift` of A's page.
-                val ia = start + shift + row
-                val ib = start + row
-                if (!a.same(ia, b, ib)) {
+                if (!a.same(start + shift + row, b, start + row)) {
                     bad++
                     if (bad > allowedBad) break
-                } else if (b.busy(ib)) {
+                } else if (b.busy(start + row)) {
                     busy++
                 }
                 row += 2
             }
-            // The first (smallest) shift that matches everywhere, with enough real content in common.
-            if (bad <= allowedBad && busy >= 12) return Join(header, footer, shift)
+            if (bad > allowedBad || busy < 12) continue
+            val ratio = 1f - bad.toFloat() / sampled
+            // Clearly better wins; nearly equal: the larger overlap (smaller shift) wins.
+            if (ratio > bestRatio + 0.005f) {
+                bestRatio = ratio
+                bestShift = shift
+            }
         }
-        return null
+        return if (bestShift > 0) Join(header, footer, bestShift) else null
+    }
+
+    /**
+     * How many rows from an edge are fixed: most of them equal, and the last counted one equal too.
+     * After a differing row, only a row with something on it extends the fixed part (plain rows of
+     * the page match anything and prove nothing).
+     */
+    private inline fun fixedPart(limit: Int, equal: (Int) -> Boolean, busy: (Int) -> Boolean): Int {
+        var best = 0
+        var differ = 0
+        for (i in 0 until limit) {
+            if (equal(i)) {
+                if (differ <= 2 + i / 25 && (differ == 0 || busy(i))) best = i + 1
+            } else {
+                differ++
+                if (differ > 2 + i / 25) break
+            }
+        }
+        return best
     }
 
     /** A part of one screenshot that goes into the long one: rows [from] until [to] of picture [index]. */
