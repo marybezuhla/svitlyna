@@ -91,6 +91,7 @@ open class MainActivity : FragmentActivity() {
     /** The phone's screen lock was removed: the app lock can't work, so it is switched off. */
     private fun lockImpossible() {
         Prefs(this).appLock = false
+        MemoriesWidget.refresh(this)
         AppLock.applyRecents(this, false)
         locked.value = false
         android.widget.Toast.makeText(this, R.string.app_lock_turned_off, android.widget.Toast.LENGTH_LONG).show()
