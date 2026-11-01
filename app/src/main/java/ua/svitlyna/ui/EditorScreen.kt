@@ -375,7 +375,7 @@ private fun TransformTools(
     }
     // Size of the copy: the longer side in pixels (only smaller than the photo makes sense).
     ChipRow {
-        Text(stringResource(R.string.edit_size), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(end = 4.dp))
+        Text(stringResource(R.string.edit_copy_size), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(end = 4.dp))
         FilterChip(selected = maxSide == 0, onClick = { onMaxSide(0) }, label = { Text(stringResource(R.string.edit_size_original)) })
         SIZES.filter { photoSide <= 0 || it < photoSide }.forEach { px ->
             FilterChip(selected = maxSide == px, onClick = { onMaxSide(px) }, label = { Text("$px px") })

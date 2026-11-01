@@ -147,7 +147,7 @@
     <string name="edit_flip_v">⇅ Перевернути</string>
     <string name="edit_turn_first">Повертайте й віддзеркалюйте до малювання: коли щось намальовано, це вимкнено (скасуйте, щоб повернути).</string>
     <string name="edit_straighten">Вирівняти</string>
-    <string name="edit_size">Розмір:</string>
+    <string name="edit_copy_size">Розмір копії:</string>
     <string name="edit_size_original">Як є</string>
     <string name="edit_brightness">Яскравість</string>
     <string name="edit_contrast">Контраст</string>
