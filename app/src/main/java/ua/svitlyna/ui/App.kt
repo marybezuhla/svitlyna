@@ -327,12 +327,16 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
     var dupGroups by remember { mutableStateOf<List<ua.svitlyna.media.Duplicates.Group>?>(null) }
     var dupProgress by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     var dupJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
-    fun findDuplicates() {
+    // Marked for the trash: exact copies come marked, similar photos are the person's choice.
+    var dupMarked by remember { mutableStateOf(emptySet<Long>()) }
+    fun findDuplicates(similar: Boolean) {
         dupProgress = 0 to 0
+        dupGroups = null
         dupJob = scope.launch {
-            val found = ua.svitlyna.media.Duplicates.find(context, state.items) { d, t ->
-                scope.launch { dupProgress = d to t }
-            }
+            val report: (Int, Int) -> Unit = { d, t -> scope.launch { dupProgress = d to t } }
+            val found = if (similar) ua.svitlyna.media.Duplicates.findSimilar(context, state.items, report)
+            else ua.svitlyna.media.Duplicates.find(context, state.items, report)
+            dupMarked = found.filter { it.exact }.flatMap { g -> g.items.filter { it !== g.best }.map { it.id } }.toSet()
             dupGroups = found
             dupProgress = null
         }
@@ -609,9 +613,15 @@ fun App(openRequest: MutableState<OpenRequest?>? = null, pick: PickRequest? = nu
                     dupProgress = dupProgress,
                     onFindDupes = ::findDuplicates,
                     onStopDupes = { dupJob?.cancel() },
+                    dupMarked = dupMarked,
+                    onMarkDupe = { item -> dupMarked = if (item.id in dupMarked) dupMarked - item.id else dupMarked + item.id },
+                    photoCount = state.items.count { !it.isVideo },
                     onTrashDupes = {
-                        val extra = dupGroups.orEmpty().flatMap { it.extra }
+                        // Only what is still in the gallery (a photo may have gone meanwhile elsewhere).
+                        val ids = state.items.mapTo(HashSet()) { it.id }
+                        val extra = dupGroups.orEmpty().flatMap { it.items }.filter { it.id in dupMarked && it.id in ids }.distinctBy { it.id }
                         dupGroups = null
+                        dupMarked = emptySet()
                         trash(extra, toTrash = true)
                     },
                     onOpenDupes = { goTo(Page.Duplicates) },
@@ -896,7 +906,10 @@ private fun Content(
     onFolderSort: (Int) -> Unit,
     dupGroups: List<ua.svitlyna.media.Duplicates.Group>?,
     dupProgress: Pair<Int, Int>?,
-    onFindDupes: () -> Unit,
+    onFindDupes: (similar: Boolean) -> Unit,
+    dupMarked: Set<Long>,
+    onMarkDupe: (MediaItem) -> Unit,
+    photoCount: Int,
     onStopDupes: () -> Unit,
     onTrashDupes: () -> Unit,
     onOpenDupes: () -> Unit,
@@ -922,7 +935,7 @@ private fun Content(
             access, canManageMedia, removeLocation, onRemoveLocation, onPickMore, screenshotSettings, onFixDates, fixDatesCount, onOpenDupes, padding,
         )
         Page.FixDates -> FixDatesScreen(fixes, fixChosen, onFixChosen, onFix, fixing, padding)
-        Page.Duplicates -> DuplicatesScreen(dupGroups, dupProgress, onFindDupes, onStopDupes, onTrashDupes, padding)
+        Page.Duplicates -> DuplicatesScreen(dupGroups, dupProgress, photoCount, dupMarked, onMarkDupe, onFindDupes, onStopDupes, onTrashDupes, padding)
     }
 }
 

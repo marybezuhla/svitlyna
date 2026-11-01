@@ -193,13 +193,17 @@
     <string name="folder_hidden_mark">hidden</string>
 
     <string name="dupes">Duplicates</string>
-    <string name="dupes_explain">Finds files that are exactly the same (the same photo saved twice, from two messengers…). Only files of equal size are compared; nothing is changed until you tap the button.</string>
-    <string name="dupes_find">Look for duplicates</string>
+    <string name="dupes_explain">Exact duplicates: files that are byte for byte the same (the same photo saved twice, from two messengers…). Similar photos: shots of a series, a copy made smaller by a messenger. Everything is checked on the phone; nothing changes until you tap the button.</string>
+    <string name="dupes_find_similar">Look for similar (≈%d min)</string>
+    <string name="dupes_tap">Tap a photo to mark it for the trash or take the mark off.</string>
+    <string name="dupes_same">Exact copies</string>
+    <string name="dupes_similar">Similar</string>
+    <string name="dupes_best">Best</string>
+    <string name="dupes_to_trash">To the trash</string>
+    <string name="dupes_find">Look for exact duplicates</string>
     <string name="dupes_checking">Checking %1$d of %2$d…</string>
-    <string name="dupes_none">No duplicates found.</string>
-    <string name="dupes_trash">Move the extra copies to the trash</string>
+    <string name="dupes_none">Nothing found.</string>
     <string name="dupes_keep">Kept</string>
-    <string name="dupes_extra">Copy</string>
     <string name="settings_look">Look</string>
     <string name="amoled">Pure black in dark mode</string>
     <string name="amoled_explain">Saves battery on OLED screens.</string>
@@ -274,9 +278,9 @@
         <item quantity="one">%d photo can get its date from its name.</item>
         <item quantity="other">%d photos can get their date from their name.</item>
     </plurals>
-    <plurals name="dupes_found">
-        <item quantity="one">%1$d extra copy, %2$s.</item>
-        <item quantity="other">%1$d extra copies, %2$s.</item>
+    <plurals name="dupes_trash_marked">
+        <item quantity="one">Move %1$d to the trash (%2$s)</item>
+        <item quantity="other">Move %1$d to the trash (%2$s)</item>
     </plurals>
     <plurals name="copied_n">
         <item quantity="one">Copied %1$d of %2$d</item>
