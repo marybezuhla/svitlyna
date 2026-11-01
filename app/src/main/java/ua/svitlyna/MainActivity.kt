@@ -7,7 +7,7 @@ import android.content.Intent
 import android.content.ClipData
 import android.os.Bundle
 import android.provider.MediaStore
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
@@ -20,7 +20,7 @@ import ua.svitlyna.data.ThemeMode
 import ua.svitlyna.ui.theme.IrisTheme
 import ua.svitlyna.ui.GalleryApp
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     private val currentIntentState = mutableStateOf<Intent?>(null)
     private val intentGenerationState = mutableStateOf(0L)
 
@@ -46,6 +46,8 @@ class MainActivity : ComponentActivity() {
             isAppearanceLightStatusBars = !isDark
             isAppearanceLightNavigationBars = !isDark
         }
+        // With the app lock on, the app's content is hidden in recent apps.
+        ua.svitlyna.core.AppLock.applyRecents(this, initialSettings.appLockEnabled)
         if (initialSettings.language.isNotEmpty()) {
             ua.svitlyna.ui.setAppLanguage(this, initialSettings.language)
         }

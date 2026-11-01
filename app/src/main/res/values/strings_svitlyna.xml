@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Svitlyna's own texts (the rest comes from Iris Gallery's strings.xml). -->
+<resources>
+    <string name="sv_lock_title">Unlock Svitlyna</string>
+    <string name="sv_lock_open">Open</string>
+    <string name="sv_lock_explain">Your fingerprint or the phone\'s PIN, pattern or password. Android checks it; Svitlyna never sees it.</string>
+    <string name="sv_lock_no_screen_lock">Set a PIN, pattern or fingerprint for the phone first.</string>
+    <string name="sv_lock_turned_off">The phone has no screen lock any more, so the app lock was turned off.</string>
+    <string name="sv_app_lock_desc">Ask for the fingerprint or the phone\'s PIN to open Svitlyna and its photo chooser. Within half a minute it doesn\'t ask again; the app is hidden in recent apps.</string>
+</resources>

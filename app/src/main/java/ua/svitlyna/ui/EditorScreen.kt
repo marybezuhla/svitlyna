@@ -2206,11 +2206,22 @@ private fun applyExifToFile(file: File, tags: Map<String, String>) {
 
 private fun copyExifMetadata(context: Context, sourceImage: MediaImage, destUri: Uri) {
     runCatching {
-        val tags = readExifTags(context, sourceImage)
-        if (tags.isEmpty()) return
+        // Svitlyna's rule: ALL of the original's metadata (not a hand-picked list), read as the
+        // original so the place is real; only what describes the old pixels is left out.
+        val source = runCatching {
+            context.contentResolver.openInputStream(MediaStore.setRequireOriginal(sourceImage.uri))!!.use { ExifInterface(it) }
+        }.recoverCatching {
+            context.contentResolver.openInputStream(sourceImage.uri)!!.use { ExifInterface(it) }
+        }.getOrNull()
+        val effectiveTitle = sourceImage.title.takeIf { it.isNotBlank() && it != sourceImage.name && it != sourceImage.name.substringBeforeLast('.') }
         context.contentResolver.openFileDescriptor(destUri, "rw")?.use { pfd ->
             val dstExif = ExifInterface(pfd.fileDescriptor)
-            applyExifTags(dstExif, tags)
+            ua.svitlyna.media.Metadata.copy(source, dstExif, sourceImage.dateTaken)
+            if (effectiveTitle != null) {
+                dstExif.setAttribute("DocumentName", effectiveTitle)
+                dstExif.setAttribute("XPTitle", effectiveTitle)
+            }
+            dstExif.setAttribute(ExifInterface.TAG_SOFTWARE, "Svitlyna")
             dstExif.saveAttributes()
         }
     }
@@ -2418,22 +2429,33 @@ private suspend fun saveEditedCopy(
 
     val nowMs = System.currentTimeMillis()
     val nowSec = nowMs / 1000L
+    // Svitlyna's rule: the copy belongs to the same moment as the original (it sits beside it in the
+    // timeline instead of jumping to the top) and lies next to it, in the same folder.
+    val takenMs = image.dateTaken.takeIf { it > 0 } ?: nowMs
     val effectiveTitle = image.title.takeIf { it.isNotBlank() && it != image.name && it != image.name.substringBeforeLast('.') }
+    val folder = runCatching {
+        context.contentResolver.query(image.uri, arrayOf(MediaStore.MediaColumns.RELATIVE_PATH), null, null, null)
+            ?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+    }.getOrNull()
     val values = ContentValues().apply {
-        put(MediaStore.Images.Media.DISPLAY_NAME, image.name.substringBeforeLast('.') + "_iris." + format.extension)
+        put(MediaStore.Images.Media.DISPLAY_NAME, image.name.substringBeforeLast('.') + "_edited." + format.extension)
         put(MediaStore.Images.Media.MIME_TYPE, format.mimeType)
         put(MediaStore.Images.Media.DATE_ADDED, nowSec)
         put(MediaStore.Images.Media.DATE_MODIFIED, nowSec)
-        put(MediaStore.Images.Media.DATE_TAKEN, nowMs)
+        put(MediaStore.Images.Media.DATE_TAKEN, takenMs)
         if (effectiveTitle != null) {
             put(MediaStore.Images.Media.TITLE, effectiveTitle)
         }
-        if (Build.VERSION.SDK_INT >= 29) {
-            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Svitlyna")
-            put(MediaStore.Images.Media.IS_PENDING, 1)
-        }
+        put(MediaStore.Images.Media.RELATIVE_PATH, folder ?: "Pictures/Svitlyna/")
+        put(MediaStore.Images.Media.IS_PENDING, 1)
     }
-    val uri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: error("Could not create copy")
+    val uri = try {
+        context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+    } catch (e: IllegalArgumentException) {
+        // Android keeps photos only under DCIM/ and Pictures/: an original elsewhere gets its copy in Pictures/Svitlyna.
+        values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Svitlyna/")
+        context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+    } ?: error("Could not create copy")
     try {
         context.contentResolver.openOutputStream(uri)?.use { outputStream ->
             outputStream.write(bytes)
@@ -2444,7 +2466,7 @@ private suspend fun saveEditedCopy(
                 put(MediaStore.Images.Media.IS_PENDING, 0)
                 put(MediaStore.Images.Media.DATE_ADDED, nowSec)
                 put(MediaStore.Images.Media.DATE_MODIFIED, nowSec)
-                put(MediaStore.Images.Media.DATE_TAKEN, nowMs)
+                put(MediaStore.Images.Media.DATE_TAKEN, takenMs)
                 if (effectiveTitle != null) {
                     put(MediaStore.Images.Media.TITLE, effectiveTitle)
                 }
