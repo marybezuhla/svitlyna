@@ -141,5 +141,9 @@ class MemoriesReceiver : BroadcastReceiver() {
 }
 
 class BootReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) = MemoriesNotifications.scheduleFromSettings(context)
+    override fun onReceive(context: Context, intent: Intent) {
+        MemoriesNotifications.scheduleFromSettings(context)
+        // Svitlyna: the search reading job comes back after a restart too.
+        ua.svitlyna.search.IndexJob.schedule(context)
+    }
 }

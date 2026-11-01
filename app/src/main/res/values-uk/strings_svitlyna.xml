@@ -8,4 +8,29 @@
     <string name="sv_app_lock_desc">Для входу у Світлину та її вибір фото потрібен відбиток або PIN-код телефона. Протягом пів хвилини повторно не питає; у недавніх застосунках вміст сховано.</string>
     <string name="sv_based_on_iris">Інтерфейс на основі</string>
     <string name="sv_certificate">Сертифікат підпису (SHA-256)</string>
+    <string name="sv_text_on_photo">Текст</string>
+    <string name="sv_reading_text">Розпізнаю текст на фото…</string>
+    <string name="sv_no_text_found">На цьому фото тексту не знайдено.</string>
+    <string name="sv_stop">Зупинити</string>
+    <string name="sv_text_hint">торкніться слів або проведіть по них пальцем</string>
+    <string name="sv_choose_all">Усе</string>
+    <string name="sv_choose_none">Зняти вибір</string>
+    <string name="sv_copy">Копіювати</string>
+    <plurals name="sv_text_chosen">
+        <item quantity="one">%1$d з %2$d слова</item>
+        <item quantity="few">%1$d з %2$d слів</item>
+        <item quantity="many">%1$d з %2$d слів</item>
+        <item quantity="other">%1$d з %2$d слова</item>
+    </plurals>
+    <string name="sv_search_text_setting">Пошук за текстом на фото</string>
+    <string name="sv_search_text_explain">Текст на фото читається на телефоні (коли він заряджається і ним не користуються) і зберігається зашифрованим, тож рядок пошуку його знаходить: форми слова, латинку, дати словами. Вимкнення стирає прочитане.</string>
+    <string name="sv_search_counting">Рахую фото…</string>
+    <string name="sv_search_none_to_read">Немає фото для читання.</string>
+    <string name="sv_search_read">Текст прочитано на %1$d з %2$d фото</string>
+    <string name="sv_search_read_now">Прочитати зараз (≈%d хв)</string>
+    <string name="sv_search_read_now_hours">Прочитати зараз (≈%d год)</string>
+    <string name="sv_search_background">Решта читається, коли телефон заряджається і ним не користуються.</string>
+    <string name="sv_search_while_open">Читання йде, поки Світлина відкрита; решта — під час заряджання.</string>
+    <string name="sv_search_off_question">Вимкнути читання тексту на фото? Прочитане буде стерто, пошук за текстом не працюватиме.</string>
+    <string name="sv_search_off_erase">Вимкнути й стерти</string>
 </resources>

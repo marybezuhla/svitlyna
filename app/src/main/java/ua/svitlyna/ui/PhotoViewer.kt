@@ -66,6 +66,7 @@ import androidx.compose.material.icons.filled.BlurOn
 import androidx.compose.material.icons.outlined.BlurOff
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.TextFields
 import androidx.compose.material.icons.outlined.DriveFileMove
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.AutoFixHigh
@@ -241,8 +242,13 @@ internal fun PhotoViewer(
     onCopyToAlbum: (List<MediaImage>, File, String, (AlbumOperationResult) -> Unit) -> Unit = { _, _, _, _ -> },
     getAlbumDir: (MediaAlbum) -> File = { File("") },
     createAlbumDir: (String) -> File = { File("") },
+    /** Svitlyna: search keys to highlight in the photo's text (opened from search). */
+    textHighlight: List<String> = emptyList(),
+    /** Svitlyna: open the text of the first photo at once (a search hit). */
+    openTextAtStart: Boolean = false,
 ) {
     val context = LocalContext.current
+    var textFor by remember { mutableStateOf<MediaImage?>(images.getOrNull(initialPage)?.takeIf { openTextAtStart && !it.isVideo }) }
     val activity = remember(context) {
         generateSequence(context) { (it as? ContextWrapper)?.baseContext }
             .filterIsInstance<Activity>().firstOrNull()
@@ -811,6 +817,12 @@ internal fun PhotoViewer(
                 if (secondaryHeaderText.isNotBlank()) {
                     Text(secondaryHeaderText, color = Color.White.copy(alpha = .75f),
                         style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+            // Svitlyna: the text on the photo, recognised on the phone (select, copy, share).
+            if (!current.isVideo) {
+                IconButton(onClick = { textFor = current }) {
+                    Icon(Icons.Outlined.TextFields, stringResource(R.string.sv_text_on_photo), tint = Color.White)
                 }
             }
             IconButton(onClick = { showInfo = true }) { Icon(Icons.Outlined.Info, stringResource(R.string.details_title), tint = Color.White) }
@@ -1387,6 +1399,8 @@ internal fun PhotoViewer(
             }
         }
         }
+
+        textFor?.let { image -> PhotoTextScreen(image, highlight = textHighlight) { textFor = null } }
 
         // Floating popup preview card when holding an item in the filmstrip
         AnimatedVisibility(
