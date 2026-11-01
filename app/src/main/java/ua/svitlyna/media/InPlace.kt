@@ -51,20 +51,25 @@ object InPlace {
     }
 
     /** Every tag outside [changed] is the same, and everything after the metadata block is identical. */
-    fun same(before: File, after: File, changed: Set<String>): Boolean {
+    fun same(before: File, after: File, changed: Set<String>): Boolean = difference(before, after, changed) == null
+
+    /** What differs besides [changed] (for the check and for tests), or null when nothing does. */
+    fun difference(before: File, after: File, changed: Set<String>): String? {
         val a = ExifInterface(before)
         val b = ExifInterface(after)
         for (tag in Metadata.COPYABLE_TAGS + listOf(ExifInterface.TAG_ORIENTATION)) {
             if (tag in changed) continue
-            if (a.getAttribute(tag) != b.getAttribute(tag)) return false
+            if (a.getAttribute(tag) != b.getAttribute(tag)) return "tag $tag: ${a.getAttribute(tag)} → ${b.getAttribute(tag)}"
         }
         val partsA = kept(before)
         val partsB = kept(after)
-        if (partsA != null && partsB != null) return sameBytes(before, partsA, after, partsB)
+        if (partsA != null && partsB != null) {
+            return if (sameBytes(before, partsA, after, partsB)) null else "bytes: $partsA (${before.length()}) vs $partsB (${after.length()})"
+        }
         // WebP and other formats: the picture must still open, at the same size.
         val oa = bounds(before)
         val ob = bounds(after)
-        return oa.first > 0 && oa == ob
+        return if (oa.first > 0 && oa == ob) null else "size $oa vs $ob"
     }
 
     private fun bounds(f: File): Pair<Int, Int> {

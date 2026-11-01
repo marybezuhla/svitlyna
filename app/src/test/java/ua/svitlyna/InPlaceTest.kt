@@ -4,6 +4,7 @@ import androidx.exifinterface.media.ExifInterface
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -84,7 +85,7 @@ class InPlaceTest {
             javaClass.classLoader!!.getResourceAsStream(name)!!.use { input -> f.outputStream().use { input.copyTo(it) } }
             val c = MetaEdit.Change(taken = LocalDateTime.of(2024, 5, 1, 14, 30))
             val after = changedCopy(f) { MetaEdit.write(it, c) }
-            assertTrue(name, InPlace.same(f, after, MetaEdit.changedTags(c)))
+            assertNull(name, InPlace.difference(f, after, MetaEdit.changedTags(c)))
         }
     }
 
