@@ -157,6 +157,26 @@ fun TrashScreen(
     }
 }
 
+class ScreenshotSettings(
+    val hints: Boolean,
+    val cropNavigation: Boolean,
+    val autoCrop: Boolean,
+    val onHints: (Boolean) -> Unit,
+    val onCropNavigation: (Boolean) -> Unit,
+    val onAutoCrop: (Boolean) -> Unit,
+)
+
+@Composable
+private fun SwitchRow(title: String, explain: String?, checked: Boolean, onChange: (Boolean) -> Unit, enabled: Boolean = true) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(title)
+            if (explain != null) Text(explain, style = MaterialTheme.typography.bodySmall)
+        }
+        Switch(checked = checked, onCheckedChange = onChange, enabled = enabled)
+    }
+}
+
 @Composable
 fun SettingsScreen(
     level: AccessLevel,
@@ -164,6 +184,7 @@ fun SettingsScreen(
     removeLocation: Boolean,
     onRemoveLocation: (Boolean) -> Unit,
     onPickMore: () -> Unit,
+    screenshots: ScreenshotSettings,
     contentPadding: PaddingValues,
 ) {
     val context = LocalContext.current
@@ -216,6 +237,29 @@ fun SettingsScreen(
             }
             Switch(checked = removeLocation, onCheckedChange = onRemoveLocation)
         }
+
+        HorizontalDivider()
+        Section(stringResource(R.string.settings_screenshots))
+        SwitchRow(
+            stringResource(R.string.screenshot_hints),
+            stringResource(R.string.screenshot_hints_explain),
+            screenshots.hints,
+            screenshots.onHints,
+        )
+        SwitchRow(
+            stringResource(R.string.crop_navigation),
+            null,
+            screenshots.cropNavigation,
+            screenshots.onCropNavigation,
+            enabled = screenshots.hints,
+        )
+        SwitchRow(
+            stringResource(R.string.auto_crop),
+            stringResource(R.string.auto_crop_explain),
+            screenshots.autoCrop,
+            screenshots.onAutoCrop,
+            enabled = screenshots.hints,
+        )
 
         Access.languageSettings(context)?.let { intent ->
             HorizontalDivider()

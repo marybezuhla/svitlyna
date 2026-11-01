@@ -1,0 +1,73 @@
+package ua.svitlyna.media
+
+import androidx.exifinterface.media.ExifInterface
+import java.lang.reflect.Modifier
+
+/**
+ * Metadata rules shared by everything that writes a photo: a copy keeps ALL the original's metadata
+ * (not a hand-picked list), except what describes the old pixels; sharing removes location.
+ */
+object Metadata {
+    /** Tags that describe the picture's pixels or its embedded preview: the copy has new ones. */
+    private val PIXEL_TAGS = setOf(
+        ExifInterface.TAG_IMAGE_WIDTH, ExifInterface.TAG_IMAGE_LENGTH,
+        ExifInterface.TAG_PIXEL_X_DIMENSION, ExifInterface.TAG_PIXEL_Y_DIMENSION,
+        ExifInterface.TAG_ORIENTATION,
+        ExifInterface.TAG_BITS_PER_SAMPLE, ExifInterface.TAG_COMPRESSION,
+        ExifInterface.TAG_PHOTOMETRIC_INTERPRETATION, ExifInterface.TAG_SAMPLES_PER_PIXEL,
+        ExifInterface.TAG_PLANAR_CONFIGURATION, ExifInterface.TAG_Y_CB_CR_SUB_SAMPLING,
+        ExifInterface.TAG_Y_CB_CR_POSITIONING, ExifInterface.TAG_STRIP_OFFSETS,
+        ExifInterface.TAG_ROWS_PER_STRIP, ExifInterface.TAG_STRIP_BYTE_COUNTS,
+        ExifInterface.TAG_JPEG_INTERCHANGE_FORMAT, ExifInterface.TAG_JPEG_INTERCHANGE_FORMAT_LENGTH,
+        ExifInterface.TAG_THUMBNAIL_IMAGE_LENGTH, ExifInterface.TAG_THUMBNAIL_IMAGE_WIDTH,
+        ExifInterface.TAG_THUMBNAIL_ORIENTATION, ExifInterface.TAG_NEW_SUBFILE_TYPE,
+        ExifInterface.TAG_SUBFILE_TYPE, ExifInterface.TAG_DEFAULT_CROP_SIZE,
+    )
+
+    /** Every tag ExifInterface knows, minus the pixel ones: found by reflection, so new tags are never forgotten. */
+    val COPYABLE_TAGS: List<String> by lazy {
+        ExifInterface::class.java.fields
+            .filter { Modifier.isStatic(it.modifiers) && it.type == String::class.java && it.name.startsWith("TAG_") }
+            .mapNotNull { it.get(null) as? String }
+            .filter { it !in PIXEL_TAGS }
+            .distinct()
+    }
+
+    val LOCATION_TAGS = listOf(
+        ExifInterface.TAG_GPS_LATITUDE, ExifInterface.TAG_GPS_LATITUDE_REF,
+        ExifInterface.TAG_GPS_LONGITUDE, ExifInterface.TAG_GPS_LONGITUDE_REF,
+        ExifInterface.TAG_GPS_ALTITUDE, ExifInterface.TAG_GPS_ALTITUDE_REF,
+        ExifInterface.TAG_GPS_TIMESTAMP, ExifInterface.TAG_GPS_DATESTAMP,
+        ExifInterface.TAG_GPS_PROCESSING_METHOD, ExifInterface.TAG_GPS_AREA_INFORMATION,
+        ExifInterface.TAG_GPS_SPEED, ExifInterface.TAG_GPS_SPEED_REF,
+        ExifInterface.TAG_GPS_TRACK, ExifInterface.TAG_GPS_TRACK_REF,
+        ExifInterface.TAG_GPS_IMG_DIRECTION, ExifInterface.TAG_GPS_IMG_DIRECTION_REF,
+        ExifInterface.TAG_GPS_DEST_LATITUDE, ExifInterface.TAG_GPS_DEST_LATITUDE_REF,
+        ExifInterface.TAG_GPS_DEST_LONGITUDE, ExifInterface.TAG_GPS_DEST_LONGITUDE_REF,
+        ExifInterface.TAG_GPS_DEST_BEARING, ExifInterface.TAG_GPS_DEST_BEARING_REF,
+        ExifInterface.TAG_GPS_DEST_DISTANCE, ExifInterface.TAG_GPS_DEST_DISTANCE_REF,
+        ExifInterface.TAG_GPS_H_POSITIONING_ERROR, ExifInterface.TAG_GPS_DOP,
+        ExifInterface.TAG_GPS_MEASURE_MODE, ExifInterface.TAG_GPS_SATELLITES,
+        ExifInterface.TAG_GPS_STATUS, ExifInterface.TAG_GPS_MAP_DATUM,
+        ExifInterface.TAG_GPS_DIFFERENTIAL, ExifInterface.TAG_GPS_VERSION_ID,
+        // XMP can repeat the location (and other programs' notes); a shared copy goes without it.
+        ExifInterface.TAG_XMP,
+    )
+
+    /**
+     * Copies every copyable tag that [from] has into [to] (the caller saves [to]). The copy is marked
+     * upright, because its pixels were already turned the right way up when it was made.
+     */
+    fun copy(from: ExifInterface, to: ExifInterface, software: String) {
+        for (tag in COPYABLE_TAGS) {
+            val value = from.getAttribute(tag) ?: continue
+            to.setAttribute(tag, value)
+        }
+        to.setAttribute(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL.toString())
+        to.setAttribute(ExifInterface.TAG_SOFTWARE, software)
+    }
+
+    fun removeLocation(exif: ExifInterface) {
+        LOCATION_TAGS.forEach { exif.setAttribute(it, null) }
+    }
+}

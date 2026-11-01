@@ -60,6 +60,20 @@
     <string name="remove_location">Share without location</string>
     <string name="remove_location_explain">Photos are sent as copies with the location removed; your originals stay as they are. Videos and some formats (HEIC, GIF…) can\'t be cleaned yet: you\'ll be asked before sending them.</string>
 
+    <string name="settings_screenshots">After a screenshot</string>
+    <string name="screenshot_hints">Hints after a screenshot</string>
+    <string name="screenshot_hints_explain">A notification with "Without bars", "Text" and "Open". Your screenshot itself is never changed.</string>
+    <string name="crop_navigation">Remove the navigation bar too</string>
+    <string name="auto_crop">Always save a copy without bars</string>
+    <string name="auto_crop_explain">Right after each screenshot, with no tap. The original stays next to it.</string>
+    <string name="screenshot_channel">Screenshot hints</string>
+    <string name="screenshot_title">Screenshot taken</string>
+    <string name="screenshot_text">Save without bars, copy its text or open it</string>
+    <string name="screenshot_crop">Without bars</string>
+    <string name="screenshot_cropped">Saved a copy without bars</string>
+    <string name="screenshot_cropped_text">Next to the screenshot, with the same date. Tap to open.</string>
+    <string name="screenshot_crop_failed">Couldn\'t save a copy without bars</string>
+
     <string name="settings_language">Language</string>
     <string name="change_language">Change the app language</string>
 

@@ -93,6 +93,7 @@ import java.util.Date
 fun Viewer(
     items: List<MediaItem>,
     startIndex: Int,
+    readTextAtStart: Boolean = false,
     onClose: () -> Unit,
     onShare: (MediaItem) -> Unit,
     onTrash: (MediaItem) -> Unit,
@@ -154,6 +155,10 @@ fun Viewer(
         notice = null
     }
     BackHandler(enabled = textMode) { closeText() }
+    // Opened from "Text" in a screenshot hint: read straight away.
+    LaunchedEffect(Unit) {
+        if (readTextAtStart) items.getOrNull(pager.currentPage)?.takeIf { !it.isVideo }?.let { readText(it) }
+    }
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         HorizontalPager(

@@ -17,6 +17,13 @@
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
+    <!-- The location stored inside photos: without it Android removes it from everything the app reads,
+         and a saved copy would silently lose it. Asked together with photos and videos. -->
+    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
+    <!-- Optional hints after a screenshot: a notification (asked only when switched on), and the
+         wake-up job asked for again after the phone restarts -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Optional "Media management" special access (Android 12+), switched on only by the person:
          changes and moves to trash without a confirmation window every time. Still photos and videos only. -->
     <uses-permission
@@ -36,12 +43,26 @@
         <activity
             android:name=".ui.MainActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density|uiMode"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Woken by Android when the photos change, to hint about a fresh screenshot -->
+        <service
+            android:name=".screenshots.ScreenshotJob"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+        <receiver android:name=".screenshots.ScreenshotActionReceiver" android:exported="false" />
+        <receiver android:name=".screenshots.RestartReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Shares copies without location from the app's private cache, one file at a time -->
         <provider
