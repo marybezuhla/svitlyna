@@ -1,6 +1,11 @@
-**Світлина 0.3.0** — приватна галерея для Android: без інтернету, акаунтів і реклами. Українська та англійська. Тестова версія.
+**Світлина 0.4.0** — приватна галерея для Android: без інтернету, акаунтів і реклами. Українська та англійська. Тестова версія.
 
-**Нове в 0.3.0**
+**Нове в 0.4.0**
+- 🔍 **Пошук за текстом на фото** українською: «Шевченко» знайде й «Шевченка», латинкою теж; а ще за назвами файлів і папок та датами словами («травень 2024», «вчора»). Знайдені слова виділені на фото. Фільтр «З текстом».
+- 🌙 Текст фото читається, коли телефон заряджається й ним не користуються (або «Прочитати зараз»); прочитане зберігається зашифрованим і лише на телефоні.
+- 🎨 Нова іконка.
+
+**У 0.3.0**
 - 🏠 **Основна галерея:** фото й відео з файлового менеджера чи месенджера відкриваються у Світлині; Світлина може бути вибором фото для інших застосунків; «Змінити» з іншого застосунку відкриває редактор.
 - 🧹 **Схожі фото** поруч з однаковими: серії кадрів, зменшені копії з месенджерів. Що піде в кошик, вирішуєте ви.
 - 🗓️ **Змінити дату чи місце** у фото — у самому файлі, після дозволу Android.
@@ -17,9 +22,14 @@
 
 ---
 
-**Svitlyna 0.3.0** — a private gallery for Android: no internet, no accounts, no ads. Ukrainian and English. Test version.
+**Svitlyna 0.4.0** — a private gallery for Android: no internet, no accounts, no ads. Ukrainian and English. Test version.
 
-**New in 0.3.0**
+**New in 0.4.0**
+- 🔍 **Search by text in photos**: Ukrainian word forms and Latin letters, file and folder names, dates in words ("May 2024", "yesterday"). Found words are highlighted on the photo. A "With text" filter.
+- 🌙 Photos' text is read while the phone is charging and not in use (or "Read now"); kept encrypted, on the phone only.
+- 🎨 A new icon.
+
+**In 0.3.0**
 - 🏠 **Main gallery:** photos and videos from a file manager or messenger open in Svitlyna; Svitlyna can be the photo chooser for other apps; "Edit" from another app opens its editor.
 - 🧹 **Similar photos** next to exact duplicates: series of shots, smaller copies from messengers. You decide what goes to the trash.
 - 🗓️ **Change the date or place** of a photo — in the file itself, after Android's permission.
