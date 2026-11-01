@@ -193,13 +193,17 @@
     <string name="folder_hidden_mark">сховано</string>
 
     <string name="dupes">Дублікати</string>
-    <string name="dupes_explain">Шукає однакові до байта файли (те саме фото, збережене двічі, з двох месенджерів…). Порівнюються лише файли однакового розміру; нічого не змінюється, доки ви не натиснете кнопку.</string>
-    <string name="dupes_find">Шукати дублікати</string>
+    <string name="dupes_explain">Однакові: файли, що збігаються до байта (те саме фото, збережене двічі, з двох месенджерів…). Схожі: кадри однієї серії, копія, яку месенджер зменшив. Усе перевіряється на телефоні; нічого не змінюється, доки ви не натиснете кнопку.</string>
+    <string name="dupes_find_similar">Шукати схожі (≈%d хв)</string>
+    <string name="dupes_tap">Торкніться фото, щоб позначити його для кошика або зняти позначку.</string>
+    <string name="dupes_same">Однакові</string>
+    <string name="dupes_similar">Схожі</string>
+    <string name="dupes_best">Найкраще</string>
+    <string name="dupes_to_trash">У кошик</string>
+    <string name="dupes_find">Шукати однакові</string>
     <string name="dupes_checking">Перевіряю %1$d з %2$d…</string>
-    <string name="dupes_none">Дублікатів не знайдено.</string>
-    <string name="dupes_trash">Перенести зайві копії в кошик</string>
+    <string name="dupes_none">Нічого не знайдено.</string>
     <string name="dupes_keep">Лишається</string>
-    <string name="dupes_extra">Копія</string>
     <string name="settings_look">Вигляд</string>
     <string name="amoled">Чисто чорний у темній темі</string>
     <string name="amoled_explain">Береже заряд на OLED-екранах.</string>
@@ -290,11 +294,11 @@
         <item quantity="many">%d фото можуть отримати дату з назви.</item>
         <item quantity="other">%d фото може отримати дату з назви.</item>
     </plurals>
-    <plurals name="dupes_found">
-        <item quantity="one">%1$d зайва копія, %2$s.</item>
-        <item quantity="few">%1$d зайві копії, %2$s.</item>
-        <item quantity="many">%1$d зайвих копій, %2$s.</item>
-        <item quantity="other">%1$d зайвої копії, %2$s.</item>
+    <plurals name="dupes_trash_marked">
+        <item quantity="one">Перенести %1$d у кошик (%2$s)</item>
+        <item quantity="few">Перенести %1$d у кошик (%2$s)</item>
+        <item quantity="many">Перенести %1$d у кошик (%2$s)</item>
+        <item quantity="other">Перенести %1$d у кошик (%2$s)</item>
     </plurals>
     <plurals name="copied_n">
         <item quantity="one">Скопійовано %1$d з %2$d</item>
