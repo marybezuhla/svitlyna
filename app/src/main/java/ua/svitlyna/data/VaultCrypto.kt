@@ -42,11 +42,14 @@ object VaultCrypto {
         return made
     }
 
-    /** Encrypts all of [input] into [target]; returns how many plain bytes were written. */
-    fun encrypt(context: Context, input: InputStream, target: File): Long {
+    /**
+     * Encrypts all of [input] into [target]; returns how many plain bytes were written. [name] is the
+     * file's final name in the vault (it may be written under a temporary name first).
+     */
+    fun encrypt(context: Context, input: InputStream, target: File, name: String = target.name): Long {
         var count = 0L
         val file = FileOutputStream(target)
-        aead(context).newEncryptingStream(file, target.name.toByteArray()).use { out ->
+        aead(context).newEncryptingStream(file, name.toByteArray()).use { out ->
             val buf = ByteArray(64 * 1024)
             while (true) {
                 val n = input.read(buf)
@@ -61,8 +64,25 @@ object VaultCrypto {
     }
 
     /** The plain content of a vault [file], read from the start. */
-    fun decrypting(context: Context, file: File): InputStream =
-        aead(context).newDecryptingStream(FileInputStream(file), file.name.toByteArray())
+    fun decrypting(context: Context, file: File, name: String = file.name): InputStream =
+        aead(context).newDecryptingStream(FileInputStream(file), name.toByteArray())
+
+    /** Small data (the vault's list) encrypted with the same key, bound to [label]. */
+    fun seal(context: Context, plain: ByteArray, label: String): ByteArray {
+        val out = java.io.ByteArrayOutputStream()
+        aead(context).newEncryptingStream(out, label.toByteArray()).use { it.write(plain) }
+        return out.toByteArray()
+    }
+
+    fun open(context: Context, sealed: ByteArray, label: String): ByteArray =
+        aead(context).newDecryptingStream(java.io.ByteArrayInputStream(sealed), label.toByteArray()).use { it.readBytes() }
+
+    /** A new file name that says nothing about the photo: 32 random hex digits. */
+    fun randomName(): String {
+        val b = ByteArray(16)
+        java.security.SecureRandom().nextBytes(b)
+        return b.joinToString("") { "%02x".format(it) }
+    }
 
     /** The plain content of a vault [file] with random access (for showing and playing). */
     fun seekable(context: Context, file: File): SeekableByteChannel =

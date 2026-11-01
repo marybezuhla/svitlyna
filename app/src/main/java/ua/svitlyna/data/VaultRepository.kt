@@ -52,6 +52,10 @@ private data class VaultRestoreTarget(val uri: Uri, val path: String)
 
 private const val VAULT_INDEX_CHECKPOINT_INTERVAL = 20
 private const val VAULT_RECOVERED_BUCKET = "Recovered"
+/** Svitlyna: a copy being written; never adopted, cleared at the next start. */
+private const val PART = ".part_"
+private const val INDEX_LABEL = "svitlyna-vault-index"
+private val RANDOM_NAME = Regex("^[0-9a-f]{32}$")
 private val VAULT_VIDEO_EXTENSIONS = setOf(
     "mp4", "mkv", "webm", "avi", "mov", "3gp", "3g2", "m4v",
     "mpeg", "mpg", "ts", "flv", "wmv", "mts", "m2ts"
@@ -103,7 +107,7 @@ class VaultRepository(private val context: Context) {
                 val uniqueId = if (item.id > 0) -item.id else item.id
                 MediaImage(
                     id = uniqueId,
-                    uri = VaultProvider.uriFor(context, file.name),
+                    uri = VaultProvider.uriFor(context, file.name, item.mimeType),
                     name = item.originalName,
                     dateTaken = item.dateTaken,
                     width = item.width,
@@ -137,11 +141,13 @@ class VaultRepository(private val context: Context) {
      */
     suspend fun recoverOrphanedItems(): Int = indexLocked {
         val currentItems = (readIndexStrict() ?: return@indexLocked 0).toMutableList()
+        // Svitlyna: unfinished copies (".part_…") are never adopted; they are cleared.
+        (vaultDir.listFiles() ?: emptyArray()).filter { it.name.startsWith(PART) }.forEach { runCatching { it.delete() } }
         val knownNames = currentItems.mapTo(mutableSetOf()) { it.vaultFileName }
         val usedIds = currentItems.mapTo(mutableSetOf()) { it.id }
         val orphans = (vaultDir.listFiles() ?: emptyArray())
             .filter { file ->
-                file.isFile && file.name != ".nomedia" && file.name !in knownNames && file.length() > 0
+                file.isFile && !file.name.startsWith(".") && file.name !in knownNames && file.length() > 0
             }
             .sortedBy { it.name }
         if (orphans.isEmpty()) return@indexLocked 0
@@ -151,12 +157,17 @@ class VaultRepository(private val context: Context) {
             val parsedId = parseVaultFileId(file.name)
             val uniqueId = if (parsedId != null && parsedId !in usedIds) parsedId else generateUniqueId(currentItems)
             usedIds.add(uniqueId)
-            val isVideo = isVideoFileName(file.name)
+            val sniffed = sniffType(file)
+            val isVideo = sniffed?.startsWith("video/") ?: isVideoFileName(file.name)
             currentItems.add(
                 VaultItem(
                     id = uniqueId,
                     vaultFileName = file.name,
-                    originalName = stripVaultPrefix(file.name),
+                    originalName = if (RANDOM_NAME.matches(file.name)) {
+                        "recovered_$uniqueId." + (MimeTypeMap.getSingleton().getExtensionFromMimeType(sniffed ?: "") ?: if (isVideo) "mp4" else "jpg")
+                    } else {
+                        stripVaultPrefix(file.name)
+                    },
                     originalPath = "",
                     originalBucketName = VAULT_RECOVERED_BUCKET,
                     originalBucketId = 0L,
@@ -166,7 +177,7 @@ class VaultRepository(private val context: Context) {
                     height = 0,
                     isVideo = isVideo,
                     durationMs = 0L,
-                    mimeType = mimeTypeForVaultFile(file.name, isVideo),
+                    mimeType = sniffed ?: mimeTypeForVaultFile(file.name, isVideo),
                     sizeBytes = file.length(),
                     orientation = 0,
                     title = "",
@@ -193,12 +204,8 @@ class VaultRepository(private val context: Context) {
 
         for (item in mediaList) {
             val uniqueId = generateUniqueId(currentItems)
-            val prefix = "${uniqueId}_"
-            val cleanName = truncateToFileSystemLimit(
-                prefix,
-                sanitizeFileName(item.name.ifBlank { "media_$uniqueId" })
-            )
-            val vaultFileName = prefix + cleanName
+            // Svitlyna: the file's name in the vault says nothing (the real one is in the encrypted list).
+            val vaultFileName = VaultCrypto.randomName()
             val targetFile = File(vaultDir, vaultFileName)
 
             val copySuccess = runCatching {
@@ -584,42 +591,6 @@ class VaultRepository(private val context: Context) {
         return id
     }
 
-    /**
-     * Keeps non-ASCII (e.g. Chinese) names intact. Only path separators and control characters are
-     * replaced, since those would break file access.
-     */
-    private fun sanitizeFileName(name: String): String {
-        val cleaned = buildString(name.length) {
-            for (ch in name) {
-                append(if (ch.isISOControl() || ch == '/' || ch == '\\') '_' else ch)
-            }
-        }.trim().trimEnd('.')
-        return cleaned.ifBlank { "media" }
-    }
-
-    /**
-     * Trims the name so `prefix + name` fits the 255-byte file name limit used by ext4/f2fs.
-     * The extension is preserved whenever possible.
-     */
-    private fun truncateToFileSystemLimit(prefix: String, name: String): String {
-        val maxBytes = 255 - (prefix.toByteArray(Charsets.UTF_8).size + 4)
-        if (name.toByteArray(Charsets.UTF_8).size <= maxBytes) return name
-        val dot = name.lastIndexOf('.')
-        val stem = if (dot > 0) name.substring(0, dot) else name
-        val extensionCandidate = if (dot > 0) name.substring(dot) else ""
-        val extension = if (extensionCandidate.toByteArray(Charsets.UTF_8).size <= 24) extensionCandidate else ""
-        val budget = (maxBytes - extension.toByteArray(Charsets.UTF_8).size).coerceAtLeast(1)
-        val builder = StringBuilder()
-        var bytes = 0
-        for (ch in stem) {
-            val chBytes = ch.toString().toByteArray(Charsets.UTF_8).size
-            if (bytes + chBytes > budget) break
-            builder.append(ch)
-            bytes += chBytes
-        }
-        return builder.toString().ifBlank { "media" } + extension
-    }
-
     private fun parseVaultFileId(fileName: String): Long? {
         val match = Regex("^(\\d{5,})_").find(fileName) ?: return null
         return match.groupValues[1].toLongOrNull()?.takeIf { it > 0 }
@@ -639,6 +610,95 @@ class VaultRepository(private val context: Context) {
             ?: if (isVideo) "video/mp4" else "image/jpeg"
     }
 
+    /**
+     * Svitlyna: vault files from 0.5.0 still carry the photo's name ("123_IMG_2024.jpg") and the list
+     * was plain JSON. Each such file is re-encrypted under a random name, checked, then the list is
+     * saved (encrypted) and only then the old file goes. A crash leaves at worst a second copy, never
+     * a missing one. Runs once in the background; nothing to do afterwards.
+     */
+    suspend fun sealNames(): Int = withContext(Dispatchers.IO) {
+        var done = 0
+        while (true) {
+            val step = synchronized(indexLock) {
+                val items = readIndexStrict() ?: return@synchronized null
+                if (indexIsPlain() && !persistIndexVerified(items)) return@synchronized null
+                val legacy = items.firstOrNull { !RANDOM_NAME.matches(it.vaultFileName) && File(vaultDir, it.vaultFileName).isFile }
+                    ?: return@synchronized null
+                val old = File(vaultDir, legacy.vaultFileName)
+                val newName = VaultCrypto.randomName()
+                val part = File(vaultDir, PART + newName)
+                val target = File(vaultDir, newName)
+                val copied = runCatching {
+                    val plain = VaultCrypto.decrypting(context, old).use { input -> VaultCrypto.encrypt(context, input, part, newName) }
+                    plain > 0 && plainLength(part, newName) == plain && plainLength(old, old.name) == plain
+                }.getOrDefault(false)
+                if (!copied || !part.renameTo(target)) {
+                    runCatching { part.delete() }
+                    return@synchronized false
+                }
+                val updated = items.map { if (it.id == legacy.id && it.vaultFileName == legacy.vaultFileName) it.copy(vaultFileName = newName) else it }
+                if (!persistIndexVerified(updated)) {
+                    // The list still names the old file, which is untouched.
+                    runCatching { target.delete() }
+                    return@synchronized false
+                }
+                runCatching { old.delete() }
+                true
+            }
+            if (step != true) break
+            done++
+        }
+        if (done > 0) loadVaultItems()
+        done
+    }
+
+    private fun indexIsPlain(): Boolean = runCatching {
+        val f = indexFile.baseFile
+        f.exists() && f.inputStream().use { s ->
+            var c = s.read()
+            while (c == ' '.code || c == '\n'.code || c == '\r'.code || c == '\t'.code) c = s.read()
+            c == '['.code
+        }
+    }.getOrDefault(false)
+
+    private fun plainLength(file: File, name: String): Long = runCatching {
+        VaultCrypto.decrypting(context, file, name).use { s ->
+            var n = 0L
+            val b = ByteArray(65536)
+            while (true) { val r = s.read(b); if (r < 0) break; n += r }
+            n
+        }
+    }.getOrDefault(-1L)
+
+    /** The type of an adopted file from its first bytes (its name says nothing). */
+    private fun sniffType(file: File): String? = runCatching {
+        val head = ByteArray(16)
+        val n = VaultCrypto.decrypting(context, file).use { s ->
+            var got = 0
+            while (got < head.size) { val r = s.read(head, got, head.size - got); if (r < 0) break; got += r }
+            got
+        }
+        if (n < 12) return@runCatching null
+        fun at(i: Int, s: String) = String(head, i, s.length, Charsets.ISO_8859_1) == s
+        when {
+            head[0] == 0xFF.toByte() && head[1] == 0xD8.toByte() -> "image/jpeg"
+            at(1, "PNG") -> "image/png"
+            at(0, "GIF8") -> "image/gif"
+            at(0, "RIFF") && at(8, "WEBP") -> "image/webp"
+            at(4, "ftyp") -> {
+                val brand = String(head, 8, 4, Charsets.ISO_8859_1)
+                when (brand) {
+                    "heic", "heix", "mif1", "msf1", "hevc" -> "image/heic"
+                    "avif", "avis" -> "image/avif"
+                    "qt  " -> "video/quicktime"
+                    else -> "video/mp4"
+                }
+            }
+            at(0, "\u001aEß£") -> "video/webm"
+            else -> null
+        }
+    }.getOrNull()
+
     private suspend fun <T> indexLocked(block: () -> T): T =
         withContext(Dispatchers.IO) { synchronized(indexLock) { block() } }
 
@@ -649,7 +709,14 @@ class VaultRepository(private val context: Context) {
         val file = indexFile.baseFile
         if (!file.exists()) return emptyList()
         return try {
-            val json = indexFile.openRead().bufferedReader().use { it.readText() }
+            val raw = indexFile.openRead().use { it.readBytes() }
+            // Svitlyna: the list is encrypted; a plain one (0.5.0) is read once and then sealed.
+            val json = runCatching { String(VaultCrypto.open(context, raw, INDEX_LABEL), Charsets.UTF_8) }
+                .getOrElse {
+                    val plain = String(raw, Charsets.UTF_8)
+                    check(plain.trimStart().startsWith("[")) { "vault index unreadable" }
+                    plain
+                }
             val array = JSONArray(json)
             val list = mutableListOf<VaultItem>()
             for (i in 0 until array.length()) {
@@ -709,7 +776,7 @@ class VaultRepository(private val context: Context) {
                 array.put(obj)
             }
             stream = indexFile.startWrite()
-            stream.write(array.toString(2).toByteArray(Charsets.UTF_8))
+            stream.write(VaultCrypto.seal(context, array.toString().toByteArray(Charsets.UTF_8), INDEX_LABEL))
             indexFile.finishWrite(stream)
             true
         } catch (e: Exception) {
