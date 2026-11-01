@@ -408,7 +408,7 @@ internal fun GalleryApp(
             viewModel.restoreSystemTrash(ids, paths)
             val totalRestored = items.size + (internalItems?.size ?: 0)
             trashFeedback = TrashFeedback(TrashFeedbackType.RESTORED, totalRestored)
-            Toast.makeText(context, "$totalRestored item(s) restored", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.sv_restored_n, totalRestored), Toast.LENGTH_SHORT).show()
             if (!internalItems.isNullOrEmpty()) {
                 coroutineScope.launch {
                     viewModel.restoreFromTrash(internalItems)
@@ -522,12 +522,18 @@ internal fun GalleryApp(
         AnimatedContent(
             targetState = (!settings.appLockEnabled || isAppUnlocked),
             transitionSpec = {
+                // Svitlyna: locking is instant (a fade would show the gallery for a moment); only
+                // unlocking is animated.
+                if (!targetState) {
+                    androidx.compose.animation.EnterTransition.None togetherWith androidx.compose.animation.ExitTransition.None
+                } else {
                 (fadeIn(animationSpec = tween(320, easing = FastOutSlowInEasing)) +
                  scaleIn(initialScale = 0.94f, animationSpec = tween(320, easing = FastOutSlowInEasing)))
                     .togetherWith(
                         fadeOut(animationSpec = tween(220, easing = FastOutSlowInEasing)) +
                         scaleOut(targetScale = 1.06f, animationSpec = tween(220, easing = FastOutSlowInEasing))
                     )
+                }
             },
             label = "AppLockTransition"
         ) { unlocked ->
@@ -618,7 +624,7 @@ internal fun GalleryApp(
                             }
                         } else {
                             viewModel.setLocked(mediaList.map { it.id }, true)
-                            Toast.makeText(context, "${mediaList.size} item(s) hidden in Svitlyna", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.sv_hidden_n, mediaList.size), Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -671,7 +677,7 @@ internal fun GalleryApp(
                                 viewModel.markMediaDeleted(delIds, delPaths)
                                 viewModel.deletePermanentlyFromVault(vaultItems)
                                 viewModel.checkForChanges()
-                                Toast.makeText(context, "${vaultItems.size} item(s) permanently deleted", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.sv_deleted_n, vaultItems.size), Toast.LENGTH_SHORT).show()
                                 onPartConfirmed()
                             }
                         }
@@ -685,7 +691,7 @@ internal fun GalleryApp(
                             }.onFailure {
                                 pendingPermanentDeleteMedia = null
                                 pendingPermanentDeleteCallback = null
-                                Toast.makeText(context, "Could not request deletion", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, R.string.sv_delete_request_failed, Toast.LENGTH_LONG).show()
                             }
                             else runCatching {
                                 val delIds = galleryLockedItems.map { it.id }.toSet()
@@ -748,7 +754,7 @@ internal fun GalleryApp(
                                 lockedAuthorized = true
                             } else {
                                 val keyguard = context.getSystemService(KeyguardManager::class.java)
-                                val intent = keyguard?.createConfirmDeviceCredentialIntent("Unlock Svitlyna", "View your locked media")
+                                val intent = keyguard?.createConfirmDeviceCredentialIntent(context.getString(R.string.sv_lock_title), context.getString(R.string.sv_vault_unlock))
                                 if (intent == null) lockedAuthorized = true else unlockLauncher.launch(intent)
                             }
                         },
@@ -909,7 +915,7 @@ internal fun GalleryApp(
                                         val restored = viewModel.restoreFromTrash(media)
                                         if (restored.isNotEmpty()) {
                                             trashFeedback = TrashFeedback(TrashFeedbackType.RESTORED, restored.size)
-                                            Toast.makeText(context, "${restored.size} item(s) restored", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, context.getString(R.string.sv_restored_n, restored.size), Toast.LENGTH_SHORT).show()
                                         }
                                     }
                                 }

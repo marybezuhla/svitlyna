@@ -254,7 +254,7 @@ class AlbumRepository(private val context: Context) {
                 }
                 if (!copied) {
                     copied = runCatching {
-                        context.contentResolver.openInputStream(item.uri)?.use { input ->
+                        (runCatching { context.contentResolver.openInputStream(android.provider.MediaStore.setRequireOriginal(item.uri)) }.getOrNull() ?: context.contentResolver.openInputStream(item.uri))?.use { input ->
                             FileOutputStream(destFile).use { output ->
                                 input.copyTo(output)
                             }
@@ -376,7 +376,7 @@ class AlbumRepository(private val context: Context) {
 
             if (!done) {
                 val copyOk = runCatching {
-                    context.contentResolver.openInputStream(item.uri)?.use { input ->
+                    (runCatching { context.contentResolver.openInputStream(android.provider.MediaStore.setRequireOriginal(item.uri)) }.getOrNull() ?: context.contentResolver.openInputStream(item.uri))?.use { input ->
                         FileOutputStream(destFile).use { output ->
                             input.copyTo(output)
                         }

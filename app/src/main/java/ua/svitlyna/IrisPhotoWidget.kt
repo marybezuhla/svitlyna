@@ -125,7 +125,7 @@ class IrisPhotoWidget : AppWidgetProvider() {
             } else {
                 views.setViewVisibility(viewId, View.VISIBLE)
                 views.setImageViewBitmap(viewId, memory?.let { memoryCard(context, it, index, cardRatio) }
-                    ?: emptyCard(cardRatio))
+                    ?: emptyCard(context, cardRatio))
             }
         }
         manager.updateAppWidget(id, views)
@@ -201,7 +201,7 @@ class IrisPhotoWidget : AppWidgetProvider() {
         val chipPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(166, 24, 21, 29) }
         canvas.drawRoundRect(RectF(28f, 26f, 260f, 78f), 26f, 26f, chipPaint)
         canvas.drawCircle(55f, 52f, 7f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(218, 184, 255) })
-        canvas.drawText("IRIS  ·  MEMORIES", 75f, 61f, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        canvas.drawText(context.getString(R.string.sv_widget_header), 75f, 61f, Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE; textSize = 20f
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
         })
@@ -251,7 +251,7 @@ class IrisPhotoWidget : AppWidgetProvider() {
         return Color.rgb(tonal(red), tonal(green), tonal(blue))
     }
 
-    private fun emptyCard(ratio: Float): Bitmap {
+    private fun emptyCard(context: Context, ratio: Float): Bitmap {
         val width = 840
         val height = (width / ratio).toInt().coerceIn(420, 900)
         return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { bitmap ->
@@ -260,7 +260,7 @@ class IrisPhotoWidget : AppWidgetProvider() {
             Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(34, 31, 39) })
         canvas.drawCircle(width / 2f, height / 2f - 40f, 22f,
             Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(218, 184, 255) })
-        canvas.drawText("No memories from this day yet", 48f, height / 2f + 42f, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        canvas.drawText(context.getString(R.string.sv_widget_empty), 48f, height / 2f + 42f, Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.rgb(234, 221, 255); textSize = 34f; typeface = Typeface.DEFAULT_BOLD
         })
         }

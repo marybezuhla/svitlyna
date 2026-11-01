@@ -139,7 +139,7 @@ object Prepare {
                 return null
             }
 
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.share", file)
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
             val send = Intent(Intent.ACTION_SEND)
                 .setType(if (png) "image/png" else "image/jpeg")
                 .putExtra(Intent.EXTRA_STREAM, uri)

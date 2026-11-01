@@ -104,4 +104,14 @@
         <item quantity="many">Виправлено %d фото</item>
         <item quantity="other">Виправлено %d фото</item>
     </plurals>
+    <string name="sv_vault_edit">Щоб редагувати, спершу поверніть фото із сейфа: відредагована копія зберігалася б незашифрованою.</string>
+    <string name="sv_memories_title">Цього дня</string>
+    <string name="sv_restored_n">Відновлено: %d</string>
+    <string name="sv_hidden_n">Приховано у Світлині: %d</string>
+    <string name="sv_deleted_n">Видалено назавжди: %d</string>
+    <string name="sv_delete_request_failed">Не вдалося попросити Android видалити.</string>
+    <string name="sv_vault_unlock">Відкрити приховані фото</string>
+    <string name="sv_widget_header">СВІТЛИНА  ·  ЦЬОГО ДНЯ</string>
+    <string name="sv_widget_empty">Цього дня фото поки немає</string>
+    <string name="widget_description">Фото, зроблені цього дня в минулі роки</string>
 </resources>

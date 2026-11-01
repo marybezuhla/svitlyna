@@ -599,6 +599,7 @@ internal fun GalleryScaffold(
         }
         onDispose {
             window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                (context as? androidx.fragment.app.FragmentActivity)?.let { ua.svitlyna.core.AppLock.applyRecents(it, settings.appLockEnabled) }
         }
     }
     fun toggleSelection(id: Long) {

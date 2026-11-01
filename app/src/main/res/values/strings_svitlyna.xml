@@ -95,4 +95,13 @@
         <item quantity="one">Fixed %d photo</item>
         <item quantity="other">Fixed %d photos</item>
     </plurals>
+    <string name="sv_vault_edit">To edit, first take the photo out of the vault: an edited copy would be saved unencrypted.</string>
+    <string name="sv_memories_title">From this day</string>
+    <string name="sv_restored_n">Restored: %d</string>
+    <string name="sv_hidden_n">Hidden in Svitlyna: %d</string>
+    <string name="sv_deleted_n">Deleted for good: %d</string>
+    <string name="sv_delete_request_failed">Couldn\'t ask Android to delete.</string>
+    <string name="sv_vault_unlock">Open the hidden photos</string>
+    <string name="sv_widget_header">SVITLYNA  ·  THIS DAY</string>
+    <string name="sv_widget_empty">No photos from this day yet</string>
 </resources>

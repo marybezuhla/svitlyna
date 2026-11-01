@@ -836,6 +836,8 @@ private fun applyExifEditFields(
  * then written over; if writing fails, the photo goes back to exactly what it was.
  */
 fun saveExifToMedia(context: android.content.Context, uri: Uri, path: String, request: ExifEditRequest): Boolean {
+    // Only the phone's own media list is written (never the vault: it is read only from outside).
+    if (uri.authority != android.provider.MediaStore.AUTHORITY) return false
     val anyTag = ua.svitlyna.media.Metadata.COPYABLE_TAGS.toSet() + androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION
     return ua.svitlyna.media.InPlace.rewrite(context, uri, anyTag) { exif -> applyExifToExifInterface(exif, request) } ==
         ua.svitlyna.media.InPlace.Result.DONE
@@ -897,7 +899,18 @@ private fun queryDataColumn(context: Context, uri: Uri): String? {
     }.getOrNull()
 }
 
+/**
+ * Svitlyna: a link from another app must never lead into Svitlyna's own private files (vault,
+ * trash, settings): such a path is ignored and the file is read only through its link.
+ */
 fun resolvePhysicalPath(context: Context, uri: Uri): String? {
+    val found = resolvePhysicalPathUnchecked(context, uri) ?: return null
+    val canonical = runCatching { File(found).canonicalPath }.getOrDefault(found)
+    val private = listOf(context.dataDir, context.filesDir, context.cacheDir).mapNotNull { runCatching { it.canonicalPath }.getOrNull() }
+    return if (private.any { canonical.startsWith(it) } || canonical.contains("/data/data/") || canonical.contains("/data/user/")) null else found
+}
+
+private fun resolvePhysicalPathUnchecked(context: Context, uri: Uri): String? {
     val scheme = uri.scheme
     if (scheme.equals("file", ignoreCase = true)) {
         return Uri.decode(uri.path)

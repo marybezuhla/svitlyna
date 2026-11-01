@@ -779,6 +779,11 @@ class MediaRepository(private val context: Context) {
     fun persistSnapshot(media: List<MediaImage>) = saveSnapshot(media)
 
     suspend fun renameMedia(item: MediaImage, newName: String): MediaImage? = withContext(Dispatchers.IO) {
+        // Svitlyna: a vault file is encrypted under its name: renaming it would make it unreadable.
+        // App-private files (vault, trash) are never renamed.
+        if (item.id < 0 || item.uri.authority == "${context.packageName}.vault" ||
+            item.path.startsWith(context.filesDir.absolutePath) || item.path.startsWith(context.dataDir.absolutePath)
+        ) return@withContext null
         val trimmedName = newName.trim()
         if (trimmedName.isBlank()) return@withContext null
 

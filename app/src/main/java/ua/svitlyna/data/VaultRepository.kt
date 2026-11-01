@@ -108,7 +108,7 @@ class VaultRepository(private val context: Context) {
                     dateTaken = item.dateTaken,
                     width = item.width,
                     height = item.height,
-                    path = file.absolutePath,
+                    path = "", // read only through the vault provider (decrypted), never as a raw file
                     bucketId = if (item.originalBucketId != 0L) item.originalBucketId else -1L,
                     bucketName = item.originalBucketName.ifBlank { "Locked" },
                     isVideo = item.isVideo,
@@ -203,12 +203,14 @@ class VaultRepository(private val context: Context) {
 
             val copySuccess = runCatching {
                 // Svitlyna: the vault keeps files only encrypted (VaultCrypto).
-                val copiedBytes = context.contentResolver.openInputStream(item.uri)?.use { input ->
+                val copiedBytes = (runCatching { context.contentResolver.openInputStream(android.provider.MediaStore.setRequireOriginal(item.uri)) }.getOrNull() ?: context.contentResolver.openInputStream(item.uri))?.use { input ->
                     VaultCrypto.encrypt(context, input, targetFile)
                 } ?: 0L
                 // A truncated copy is worse than no copy: the original is only
                 // deleted after this check passes.
-                targetFile.exists() && copiedBytes > 0 && (item.sizeBytes <= 0 || copiedBytes == item.sizeBytes)
+                // …and it must decrypt back to the same length before the original may go.
+                val readBack = runCatching { VaultCrypto.decrypting(context, targetFile).use { s -> var n = 0L; val b = ByteArray(65536); while (true) { val r = s.read(b); if (r < 0) break; n += r }; n } }.getOrDefault(-1L)
+                targetFile.exists() && copiedBytes > 0 && readBack == copiedBytes && (item.sizeBytes <= 0 || copiedBytes == item.sizeBytes)
             }.getOrDefault(false)
 
             if (!copySuccess) {
@@ -244,7 +246,7 @@ class VaultRepository(private val context: Context) {
                     dateTaken = item.dateTaken,
                     width = item.width,
                     height = item.height,
-                    path = targetFile.absolutePath,
+                    path = "", // read only through the vault provider (decrypted), never as a raw file
                     bucketId = if (item.bucketId != 0L) item.bucketId else -1L,
                     bucketName = item.bucketName.ifBlank { "Locked" },
                     isVideo = item.isVideo,
@@ -355,7 +357,9 @@ class VaultRepository(private val context: Context) {
         val idsToRemove = vaultedItems.map { abs(it.id) }.toSet()
 
         currentItems.removeAll { item ->
-            if (item.id in idsToRemove) {
+            // Svitlyna: a copy is undone only while its original is still there; if the original
+            // was already removed, the vault copy is the only one left and stays.
+            if (item.id in idsToRemove && originalStillThere(item.originalPath)) {
                 val file = File(vaultDir, item.vaultFileName)
                 runCatching { file.delete() }
                 true
@@ -363,15 +367,11 @@ class VaultRepository(private val context: Context) {
                 false
             }
         }
-        // Also drop copies that never made it into the index (interrupted/broken batch persists).
-        for (media in vaultedItems) {
-            if (media.path.startsWith(vaultDir.absolutePath)) {
-                runCatching { File(media.path).delete() }
-            }
-        }
         writeIndex(currentItems)
         loadVaultItems()
     }
+
+    private fun originalStillThere(path: String): Boolean = path.isBlank() || runCatching { File(path).exists() }.getOrDefault(true)
 
     suspend fun restoreFromVault(mediaList: List<MediaImage>): List<MediaImage> = indexLocked {
         val currentItems = readIndex().toMutableList()
