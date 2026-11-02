@@ -19,18 +19,34 @@ import java.io.File
  */
 object SaveCopy {
     /** Returns the new file's address, or null if it couldn't be saved (nothing half-written is left). */
-    suspend fun save(context: Context, original: MediaItem, picture: Bitmap, suffix: String): Uri? = withContext(Dispatchers.IO) {
+    /** The picture formats a copy can be saved in. */
+    enum class Format(val ext: String, val mime: String, val compress: Bitmap.CompressFormat) {
+        JPEG("jpg", "image/jpeg", Bitmap.CompressFormat.JPEG),
+        WEBP("webp", "image/webp", Bitmap.CompressFormat.WEBP_LOSSY),
+        PNG("png", "image/png", Bitmap.CompressFormat.PNG),
+    }
+
+    suspend fun save(
+        context: Context,
+        original: MediaItem,
+        picture: Bitmap,
+        suffix: String,
+        format: Format? = null,
+        quality: Int = 95,
+    ): Uri? = withContext(Dispatchers.IO) {
         val resolver = context.contentResolver
-        val png = original.mime.equals("image/png", ignoreCase = true)
-        val ext = if (png) "png" else "jpg"
-        val mime = if (png) "image/png" else "image/jpeg"
+        // Without a chosen format: PNG stays PNG (screenshots), anything else becomes JPEG.
+        val f = format ?: if (original.mime.equals("image/png", ignoreCase = true)) Format.PNG else Format.JPEG
+        val png = f == Format.PNG
+        val ext = f.ext
+        val mime = f.mime
         val dir = File(context.cacheDir, "edit").apply { mkdirs() }
         val temp = File.createTempFile("copy", ".$ext", dir)
         var uri: Uri? = null
         try {
             temp.outputStream().use { out ->
                 // Lossless for PNG (screenshots); high quality for photos.
-                check(picture.compress(if (png) Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG, 95, out))
+                check(picture.compress(f.compress, if (png) 100 else quality.coerceIn(30, 100), out))
             }
             copyMetadata(context, original, temp)
 

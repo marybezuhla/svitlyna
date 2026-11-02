@@ -148,4 +148,30 @@
     <string name="sv_licences">Licenses and credits</string>
     <string name="sv_licence_line">GPL-3.0, without any warranty · licenses of the libraries and models</string>
     <string name="sv_share_skipped">%1$d not sent: their details could not be removed.</string>
+    <string name="sv_convert_title">Resize or convert</string>
+    <string name="sv_convert_format">Format</string>
+    <string name="sv_convert_size">Longer side</string>
+    <string name="sv_convert_as_is">As is</string>
+    <string name="sv_convert_quality">Quality: %1$d</string>
+    <string name="sv_convert_note">Copies are saved next to the originals, with their date and details; the originals stay as they are.</string>
+    <plurals name="sv_convert_start">
+        <item quantity="one">Make %1$d copy</item>
+        <item quantity="other">Make %1$d copies</item>
+    </plurals>
+    <plurals name="sv_convert_done">
+        <item quantity="one">%1$d copy saved</item>
+        <item quantity="other">%1$d copies saved</item>
+    </plurals>
+    <string name="sv_pdf_title">Make a PDF</string>
+    <plurals name="sv_pdf_explain">
+        <item quantity="one">%1$d photo on an A4 page, saved in Documents/Svitlyna. The PDF carries none of the photo\'s details (place, date, camera).</item>
+        <item quantity="other">%1$d photos, one per A4 page, in the order they were taken, saved in Documents/Svitlyna. The PDF carries none of the photos\' details (place, date, camera).</item>
+    </plurals>
+    <string name="sv_pdf_make">Make PDF</string>
+    <string name="sv_pdf_saved">PDF saved in Documents/Svitlyna</string>
+    <string name="sv_pdf_failed">Could not make the PDF</string>
+    <string name="sv_tools_estimate">It will take about %1$d s.</string>
+    <string name="sv_tools_progress_start">%1$d of %2$d…</string>
+    <string name="sv_tools_progress">%1$d of %2$d · about %3$d s left</string>
+    <string name="sv_tools_stopped">Stopped. What was already made is kept.</string>
 </resources>

@@ -2,6 +2,8 @@
 
 package ua.svitlyna.ui
 
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material.icons.outlined.PhotoSizeSelectLarge
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import android.app.Activity
@@ -624,6 +626,8 @@ internal fun GalleryScaffold(
     }
     fun clearSelection() { selectedIds = emptySet() }
     val stitchScope = rememberCoroutineScope()
+    // Svitlyna: copies in another size or format, and one PDF from several photos.
+    val toolsState = remember { PhotoToolsState() }
     fun shareSelection() {
         val selected = activeMedia.filter { it.id in selectedIds }
         if (selected.isEmpty()) return
@@ -910,6 +914,19 @@ internal fun GalleryScaffold(
                                                 ).show()
                                             }
                                         }
+                                    )
+                                }
+                                val chosenPhotos = chosenShots.filter { !it.isVideo && it.id > 0 }
+                                if (chosenPhotos.isNotEmpty() && chosenPhotos.size == chosenShots.size) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.sv_convert_title)) },
+                                        leadingIcon = { Icon(Icons.Outlined.PhotoSizeSelectLarge, null) },
+                                        onClick = { selectionMenuExpanded = false; toolsState.convert = chosenPhotos.sortedBy { it.dateTaken }; clearSelection() }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.sv_pdf_title)) },
+                                        leadingIcon = { Icon(Icons.Outlined.PictureAsPdf, null) },
+                                        onClick = { selectionMenuExpanded = false; toolsState.pdf = chosenPhotos.sortedBy { it.dateTaken }; clearSelection() }
                                     )
                                 }
                                 if (destination == 1 && selectedAlbum != null && selectedIds.size == 1) {
@@ -2443,6 +2460,8 @@ internal fun GalleryScaffold(
             })
         }
     }
+
+        PhotoToolsHost(toolsState)
 
         AnimatedVisibility(
             visible = trashFeedback != null,

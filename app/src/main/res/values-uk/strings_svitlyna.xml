@@ -164,4 +164,36 @@
     <string name="sv_licences">Ліцензії та подяки</string>
     <string name="sv_licence_line">GPL-3.0, без жодних гарантій · ліцензії бібліотек і моделей</string>
     <string name="sv_share_skipped">Не надіслано: %1$d — з них не вдалося прибрати дані.</string>
+    <string name="sv_convert_title">Змінити розмір чи формат</string>
+    <string name="sv_convert_format">Формат</string>
+    <string name="sv_convert_size">Довша сторона</string>
+    <string name="sv_convert_as_is">Як є</string>
+    <string name="sv_convert_quality">Якість: %1$d</string>
+    <string name="sv_convert_note">Копії зберігаються поруч з оригіналами, з їхньою датою й даними; оригінали не змінюються.</string>
+    <plurals name="sv_convert_start">
+        <item quantity="one">Зробити %1$d копію</item>
+        <item quantity="few">Зробити %1$d копії</item>
+        <item quantity="many">Зробити %1$d копій</item>
+        <item quantity="other">Зробити %1$d копії</item>
+    </plurals>
+    <plurals name="sv_convert_done">
+        <item quantity="one">Збережено %1$d копію</item>
+        <item quantity="few">Збережено %1$d копії</item>
+        <item quantity="many">Збережено %1$d копій</item>
+        <item quantity="other">Збережено %1$d копії</item>
+    </plurals>
+    <string name="sv_pdf_title">Зробити PDF</string>
+    <plurals name="sv_pdf_explain">
+        <item quantity="one">%1$d фото на сторінці A4, у папці Documents/Svitlyna. У PDF не потрапляють дані фото (місце, дата, камера).</item>
+        <item quantity="few">%1$d фото, по одному на сторінку A4, у порядку зйомки, у папці Documents/Svitlyna. У PDF не потрапляють дані фото (місце, дата, камера).</item>
+        <item quantity="many">%1$d фото, по одному на сторінку A4, у порядку зйомки, у папці Documents/Svitlyna. У PDF не потрапляють дані фото (місце, дата, камера).</item>
+        <item quantity="other">%1$d фото, по одному на сторінку A4, у порядку зйомки, у папці Documents/Svitlyna. У PDF не потрапляють дані фото (місце, дата, камера).</item>
+    </plurals>
+    <string name="sv_pdf_make">Зробити PDF</string>
+    <string name="sv_pdf_saved">PDF збережено в Documents/Svitlyna</string>
+    <string name="sv_pdf_failed">Не вдалося зробити PDF</string>
+    <string name="sv_tools_estimate">Це займе близько %1$d с.</string>
+    <string name="sv_tools_progress_start">%1$d з %2$d…</string>
+    <string name="sv_tools_progress">%1$d з %2$d · ще ≈ %3$d с</string>
+    <string name="sv_tools_stopped">Зупинено. Уже зроблене збережено.</string>
 </resources>
