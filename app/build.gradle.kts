@@ -9,7 +9,10 @@ plugins {
 // The version people see (major.minor.patch), set by hand before each release in version.txt.
 val appVersion = rootProject.file("version.txt").readText().trim()
 // The version Android compares, from the same file: 1.2.4 -> 10204 (always above the old run numbers).
-val appVersionCode = appVersion.split('.').map { it.toInt() }.let { (a, b, c) -> a * 10000 + b * 100 + c }
+val appVersionCode = appVersion.split('.').map { it.toInt() }.let { (a, b, c) ->
+    require(b < 100 && c < 100) { "version.txt: minor and patch must be below 100" }
+    a * 10000 + b * 100 + c
+}
 
 android {
     namespace = "ua.svitlyna"

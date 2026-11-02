@@ -14,9 +14,9 @@ grep -q '^package:' permissions.txt || { echo "::error::Could not read permissio
 # moving photos and the vault without a window each time), and setting a photo as wallpaper.
 ALLOWED=" android.permission.READ_MEDIA_IMAGES android.permission.READ_MEDIA_VIDEO \
 android.permission.READ_MEDIA_VISUAL_USER_SELECTED android.permission.READ_EXTERNAL_STORAGE \
-android.permission.MANAGE_MEDIA android.permission.ACCESS_MEDIA_LOCATION \
+android.permission.ACCESS_MEDIA_LOCATION \
 android.permission.POST_NOTIFICATIONS android.permission.RECEIVE_BOOT_COMPLETED \
-android.permission.USE_BIOMETRIC android.permission.USE_FINGERPRINT \
+android.permission.USE_BIOMETRIC \
 android.permission.MANAGE_EXTERNAL_STORAGE android.permission.SET_WALLPAPER \
 ua.svitlyna.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION "
 for p in $(grep -oE "name='[^']+'" permissions.txt | sed "s/name='//;s/'//"); do

@@ -1,3 +1,5 @@
+// From Iris Gallery (https://github.com/MohamadOday/iris-gallery), Copyright 2026 Mohamad Oday,
+// Apache License 2.0; unchanged except for the package. See NOTICE.md.
 package ua.svitlyna.ui
 
 import android.content.Context

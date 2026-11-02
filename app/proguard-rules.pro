@@ -7,6 +7,9 @@
 -keep class net.zetetic.** { *; }
 # Metadata copying lists ExifInterface's TAG_* fields by reflection: all of them must stay.
 -keep class androidx.exifinterface.media.ExifInterface { public static final java.lang.String *; }
+# Unicode descriptions are written through ExifInterface's private attribute map (MediaImage.kt).
+-keepclassmembers class androidx.exifinterface.media.ExifInterface { ** mAttributes; }
+-keep class androidx.exifinterface.media.ExifInterface$ExifAttribute { <init>(...); }
 # AVIF decoder (JNI).
 -keep class org.aomedia.avif.android.** { *; }
 

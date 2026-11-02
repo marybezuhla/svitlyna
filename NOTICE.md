@@ -17,9 +17,9 @@ Svitlyna's own code is licensed under GPL-3.0 (see `LICENSE`).
   Its Ukrainian translation is Svitlyna's. Iris Gallery's licence applies to those parts; its full
   text is in `LICENSES/Apache-2.0-Iris-Gallery.txt` (Iris Gallery has no NOTICE file of its own).
   Files from Iris Gallery were modified by Svitlyna (November 2026).
-- `app/src/main/java/ua/svitlyna/edit/EditorCanvasView.kt` — the editor canvas from Iris Gallery
+- `app/src/main/java/ua/svitlyna/ui/EditorCanvasView.kt` — the editor canvas from Iris Gallery
   (https://github.com/MohamadOday/iris-gallery, Mohamad Oday), Apache License 2.0, unchanged except
-  for the package. `edit/EditorRender.kt` adapts its rendering of colours, brushes, shapes and text.
+  for the package.
   `media/Similar.kt` follows Iris Gallery's way of grouping similar photos (difference hash, six bands);
   `media/VideoClean.kt` follows the idea of its MP4 metadata stripper (boxes are emptied in place here).
 - ONNX Runtime (Microsoft, MIT) runs the text models.

@@ -1,6 +1,9 @@
 package ua.svitlyna.media
 
 /** Plain numbers in, plain numbers out: grouping of look-alike photos, checked by tests without a phone. */
+/** Photos at most this many bits apart (of a 64-bit picture hash) count as similar. */
+const val SIMILAR_BITS = 5
+
 object Similar {
     /** [grey]: 9 columns × 8 rows of brightness. Bit k is set when pixel k is brighter than its right neighbour. */
     fun dHash(grey: IntArray): Long {
@@ -22,7 +25,7 @@ object Similar {
      * sharing a band are compared (from Iris Gallery, Apache 2.0). Plain pictures (all one colour)
      * say nothing about what is on them and are left out.
      */
-    fun group(hashes: List<Long>, ratios: List<Float>, maxBits: Int = Duplicates.SIMILAR_BITS): List<List<Int>> {
+    fun group(hashes: List<Long>, ratios: List<Float>, maxBits: Int = SIMILAR_BITS): List<List<Int>> {
         // For each photo: the first photo of its group (itself when it starts one).
         val head = IntArray(hashes.size) { -1 }
         val bands = HashMap<Long, MutableList<Int>>()

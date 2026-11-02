@@ -152,9 +152,6 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     var showResetDialog by remember { mutableStateOf(false) }
-    var showSetPinDialog by remember { mutableStateOf(false) }
-    var showChangePinDialog by remember { mutableStateOf(false) }
-    var showDisablePinDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showDateFormatDialog by remember { mutableStateOf(false) }
     var showViewerHeaderDialog by remember { mutableStateOf(false) }
@@ -1655,41 +1652,6 @@ fun SettingsScreen(
             }
         }
     }
-    }
-
-    if (showSetPinDialog) {
-        PinSetupBottomSheet(
-            onDismiss = { showSetPinDialog = false },
-            onPinConfirmed = { pin ->
-                preferences.setPin(pin)
-                showSetPinDialog = false
-                Toast.makeText(context, context.getString(R.string.toast_pin_enabled), Toast.LENGTH_SHORT).show()
-            }
-        )
-    }
-
-    if (showChangePinDialog) {
-        PinChangeBottomSheet(
-            onDismiss = { showChangePinDialog = false },
-            onVerifyOldPin = { pin -> preferences.verifyPin(pin) },
-            onNewPinConfirmed = { pin ->
-                preferences.setPin(pin)
-                showChangePinDialog = false
-                Toast.makeText(context, context.getString(R.string.toast_pin_changed), Toast.LENGTH_SHORT).show()
-            }
-        )
-    }
-
-    if (showDisablePinDialog) {
-        PinDisableBottomSheet(
-            onDismiss = { showDisablePinDialog = false },
-            onVerifyPin = { pin -> preferences.verifyPin(pin) },
-            onSuccess = {
-                preferences.removePin()
-                showDisablePinDialog = false
-                Toast.makeText(context, context.getString(R.string.toast_pin_disabled), Toast.LENGTH_SHORT).show()
-            }
-        )
     }
 
     if (showResetDialog) {

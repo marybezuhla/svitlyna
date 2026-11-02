@@ -75,7 +75,6 @@ import ua.svitlyna.data.saveExifToMedia
 import ua.svitlyna.data.resolveMediaUri
 import ua.svitlyna.ui.GalleryViewModel
 import ua.svitlyna.ui.EditorScreen
-import ua.svitlyna.ui.AppLockScreen
 import ua.svitlyna.data.SettingsPreferences
 import ua.svitlyna.data.SettingsState
 import androidx.compose.material.icons.outlined.Settings
