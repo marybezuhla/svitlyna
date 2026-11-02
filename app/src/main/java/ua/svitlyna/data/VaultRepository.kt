@@ -161,8 +161,13 @@ class VaultRepository(private val context: Context) {
                     if (old.isFile) runCatching { old.delete() }
                     item.copy(previousName = "")
                 }
-                old.isFile -> item.copy(vaultFileName = item.previousName, previousName = "") // undone
-                else -> item.copy(previousName = "")
+                old.isFile && plainLength(old, item.previousName) > 0 -> {
+                    // Undone: back to the old copy; a broken new one goes.
+                    runCatching { now.delete() }
+                    item.copy(vaultFileName = item.previousName, previousName = "")
+                }
+                // Neither can be read right now (e.g. the keystore is busy): tried again next start.
+                else -> continue
             }
             repaired = true
         }
@@ -448,7 +453,12 @@ class VaultRepository(private val context: Context) {
                     val got = runCatching {
                         context.contentResolver.openInputStream(r.uri)!!.use { s -> var n = 0L; val b = ByteArray(65536); while (true) { val k = s.read(b); if (k < 0) break; n += k }; n }
                     }.getOrDefault(-1L)
-                    want > 0 && got == want
+                    (want > 0 && got == want).also { whole ->
+                        // Not whole: the fresh copy (new, with its own name) goes; the vault copy stays.
+                        if (!whole) runCatching {
+                            if (r.uri.scheme == "file") File(r.path).delete() else context.contentResolver.delete(r.uri, null, null)
+                        }
+                    }
                 }
             if (restored != null) {
                 runCatching { vaultFile.delete() }
@@ -779,7 +789,11 @@ class VaultRepository(private val context: Context) {
     private fun readIndexStrict(): List<VaultItem>? {
         return try {
             // openRead also finds a backup left by an interrupted write.
-            val raw = try { indexFile.openRead().use { it.readBytes() } } catch (_: java.io.FileNotFoundException) { return emptyList() }
+            val base = indexFile.baseFile
+            // Empty only when there is truly no list (nor a backup of one); any other failure to
+            // open it (no access, too many open files) is "unreadable", never "empty".
+            if (!base.exists() && !File(base.path + ".bak").exists() && !File(base.path + ".new").exists()) return emptyList()
+            val raw = indexFile.openRead().use { it.readBytes() }
             // Svitlyna: the list is encrypted; a plain one (0.5.0) is read once and then sealed.
             val json = runCatching { String(VaultCrypto.open(context, raw, INDEX_LABEL), Charsets.UTF_8) }
                 .getOrElse {
