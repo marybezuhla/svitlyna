@@ -2,6 +2,12 @@
 
 package ua.svitlyna.ui
 
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import kotlin.math.roundToInt
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -512,13 +518,29 @@ internal fun PhotoGrid(
               }
               items(group.value, key = { it.id }, contentType = { "photo" }) { image ->
                 val selected = image.id in selectedIds
+                // Svitlyna: for TalkBack the cell says what it is ("Photo, 12 May 2024"), whether it is
+                // selected, and offers "Select" (selecting by dragging needs sight).
+                val a11yContext = LocalContext.current
+                val a11yLabel = remember(image.id, image.dateTaken, image.isVideo) {
+                    val day = java.text.DateFormat.getDateInstance(java.text.DateFormat.LONG).format(java.util.Date(image.dateTaken))
+                    a11yContext.getString(if (image.isVideo) R.string.sv_a11y_video else R.string.sv_a11y_photo, day)
+                }
+                val selectLabel = stringResource(if (selected) R.string.sv_a11y_deselect else R.string.sv_a11y_select)
                 Box(Modifier.animateItem(fadeInSpec = null).aspectRatio(1f).clip(RoundedCornerShape(if (selected) 14.dp else cornerStyle.dp.dp))
                     .combinedClickable(onClick = {
                         if (suppressReleaseClickId == image.id) suppressReleaseClickId = null
                         else onOpen(image)
                     },
-                        onLongClick = null)) {
+                        onLongClick = null)
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = a11yLabel
+                        this.selected = selected
+                        if (onToggleSelection != null) {
+                            customActions = listOf(CustomAccessibilityAction(selectLabel) { onToggleSelection(image.id); true })
+                        }
+                    }) {
                     MediaThumbnail(
+                        describe = false,
                         image = image,
                         modifier = Modifier.fillMaxSize().graphicsLayer {
                             val selectedScale = if (selected) .91f else 1f

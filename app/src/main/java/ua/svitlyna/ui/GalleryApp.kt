@@ -110,7 +110,9 @@ data class TrashFeedback(
     val type: TrashFeedbackType,
     val count: Int,
     val albumName: String = "",
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    /** Svitlyna: the trash entries to put back on "Undo" (empty: no undo offered). */
+    val undo: List<MediaImage> = emptyList(),
 )
 
 private fun requiredPermissions(): Array<String> = when {
@@ -359,8 +361,7 @@ internal fun GalleryApp(
             }
             viewModel.checkForChanges()
             val count = pending?.trashedMedia?.size ?: 0
-            trashFeedback = TrashFeedback(TrashFeedbackType.MOVED_TO_TRASH, count)
-            Toast.makeText(context, context.getString(R.string.toast_items_moved_to_trash, count), Toast.LENGTH_SHORT).show()
+            trashFeedback = TrashFeedback(TrashFeedbackType.MOVED_TO_TRASH, count, undo = pending?.trashedMedia.orEmpty())
             cb?.invoke()
         } else {
             pending?.let { moveResult ->
@@ -388,7 +389,6 @@ internal fun GalleryApp(
             viewModel.markMediaDeleted(delIds, delPaths)
             viewModel.checkForChanges()
             trashFeedback = TrashFeedback(TrashFeedbackType.MOVED_TO_TRASH, items.size)
-            Toast.makeText(context, context.getString(R.string.toast_items_moved_to_trash, items.size), Toast.LENGTH_SHORT).show()
             if (internalItems.isNullOrEmpty()) {
                 cb?.invoke()
             } else {
@@ -798,9 +798,8 @@ internal fun GalleryApp(
                                                     val delPaths = moveResult.originalMedia.map { it.path }.toSet()
                                                     viewModel.markMediaDeleted(delIds, delPaths)
                                                     viewModel.checkForChanges()
-                                                    trashFeedback = TrashFeedback(TrashFeedbackType.MOVED_TO_TRASH, moveResult.trashedMedia.size)
+                                                    trashFeedback = TrashFeedback(TrashFeedbackType.MOVED_TO_TRASH, moveResult.trashedMedia.size, undo = moveResult.trashedMedia)
                                                     onConfirmed?.invoke()
-                                                    Toast.makeText(context, context.getString(R.string.toast_items_moved_to_trash, moveResult.trashedMedia.size), Toast.LENGTH_SHORT).show()
                                                 } else if (Build.VERSION.SDK_INT >= 30) {
                                                     runCatching {
                                                         pendingTrashMove = moveResult
@@ -822,9 +821,8 @@ internal fun GalleryApp(
                                                             val delPaths = moveResult.originalMedia.map { it.path }.toSet()
                                                             viewModel.markMediaDeleted(delIds, delPaths)
                                                             viewModel.checkForChanges()
-                                                            trashFeedback = TrashFeedback(TrashFeedbackType.MOVED_TO_TRASH, moveResult.trashedMedia.size)
+                                                            trashFeedback = TrashFeedback(TrashFeedbackType.MOVED_TO_TRASH, moveResult.trashedMedia.size, undo = moveResult.trashedMedia)
                                                             onConfirmed?.invoke()
-                                                            Toast.makeText(context, context.getString(R.string.toast_items_moved_to_trash, moveResult.trashedMedia.size), Toast.LENGTH_SHORT).show()
                                                         } else {
                                                             pendingTrashMove = null
                                                             pendingTrashCallback = null
@@ -845,9 +843,8 @@ internal fun GalleryApp(
                                                 val delPaths = moveResult.originalMedia.map { it.path }.toSet()
                                                 viewModel.markMediaDeleted(delIds, delPaths)
                                                 viewModel.checkForChanges()
-                                                trashFeedback = TrashFeedback(TrashFeedbackType.MOVED_TO_TRASH, moveResult.trashedMedia.size)
+                                                trashFeedback = TrashFeedback(TrashFeedbackType.MOVED_TO_TRASH, moveResult.trashedMedia.size, undo = moveResult.trashedMedia)
                                                 onConfirmed?.invoke()
-                                                Toast.makeText(context, context.getString(R.string.toast_items_moved_to_trash, moveResult.trashedMedia.size), Toast.LENGTH_SHORT).show()
                                             } else if (Build.VERSION.SDK_INT >= 30) {
                                                 runCatching {
                                                     pendingTrashMove = moveResult
@@ -869,9 +866,8 @@ internal fun GalleryApp(
                                                         val delPaths = moveResult.originalMedia.map { it.path }.toSet()
                                                         viewModel.markMediaDeleted(delIds, delPaths)
                                                         viewModel.checkForChanges()
-                                                        trashFeedback = TrashFeedback(TrashFeedbackType.MOVED_TO_TRASH, moveResult.trashedMedia.size)
+                                                        trashFeedback = TrashFeedback(TrashFeedbackType.MOVED_TO_TRASH, moveResult.trashedMedia.size, undo = moveResult.trashedMedia)
                                                         onConfirmed?.invoke()
-                                                        Toast.makeText(context, context.getString(R.string.toast_items_moved_to_trash, moveResult.trashedMedia.size), Toast.LENGTH_SHORT).show()
                                                     } else {
                                                         pendingTrashMove = null
                                                         pendingTrashCallback = null
@@ -891,9 +887,8 @@ internal fun GalleryApp(
                                                     val delPaths = moveResult.originalMedia.map { it.path }.toSet()
                                                     viewModel.markMediaDeleted(delIds, delPaths)
                                                     viewModel.checkForChanges()
-                                                    trashFeedback = TrashFeedback(TrashFeedbackType.MOVED_TO_TRASH, moveResult.trashedMedia.size)
+                                                    trashFeedback = TrashFeedback(TrashFeedbackType.MOVED_TO_TRASH, moveResult.trashedMedia.size, undo = moveResult.trashedMedia)
                                                     onConfirmed?.invoke()
-                                                    Toast.makeText(context, context.getString(R.string.toast_items_moved_to_trash, moveResult.trashedMedia.size), Toast.LENGTH_SHORT).show()
                                                 } else {
                                                     viewModel.rollbackTrashMove(moveResult.trashedMedia)
                                                     Toast.makeText(context, context.getString(R.string.toast_could_not_request_removal), Toast.LENGTH_SHORT).show()

@@ -80,17 +80,14 @@ fun AboutScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    var eggClicks by remember { mutableIntStateOf(0) }
-    var activeToast by remember { mutableStateOf<Toast?>(null) }
-    var showEasterEggSheet by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val scope = rememberCoroutineScope()
+    var showLicences by remember { mutableStateOf(false) }
 
     fun openUrl(url: String) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        context.startActivity(intent)
+        // No browser on the phone: nothing happens instead of a crash.
+        runCatching { context.startActivity(intent) }
     }
 
     Scaffold(
@@ -189,8 +186,8 @@ fun AboutScreen(
                     AboutLinkRow(
                         icon = Icons.Outlined.VerifiedUser,
                         title = androidx.compose.ui.res.stringResource(R.string.about_license_label),
-                        subtitle = "GPL-3.0"
-                    ) { openUrl("https://github.com/Marybezu/svitlyna/blob/main/LICENSE") }
+                        subtitle = androidx.compose.ui.res.stringResource(R.string.sv_licence_line)
+                    ) { showLicences = true }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
@@ -207,7 +204,13 @@ fun AboutScreen(
                         icon = Icons.Outlined.Language,
                         title = androidx.compose.ui.res.stringResource(R.string.sv_certificate),
                         subtitle = "53027b1a87085eb9e40a74820ff2aa067dd3350a0e3010a8f6c559e04a628630"
-                    ) { }
+                    ) {
+                        // Copies the fingerprint, to compare with the one on the project page.
+                        runCatching {
+                            (context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager)
+                                .setPrimaryClip(android.content.ClipData.newPlainText("SHA-256", "53027b1a87085eb9e40a74820ff2aa067dd3350a0e3010a8f6c559e04a628630"))
+                        }
+                    }
                 }
             }
         }
@@ -262,16 +265,25 @@ fun AboutScreen(
     }
     }
 
-    if (showEasterEggSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showEasterEggSheet = false },
-            sheetState = sheetState,
-            containerColor = MaterialTheme.colorScheme.surface
-        ) {
-            MesopotamiaOpticsSheet(onClose = {
-                scope.launch { sheetState.hide() }.invokeOnCompletion { showEasterEggSheet = false }
-            })
+    if (showLicences) {
+        // Svitlyna: the notices and full licence texts, inside the app (no internet needed).
+        val text = remember {
+            listOf("licences/NOTICE.md", "licences/LICENSE", "licences/Apache-2.0-Iris-Gallery.txt").joinToString("\n\n────────\n\n") { name ->
+                runCatching { context.assets.open(name).bufferedReader().use { it.readText() } }.getOrDefault("")
+            }
         }
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showLicences = false },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { showLicences = false }) { Text(androidx.compose.ui.res.stringResource(R.string.action_close)) } },
+            title = { Text(androidx.compose.ui.res.stringResource(R.string.sv_licences)) },
+            text = {
+                Text(
+                    text,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()),
+                )
+            },
+        )
     }
 }
 
@@ -306,197 +318,6 @@ private fun AboutLinkRow(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
-    }
-}
-
-@Composable
-fun MesopotamiaOpticsSheet(onClose: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Ancient Cuneiform Banner
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFF0D2538),
-                            Color(0xFF1E3A5F),
-                            Color(0xFF2A1B0A)
-                        )
-                    )
-                )
-                .padding(20.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    "𒀭 𒈹 𒌓 𒂗 𒆠",
-                    fontSize = 24.sp,
-                    color = Color(0xFFFFD700),
-                    letterSpacing = 6.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "AL-HASAN IBN AL-HAYTHAM",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color.White,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    "The Invention of the Camera & Optics",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFFFE082),
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-
-        // Feature: Al-Hasan Ibn al-Haytham (Alhazen)
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            ),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Icon(
-                        Icons.Outlined.Camera,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(28.dp)
-                    )
-                    Column {
-                        Text(
-                            "Al-Hasan Ibn al-Haytham (Alhazen)",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            "Born in Basra, Iraq • c. 965 – 1040 CE",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-
-                Text(
-                    "Long before the modern digital sensor and smartphone camera, the foundational principles of photography were invented by the Iraqi polymath, mathematician, and physicist Al-Hasan Ibn al-Haytham (الحسن ابن الهيثم), born in Basra during the Islamic Golden Age.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
-
-        // The Invention of Camera Obscura
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
-            ),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    "1. The Invention of the Camera Obscura",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    "Ibn al-Haytham was the first to systematically construct and explain the Camera Obscura (which he termed 'Al-Bayt Al-Muthlim' / البيت المظلم — The Darkened Room). He demonstrated that light passing through a tiny pinhole aperture travels in straight rays and projects an inverted, true-to-life image of the outside world onto a flat surface inside.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    "The word 'Camera' itself originates directly from this concept (from the Arabic 'Qamara' / قمرة and Latin 'camera' meaning a dark chamber).",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        // Debunking Ancient Greek Emission Theory
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            ),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    "2. Revolutionizing the Science of Vision",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    "For over a thousand years, ancient Greek philosophers (including Euclid and Ptolemy) believed vision occurred because our eyes emitted invisible rays that touched objects. Ibn al-Haytham refuted this mathematically and experimentally, proving that light reflects from objects and enters the pupil of the eye, correctly identifying the lens and retina's image-forming role.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
-
-        // Father of Modern Scientific Method
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            ),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    "3. Kitāb al-Manāẓir & The Scientific Method",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    "His landmark 7-volume treatise 'Kitāb al-Manāẓir' (Book of Optics) established modern empirical science. He insisted that scientific truth cannot be accepted by authority or intuition alone, but must be proven through reproducible, controlled experiments and mathematical proofs — establishing the scientific method 600 years before European scientists.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
-
-        // Mesopotamian Legacy
-        OutlinedCard(
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    "Mesopotamian Heritage & Optics Legacy",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "From the earliest mathematics, astronomy, and cuneiform writing in ancient Sumer, Babylon, and Mesopotamia, to the groundbreaking optics of Basra that created the Camera: Iris Gallery honors this timeless heritage of preserving visual memories.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        FilledTonalButton(
-            onClick = onClose,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp, bottom = 24.dp)
-        ) {
-            Text(androidx.compose.ui.res.stringResource(R.string.action_close))
         }
     }
 }

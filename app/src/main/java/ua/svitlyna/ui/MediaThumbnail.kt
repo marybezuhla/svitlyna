@@ -359,6 +359,8 @@ fun MediaThumbnail(
     showFormatBadge: Boolean = true,
     isFavorite: Boolean = false,
     onInvalidMedia: ((MediaImage) -> Unit)? = null,
+    /** Svitlyna: false where the cell itself describes the photo for TalkBack (the grid). */
+    describe: Boolean = true,
 ) {
     val context = LocalContext.current
     val cacheKey = remember(image.id, targetSizePx) { (image.id shl 16) xor (targetSizePx.toLong() and 0xFFFFL) }
@@ -436,7 +438,7 @@ fun MediaThumbnail(
         bitmap?.let {
             Image(
                 bitmap = it.asImageBitmap(),
-                contentDescription = image.name,
+                contentDescription = if (describe) image.name else null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )

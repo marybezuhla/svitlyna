@@ -108,7 +108,7 @@ class MainActivity : FragmentActivity() {
             val rawViewUri = activeIntent.data ?: activeIntent.clipData?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.uri
             // Svitlyna: only content:// from other apps; never the app's own providers (trash, vault,
             // shared copies) handed back to it, and never plain file paths.
-            val viewUri = rawViewUri.takeIf {
+            val viewUri = rawViewUri?.takeIf {
                 isViewAction && it.scheme == "content" && it.authority?.startsWith(packageName) != true
             }
             val isEditAction = activeIntent.action == Intent.ACTION_EDIT

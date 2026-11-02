@@ -91,7 +91,7 @@
     <string name="empty_photos">No photos found</string>
     <string name="empty_favorites">Favorite photos appear here</string>
     <string name="empty_trash">Trash is empty</string>
-    <string name="empty_locked">No locked items</string>
+    <string name="empty_locked">No locked items. They are kept encrypted and only on this phone.</string>
     <string name="empty_locked_locked_state">Unlock to view private items</string>
     <string name="empty_memories">No memories for today yet</string>
     <string name="empty_editable">No editable images</string>
@@ -106,7 +106,7 @@
     <string name="empty_trash_dialog_title">Empty Trash?</string>
     <string name="empty_trash_dialog_desc">Permanently delete all %1$d item%2$s from your device? This cannot be undone.</string>
     <string name="dialog_empty_trash_title">Empty Trash?</string>
-    <string name="dialog_empty_trash_message">Permanently delete all %1$d item(s) from your device? This cannot be undone.</string>
+    <string name="dialog_empty_trash_message">Permanently delete all items (%1$d) from your device? This cannot be undone.</string>
     <string name="dialog_empty_trash_confirm">Empty Trash</string>
     <string name="dialog_delete_item_title">Move %1$s to trash?</string>
     <string name="dialog_delete_item_message">Android will ask you to confirm this change.</string>
@@ -159,7 +159,7 @@
     <string name="library_locked_title">Locked</string>
     <string name="library_locked_subtitle">%1$d private items</string>
     <string name="library_trash_title">Trash</string>
-    <string name="library_trash_subtitle">%1$d items · Android removes them after 30 days</string>
+    <string name="library_trash_subtitle">%1$d items · deleted after 30 days</string>
     <string name="library_editor_title">Editor</string>
     <string name="library_editor_subtitle">Create a polished copy without touching the original</string>
     <string name="library_formats_title">Media formats</string>
@@ -443,7 +443,7 @@
     <string name="settings_biometric_unlock_title">Fingerprint / Biometric Unlock</string>
     <string name="settings_biometric_unlock_desc">Allow unlocking Svitlyna with your fingerprint</string>
     <string name="settings_hide_vault_title">Hide Vault Media from Storage</string>
-    <string name="settings_hide_vault_desc">Moves locked photos and videos to private app storage so other apps and file managers cannot see them. When disabled, items are only hidden within Svitlyna.</string>
+    <string name="settings_hide_vault_desc">Moves locked photos and videos, encrypted, to private app storage so other apps and file managers cannot see them. The key is only on this phone: before uninstalling the app, resetting or switching phones, unlock them, or they cannot be recovered.</string>
     <string name="settings_silent_vault_title">Prompt-Free Vault Management</string>
     <string name="settings_silent_vault_desc_granted">All Files Access granted — vault operations are silent with zero system confirmation popups.</string>
     <string name="settings_silent_vault_desc_prompt">Grant \'All Files Access\' so Svitlyna can move and hide photos in the vault without Android confirmation popups.</string>

@@ -24,6 +24,8 @@
 - **Основа — Iris Gallery:** інтерфейс і більшість функцій — з [Iris Gallery](https://github.com/MohamadOday/iris-gallery) (Apache 2.0), доповнені Світлиною; див. [NOTICE.md](NOTICE.md).
 - **Як створено:** код пишеться за допомогою ШІ (Claude, Anthropic) під керівництвом і з тестуванням авторки.
 
+**Вимоги:** Android 11 або новіший, 64-бітний телефон (arm64); застосунок займає близько 50 МБ (з моделями розпізнавання тексту). Приховані фото зашифровані ключем саме цього телефона: перед переходом на новий поверніть їх із Прихованого.
+
 Kotlin · Jetpack Compose. Ліцензія GPL-3.0.
 
 ---
@@ -53,5 +55,7 @@ A private gallery for Android: everything on the phone, no internet, no accounts
 - **Build:** the APK will be built from this code in GitHub Actions and signed only after the author's approval.
 - **Based on Iris Gallery:** the interface and most features come from [Iris Gallery](https://github.com/MohamadOday/iris-gallery) (Apache 2.0), extended by Svitlyna; see [NOTICE.md](NOTICE.md).
 - **How it is made:** written with AI assistance (Claude, Anthropic), directed and tested by the author.
+
+**Requirements:** Android 11 or newer, a 64-bit phone (arm64); the app takes about 50 MB (with the text recognition models). Locked photos are encrypted with a key of this phone only: unlock them before moving to a new phone.
 
 Kotlin · Jetpack Compose. GPL-3.0 licence.

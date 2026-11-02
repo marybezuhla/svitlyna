@@ -134,10 +134,17 @@
     <string name="sv_cleanup_blurry_progress_start">Checking %1$d of %2$d…</string>
     <string name="sv_cleanup_blurry_progress">Checking %1$d of %2$d · about %3$d min left</string>
     <string name="sv_cleanup_blurry_note">Found by sharpness: check before deleting, a plain sky or a smooth wall can end up here too. Results are kept, so next time only new photos are checked.</string>
-    <string name="sv_cleanup_hint">Select and delete from the menu, as anywhere in the gallery. Favourites and the vault are never offered.</string>
+    <string name="sv_cleanup_hint">Select and delete from the menu, as anywhere in the gallery. Favorites and Locked items are never offered.</string>
     <string name="sv_cleanup_select_all">Select all</string>
     <string name="sv_cleanup_empty">Nothing here</string>
     <string name="sv_error_scan">Could not finish the search. Try again.</string>
     <string name="sv_error_load">Could not load the photos. Pull down to try again.</string>
     <string name="sv_vault_no_screen_lock">The phone has no screen lock, so the vault opens for anyone holding it. Set a PIN in the phone\'s settings.</string>
+    <string name="sv_undo">Undo</string>
+    <string name="sv_a11y_photo">Photo, %1$s</string>
+    <string name="sv_a11y_video">Video, %1$s</string>
+    <string name="sv_a11y_select">Select</string>
+    <string name="sv_a11y_deselect">Deselect</string>
+    <string name="sv_licences">Licences and credits</string>
+    <string name="sv_licence_line">GPL-3.0, without any warranty · licences of the libraries and models</string>
 </resources>

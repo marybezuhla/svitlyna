@@ -91,7 +91,7 @@
     <string name="empty_photos">Фото не знайдено</string>
     <string name="empty_favorites">Тут зʼявляться обрані фото</string>
     <string name="empty_trash">Кошик порожній</string>
-    <string name="empty_locked">Немає прихованих елементів</string>
+    <string name="empty_locked">Немає прихованих елементів. Вони зберігаються зашифрованими й лише на цьому телефоні.</string>
     <string name="empty_locked_locked_state">Розблокуйте, щоб побачити приховане</string>
     <string name="empty_memories">Спогадів на сьогодні поки немає</string>
     <string name="empty_editable">Немає зображень для редагування</string>
@@ -159,7 +159,7 @@
     <string name="library_locked_title">Приховане</string>
     <string name="library_locked_subtitle">Приватних елементів: %1$d</string>
     <string name="library_trash_title">Кошик</string>
-    <string name="library_trash_subtitle">Елементів: %1$d · Android видаляє їх через 30 днів</string>
+    <string name="library_trash_subtitle">Елементів: %1$d · видаляються через 30 днів</string>
     <string name="library_editor_title">Редактор</string>
     <string name="library_editor_subtitle">Створіть гарну копію, не змінюючи оригіналу</string>
     <string name="library_formats_title">Медіаформати</string>
@@ -443,7 +443,7 @@
     <string name="settings_biometric_unlock_title">Розблокування відбитком пальця</string>
     <string name="settings_biometric_unlock_desc">Дозволити розблоковувати Світлину відбитком пальця</string>
     <string name="settings_hide_vault_title">Ховати вміст сховища з памʼяті</string>
-    <string name="settings_hide_vault_desc">Переміщує приховані фото й відео в приватну памʼять застосунку, щоб інші застосунки й файлові менеджери їх не бачили. Якщо вимкнено, елементи приховано лише у Світлині.</string>
+    <string name="settings_hide_vault_desc">Переміщує приховані фото й відео в приватну памʼять застосунку, зашифрованими, щоб інші застосунки й файлові менеджери їх не бачили. Ключ — лише на цьому телефоні: перед видаленням застосунку, скиданням чи переходом на новий телефон поверніть їх із Прихованого, інакше їх не відновити.</string>
     <string name="settings_silent_vault_title">Сховище без запитів</string>
     <string name="settings_silent_vault_desc_granted">«Доступ до всіх файлів» надано — дії зі сховищем відбуваються без системних запитів на підтвердження.</string>
     <string name="settings_silent_vault_desc_prompt">Надайте «Доступ до всіх файлів», щоб Світлина могла переміщувати й ховати фото у сховище без запитів Android на підтвердження.</string>

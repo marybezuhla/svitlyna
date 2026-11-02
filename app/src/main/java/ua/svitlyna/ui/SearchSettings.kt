@@ -1,5 +1,6 @@
 package ua.svitlyna.ui
 
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -50,12 +51,7 @@ fun SearchSettings() {
     }
     LaunchedEffect(progress.running) { if (!progress.running) count() }
     Column(Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.sv_search_text_setting), style = MaterialTheme.typography.bodyLarge)
-                Text(stringResource(R.string.sv_search_text_explain), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Switch(checked = on, onCheckedChange = { want ->
+        val onToggle: (Boolean) -> Unit = { want ->
                 if (want) {
                     on = true
                     prefs.searchText = true
@@ -64,7 +60,16 @@ fun SearchSettings() {
                 } else {
                     askErase = true
                 }
-            })
+        }
+        Row(
+            Modifier.fillMaxWidth().toggleable(value = on, role = androidx.compose.ui.semantics.Role.Switch, onValueChange = onToggle),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.sv_search_text_setting), style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.sv_search_text_explain), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Switch(checked = on, onCheckedChange = null)
         }
         if (on) {
             if (progress.total > 0 && progress.done < progress.total) {

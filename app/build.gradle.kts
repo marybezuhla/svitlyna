@@ -123,3 +123,11 @@ dependencies {
     // The search database's queries, checked on plain SQLite in tests (the encrypted one needs the phone)
     testImplementation("androidx.sqlite:sqlite-framework:2.4.0")
 }
+
+// The notices and licence texts go into the app, so they can be read without internet (GPL, Apache).
+val copyLicences by tasks.registering(Copy::class) {
+    from(rootProject.file("NOTICE.md"), rootProject.file("LICENSE"), rootProject.file("LICENSES"))
+    into(layout.buildDirectory.dir("generated/licences/licences"))
+}
+android.sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/licences"))
+tasks.named("preBuild") { dependsOn(copyLicences) }

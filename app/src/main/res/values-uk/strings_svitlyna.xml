@@ -104,7 +104,7 @@
         <item quantity="many">Виправлено %d фото</item>
         <item quantity="other">Виправлено %d фото</item>
     </plurals>
-    <string name="sv_vault_edit">Щоб редагувати, спершу поверніть фото із сейфа: відредагована копія зберігалася б незашифрованою.</string>
+    <string name="sv_vault_edit">Щоб редагувати, спершу поверніть фото з Прихованого: відредагована копія зберігалася б незашифрованою.</string>
     <string name="sv_memories_title">Цього дня</string>
     <string name="sv_restored_n">Відновлено: %d</string>
     <string name="sv_hidden_n">Приховано у Світлині: %d</string>
@@ -133,7 +133,7 @@
         <item quantity="many">%d днів</item>
         <item quantity="other">%d дня</item>
     </plurals>
-    <string name="sv_cleanup_title">Прибирання пам\'яті</string>
+    <string name="sv_cleanup_title">Прибирання памʼяті</string>
     <string name="sv_cleanup_subtitle">Великі відео, старі скріншоти, з месенджерів, розмиті фото</string>
     <string name="sv_cleanup_total">Можна звільнити до %1$s</string>
     <string name="sv_cleanup_big_videos">Великі відео · %1$d · %2$s</string>
@@ -149,11 +149,18 @@
     </plurals>
     <string name="sv_cleanup_blurry_progress_start">Перевіряю %1$d з %2$d…</string>
     <string name="sv_cleanup_blurry_progress">Перевіряю %1$d з %2$d · ще ≈ %3$d хв</string>
-    <string name="sv_cleanup_blurry_note">Знайдено за різкістю: перевір перед видаленням, сюди може потрапити й однотонне небо чи гладка стіна. Результати зберігаються, тож наступного разу перевіряються лише нові фото.</string>
-    <string name="sv_cleanup_hint">Вибери й видали через меню, як деінде в галереї. Улюблені й сейф ніколи не пропонуються.</string>
+    <string name="sv_cleanup_blurry_note">Знайдено за різкістю: перевірте перед видаленням, сюди може потрапити й однотонне небо чи гладка стіна. Результати зберігаються, тож наступного разу перевіряються лише нові фото.</string>
+    <string name="sv_cleanup_hint">Виберіть і видаліть через меню, як деінде в галереї. Обране й Приховане ніколи не пропонуються.</string>
     <string name="sv_cleanup_select_all">Вибрати всі</string>
     <string name="sv_cleanup_empty">Тут нічого немає</string>
-    <string name="sv_error_scan">Не вдалося завершити пошук. Спробуй ще раз.</string>
-    <string name="sv_error_load">Не вдалося завантажити фото. Потягни вниз, щоб спробувати ще раз.</string>
-    <string name="sv_vault_no_screen_lock">На телефоні немає блокування екрана, тож сховище відкривається будь-кому, хто тримає телефон. Встановіть PIN у налаштуваннях телефона.</string>
+    <string name="sv_error_scan">Не вдалося завершити пошук. Спробуйте ще раз.</string>
+    <string name="sv_error_load">Не вдалося завантажити фото. Потягніть вниз, щоб спробувати ще раз.</string>
+    <string name="sv_vault_no_screen_lock">На телефоні немає блокування екрана, тож Приховане відкривається будь-кому, хто тримає телефон. Встановіть PIN у налаштуваннях телефона.</string>
+    <string name="sv_undo">Скасувати</string>
+    <string name="sv_a11y_photo">Фото, %1$s</string>
+    <string name="sv_a11y_video">Відео, %1$s</string>
+    <string name="sv_a11y_select">Вибрати</string>
+    <string name="sv_a11y_deselect">Зняти вибір</string>
+    <string name="sv_licences">Ліцензії та подяки</string>
+    <string name="sv_licence_line">GPL-3.0, без жодних гарантій · ліцензії бібліотек і моделей</string>
 </resources>

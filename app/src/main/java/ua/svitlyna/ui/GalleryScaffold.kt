@@ -2,6 +2,8 @@
 
 package ua.svitlyna.ui
 
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import android.app.Activity
 import android.content.Intent
 import android.content.ClipData
@@ -676,7 +678,15 @@ internal fun GalleryScaffold(
     var pendingPermanentDeleteItems by remember { mutableStateOf<List<MediaImage>?>(null) }
     LaunchedEffect(trashFeedback) {
         if (trashFeedback != null) {
-            kotlinx.coroutines.delay(1800)
+            // Svitlyna: with "Undo" the message stays long enough to use it (longer with TalkBack).
+            val a11y = (context.getSystemService(android.content.Context.ACCESSIBILITY_SERVICE) as? android.view.accessibility.AccessibilityManager)?.isTouchExplorationEnabled == true
+            kotlinx.coroutines.delay(
+                when {
+                    trashFeedback.undo.isEmpty() -> 1800L
+                    a11y -> 15_000L
+                    else -> 6_000L
+                }
+            )
             onTrashFeedbackChange(null)
         }
     }
@@ -1951,7 +1961,7 @@ internal fun GalleryScaffold(
         AlertDialog(
             onDismissRequest = { confirmEmptyTrash = false },
             title = { Text(stringResource(R.string.empty_trash_dialog_title)) },
-            text = { Text(stringResource(R.string.empty_trash_dialog_desc, trashed.size, if (trashed.size != 1) "s" else "")) },
+            text = { Text(stringResource(R.string.dialog_empty_trash_message, trashed.size)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmEmptyTrash = false
@@ -2512,8 +2522,17 @@ internal fun GalleryScaffold(
                         Text(
                             text = message,
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            // Svitlyna: read out by TalkBack when it appears.
+                            modifier = Modifier.semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite }
                         )
+                        if (feedback.undo.isNotEmpty()) {
+                            TextButton(onClick = {
+                                val back = feedback.undo
+                                onTrashFeedbackChange(null)
+                                onRestore(back)
+                            }) { Text(stringResource(R.string.sv_undo)) }
+                        }
                     }
                 }
             }
