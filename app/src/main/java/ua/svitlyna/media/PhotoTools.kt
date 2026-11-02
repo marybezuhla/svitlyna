@@ -27,9 +27,14 @@ object PhotoTools {
         return ((mp * MS_PER_MEGAPIXEL) / 1000).toInt().coerceAtLeast(1)
     }
 
+    /** "As is" stays below this many pixels (a 200 MP photo would not fit in memory twice). */
+    private const val MAX_PIXELS = 50_000_000L
+
+    class Done(val saved: Int, val skipped: Int)
+
     /**
      * Copies of [items] with the longer side at most [maxSide] px (0: as is) in [format], next to
-     * each original, with its date and metadata. Returns how many were saved.
+     * each original, with its date and metadata.
      */
     suspend fun convert(
         context: Context,
@@ -38,65 +43,82 @@ object PhotoTools {
         maxSide: Int,
         quality: Int,
         progress: (Int) -> Unit,
-    ): Int {
+    ): Done {
         var saved = 0
+        var skipped = 0
         for ((i, item) in items.withIndex()) {
             coroutineContext.ensureActive()
-            val picture = Images.full(context.contentResolver, item, if (maxSide > 0) maxSide else Int.MAX_VALUE)
-            if (picture != null) {
-                val suffix = if (maxSide > 0) "${maxSide}px" else format.ext
-                if (SaveCopy.save(context, item, picture, suffix, format, quality) != null) saved++
-                picture.recycle()
+            val pixels = item.width.toLong() * item.height
+            val side = when {
+                maxSide > 0 -> maxSide
+                pixels > MAX_PIXELS -> (maxOf(item.width, item.height) * Math.sqrt(MAX_PIXELS.toDouble() / pixels)).toInt()
+                else -> Int.MAX_VALUE
             }
+            val ok = runCatching {
+                val picture = Images.full(context.contentResolver, item, side, software = true) ?: return@runCatching false
+                try {
+                    val suffix = if (maxSide > 0) "${maxSide}px" else format.ext
+                    SaveCopy.save(context, item, picture, suffix, format, quality) != null
+                } finally {
+                    picture.recycle()
+                }
+            }.getOrElse { if (it is kotlinx.coroutines.CancellationException) throw it else false }
+            if (ok) saved++ else skipped++
             progress(i + 1)
         }
-        return saved
+        return Done(saved, skipped)
     }
 
     /**
-     * One PDF of [items] (one per A4 page, in the given order) in Documents/Svitlyna. Pages are
-     * JPEG at most [maxSide] px; the file carries no metadata of the photos.
+     * One PDF of [items] (one per A4 page, in the given order) in Documents/Svitlyna, written page by
+     * page (nothing piles up in memory). Pages are JPEG at most [maxSide] px; a photo that can't be
+     * opened is left out; the file carries no metadata of the photos. Null if nothing was made.
      */
-    suspend fun pdf(context: Context, items: List<MediaItem>, maxSide: Int = 2000, progress: (Int) -> Unit): Uri? {
-        val pages = ArrayList<PdfWriter.Page>()
-        for ((i, item) in items.withIndex()) {
-            coroutineContext.ensureActive()
-            val picture = Images.full(context.contentResolver, item, maxSide) ?: return null
-            val jpeg = withContext(Dispatchers.Default) {
-                // JPEG has no transparency: a transparent PNG is put on white.
-                val flat = if (picture.hasAlpha()) {
-                    Bitmap.createBitmap(picture.width, picture.height, Bitmap.Config.ARGB_8888).also { b ->
-                        android.graphics.Canvas(b).apply { drawColor(android.graphics.Color.WHITE); drawBitmap(picture, 0f, 0f, null) }
-                    }
-                } else picture
-                ByteArrayOutputStream().also { flat.compress(Bitmap.CompressFormat.JPEG, 85, it) }.toByteArray().also {
-                    if (flat !== picture) flat.recycle()
-                }
-            }
-            pages += PdfWriter.Page(jpeg, picture.width, picture.height)
-            picture.recycle()
-            progress(i + 1)
+    suspend fun pdf(context: Context, items: List<MediaItem>, maxSide: Int = 2000, progress: (Int) -> Unit): Uri? = withContext(Dispatchers.IO) {
+        val resolver = context.contentResolver
+        val name = "Svitlyna_" + SimpleDateFormat("yyyy-MM-dd_HH-mm", Locale.ROOT).format(Date()) + ".pdf"
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+            put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, "Documents/Svitlyna/")
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
         }
-        coroutineContext.ensureActive()
-        return withContext(Dispatchers.IO) {
-            val resolver = context.contentResolver
-            val name = "Svitlyna_" + SimpleDateFormat("yyyy-MM-dd_HH-mm", Locale.ROOT).format(Date()) + ".pdf"
-            val values = ContentValues().apply {
-                put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-                put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
-                put(MediaStore.MediaColumns.RELATIVE_PATH, "Documents/Svitlyna/")
-                put(MediaStore.MediaColumns.IS_PENDING, 1)
+        var uri: Uri? = null
+        try {
+            uri = resolver.insert(MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values) ?: return@withContext null
+            val written = resolver.openOutputStream(uri)!!.buffered().use { out ->
+                val pdf = PdfWriter(out)
+                pdf.begin()
+                for ((i, item) in items.withIndex()) {
+                    coroutineContext.ensureActive()
+                    val page = runCatching { page(context, item, maxSide) }.getOrNull()
+                    if (page != null) pdf.add(page)
+                    progress(i + 1)
+                }
+                if (pdf.pages > 0) pdf.finish()
+                pdf.pages
             }
-            var uri: Uri? = null
-            try {
-                uri = resolver.insert(MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values) ?: return@withContext null
-                resolver.openOutputStream(uri)!!.use { PdfWriter(it.buffered()).write(pages) }
-                resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
-                uri
-            } catch (e: Exception) {
-                uri?.let { runCatching { resolver.delete(it, null, null) } }
-                null
-            }
+            if (written == 0) throw IllegalStateException("no pages")
+            resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
+            uri
+        } catch (e: Throwable) {
+            // Stopped or failed: no half-written PDF is left.
+            uri?.let { runCatching { resolver.delete(it, null, null) } }
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            null
+        }
+    }
+
+    private suspend fun page(context: Context, item: MediaItem, maxSide: Int): PdfWriter.Page? {
+        val picture = Images.full(context.contentResolver, item, maxSide, software = true) ?: return null
+        try {
+            val jpeg = ByteArrayOutputStream().also { SaveCopy.onWhite(picture).let { flat ->
+                flat.compress(Bitmap.CompressFormat.JPEG, 85, it)
+                if (flat !== picture) flat.recycle()
+            } }.toByteArray()
+            return PdfWriter.Page(jpeg, picture.width, picture.height)
+        } finally {
+            picture.recycle()
         }
     }
 }

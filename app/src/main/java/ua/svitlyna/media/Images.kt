@@ -54,12 +54,14 @@ object Images {
      * The full photo for the viewer, scaled so its longer side is at most [maxPx]. ImageDecoder turns
      * the photo the right way up by its EXIF orientation.
      */
-    suspend fun full(resolver: ContentResolver, item: MediaItem, maxPx: Int): Bitmap? = withContext(fullIo) {
+    /** [software]: pixels the app reads or draws itself (tools); otherwise Android may keep it on the GPU. */
+    suspend fun full(resolver: ContentResolver, item: MediaItem, maxPx: Int, software: Boolean = false): Bitmap? = withContext(fullIo) {
         // A photo swiped past while waiting for its turn is not decoded at all.
         ensureActive()
         runCatching {
             val source = ImageDecoder.createSource(resolver, item.uri)
             ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
+                if (software) decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
                 val w = info.size.width
                 val h = info.size.height
                 val longer = maxOf(w, h)

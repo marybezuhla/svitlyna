@@ -26,9 +26,11 @@ object Codes {
             DecodeHintType.TRY_HARDER to true,
         )
         val bitmap = BinaryBitmap(HybridBinarizer(RGBLuminanceSource(w, h, px)))
-        val found = runCatching { GenericMultipleBarcodeReader(MultiFormatReader()).decodeMultiple(bitmap, hints).toList() }
-            .getOrNull().orEmpty()
-            .ifEmpty { listOfNotNull(runCatching { MultiFormatReader().decode(bitmap, hints) }.getOrNull()) }
+        // Quick first (most codes are found at once), then the thorough way.
+        val quick = hints - DecodeHintType.TRY_HARDER
+        val found = runCatching { GenericMultipleBarcodeReader(MultiFormatReader()).decodeMultiple(bitmap, quick).toList() }.getOrNull()
+            ?: runCatching { GenericMultipleBarcodeReader(MultiFormatReader()).decodeMultiple(bitmap, hints).toList() }.getOrNull()
+            ?: emptyList()
         return found.sortedBy { r -> r.resultPoints?.minOfOrNull { it.y + it.x / 10f } ?: 0f }
             .map { it.text }.filter { it.isNotBlank() }.distinct()
     }

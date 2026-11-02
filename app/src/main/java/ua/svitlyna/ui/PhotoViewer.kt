@@ -259,6 +259,7 @@ internal fun PhotoViewer(
     // Svitlyna: codes read from the photo (null: not asked; empty: none found).
     var codesFound by remember { mutableStateOf<List<String>?>(null) }
     var scanFor by remember { mutableStateOf<MediaImage?>(null) }
+    var readingCodes by remember { mutableStateOf(false) }
     val activity = remember(context) {
         generateSequence(context) { (it as? ContextWrapper)?.baseContext }
             .filterIsInstance<Activity>().firstOrNull()
@@ -929,10 +930,17 @@ internal fun PhotoViewer(
                                 onClick = {
                                     viewerMenuExpanded = false
                                     val shot = current
-                                    coroutineScope.launch {
-                                        codesFound = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-                                            val pic = ua.svitlyna.media.Images.full(context.contentResolver, shot.asItem(), 2400)
-                                            pic?.let { ua.svitlyna.media.Codes.read(it).also { _ -> it.recycle() } }.orEmpty()
+                                    if (!readingCodes) {
+                                        readingCodes = true
+                                        android.widget.Toast.makeText(context, R.string.sv_codes_reading, android.widget.Toast.LENGTH_SHORT).show()
+                                        coroutineScope.launch {
+                                            codesFound = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                                                runCatching {
+                                                    val pic = ua.svitlyna.media.Images.full(context.contentResolver, shot.asItem(), 2000, software = true)
+                                                    pic?.let { p -> try { ua.svitlyna.media.Codes.read(p) } finally { p.recycle() } }.orEmpty()
+                                                }.getOrDefault(emptyList())
+                                            }
+                                            readingCodes = false
                                         }
                                     }
                                 }

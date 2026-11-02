@@ -25,4 +25,12 @@ class DocScanTest {
         assertTrue(g(31, 10) < 80)    // ink in the light
         assertTrue(g(151, 10) < 80)   // ink in the shadow
     }
+
+    @Test
+    fun cornersAnyOrder() {
+        // Dragged in a crossed order: bottom-right, top-left, bottom-left, top-right.
+        val got = DocScan.ordered(floatArrayOf(90f, 80f, 10f, 5f, 12f, 85f, 95f, 8f))
+        val want = floatArrayOf(10f, 5f, 95f, 8f, 90f, 80f, 12f, 85f)
+        assertTrue(got.contentToString(), got.contentEquals(want))
+    }
 }

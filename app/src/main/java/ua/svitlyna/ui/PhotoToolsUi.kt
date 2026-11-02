@@ -54,7 +54,7 @@ fun PhotoToolsHost(state: PhotoToolsState) {
     var title by remember { mutableStateOf("") }
     var startedAt by remember { mutableStateOf(0L) }
 
-    fun run(name: String, count: Int, block: suspend ((Int) -> Unit) -> Unit) {
+    fun run(name: String, count: Int, stoppedText: Int, block: suspend ((Int) -> Unit) -> Unit) {
         title = name
         done = 0
         total = count
@@ -63,7 +63,7 @@ fun PhotoToolsHost(state: PhotoToolsState) {
             try {
                 block { done = it }
             } catch (e: CancellationException) {
-                Toast.makeText(context, R.string.sv_tools_stopped, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, stoppedText, Toast.LENGTH_SHORT).show()
             } finally {
                 job = null
             }
@@ -112,9 +112,11 @@ fun PhotoToolsHost(state: PhotoToolsState) {
                 TextButton(onClick = {
                     state.convert = null
                     val f = format; val s = side; val q = quality.toInt()
-                    run(context.getString(R.string.sv_convert_title), photos.size) { progress ->
-                        val saved = PhotoTools.convert(context, photos, f, s, q, progress)
-                        Toast.makeText(context, context.resources.getQuantityString(R.plurals.sv_convert_done, saved, saved), Toast.LENGTH_LONG).show()
+                    run(context.getString(R.string.sv_convert_title), photos.size, R.string.sv_tools_stopped) { progress ->
+                        val done = PhotoTools.convert(context, photos, f, s, q, progress)
+                        var text = context.resources.getQuantityString(R.plurals.sv_convert_done, done.saved, done.saved)
+                        if (done.skipped > 0) text += " " + context.getString(R.string.sv_convert_skipped, done.skipped)
+                        Toast.makeText(context, text, Toast.LENGTH_LONG).show()
                     }
                 }) { Text(pluralStringResource(R.plurals.sv_convert_start, photos.size, photos.size)) }
             },
@@ -136,7 +138,7 @@ fun PhotoToolsHost(state: PhotoToolsState) {
             confirmButton = {
                 TextButton(onClick = {
                     state.pdf = null
-                    run(context.getString(R.string.sv_pdf_title), photos.size) { progress ->
+                    run(context.getString(R.string.sv_pdf_title), photos.size, R.string.sv_pdf_stopped) { progress ->
                         val uri = PhotoTools.pdf(context, photos, progress = progress)
                         Toast.makeText(context, if (uri != null) R.string.sv_pdf_saved else R.string.sv_pdf_failed, Toast.LENGTH_LONG).show()
                     }

@@ -72,12 +72,17 @@ fun ScanScreen(item: MediaItem, onClose: () -> Unit) {
     var box by remember { mutableStateOf(IntSize.Zero) }
     BackHandler(onBack = onClose)
     LaunchedEffect(item.id) {
-        picture = Images.full(context.contentResolver, item, 2600)
+        picture = Images.full(context.contentResolver, item, 2600, software = true)
         if (picture == null) failed = true
     }
     val grab = with(LocalDensity.current) { 40.dp.toPx() }
 
-    Column(Modifier.fillMaxSize().background(Color.Black).statusBarsPadding().navigationBarsPadding()) {
+    // Nothing reaches the viewer underneath.
+    Column(
+        Modifier.fillMaxSize().background(Color.Black)
+            .pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } }
+            .statusBarsPadding().navigationBarsPadding(),
+    ) {
         Text(
             stringResource(R.string.sv_scan_hint),
             color = Color.White,
@@ -143,6 +148,10 @@ fun ScanScreen(item: MediaItem, onClose: () -> Unit) {
             Switch(checked = clean, onCheckedChange = null)
         }
         Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)) {
+            // Without moving anything (also with TalkBack): the whole picture is the page.
+            TextButton(onClick = { corners = floatArrayOf(0f, 0f, 1f, 0f, 1f, 1f, 0f, 1f) }) {
+                Text(stringResource(R.string.sv_scan_whole), color = Color.White)
+            }
             TextButton(onClick = onClose) { Text(stringResource(R.string.action_cancel), color = Color.White) }
             Button(enabled = picture != null && !saving, onClick = {
                 val pic = picture ?: return@Button
@@ -150,9 +159,11 @@ fun ScanScreen(item: MediaItem, onClose: () -> Unit) {
                 scope.launch {
                     val uri = withContext(Dispatchers.Default) {
                         val px = FloatArray(8) { i -> corners[i] * if (i % 2 == 0) pic.width else pic.height }
-                        val page = runCatching { DocScan.straighten(pic, px) }.getOrNull() ?: return@withContext null
-                        val result = if (clean) DocScan.clean(page).also { page.recycle() } else page
-                        SaveCopy.save(context, item, result, "scan", SaveCopy.Format.JPEG, 92).also { result.recycle() }
+                        runCatching {
+                            val page = DocScan.straighten(pic, px)
+                            val result = if (clean) DocScan.clean(page).also { page.recycle() } else page
+                            SaveCopy.save(context, item, result, "scan", SaveCopy.Format.JPEG, 92).also { result.recycle() }
+                        }.getOrNull()
                     }
                     saving = false
                     Toast.makeText(context, if (uri != null) R.string.sv_scan_saved else R.string.sv_scan_failed, Toast.LENGTH_LONG).show()

@@ -48,7 +48,11 @@ fun CodesDialog(codes: List<String>, onDismiss: () -> Unit) {
                             if (Codes.isLink(code)) {
                                 TextButton(onClick = {
                                     runCatching {
-                                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(code)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                                        context.startActivity(
+                                            Intent(Intent.ACTION_VIEW, Uri.parse(code.trim()).normalizeScheme())
+                                                .addCategory(Intent.CATEGORY_BROWSABLE)
+                                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                                        )
                                     }
                                 }) { Text(stringResource(R.string.sv_codes_open)) }
                             }

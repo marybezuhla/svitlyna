@@ -18,7 +18,6 @@ import java.io.File
  * - the original is never changed or removed.
  */
 object SaveCopy {
-    /** Returns the new file's address, or null if it couldn't be saved (nothing half-written is left). */
     /** The picture formats a copy can be saved in. */
     enum class Format(val ext: String, val mime: String, val compress: Bitmap.CompressFormat) {
         JPEG("jpg", "image/jpeg", Bitmap.CompressFormat.JPEG),
@@ -26,6 +25,7 @@ object SaveCopy {
         PNG("png", "image/png", Bitmap.CompressFormat.PNG),
     }
 
+    /** Returns the new file's address, or null if it couldn't be saved (nothing half-written is left). */
     suspend fun save(
         context: Context,
         original: MediaItem,
@@ -46,7 +46,13 @@ object SaveCopy {
         try {
             temp.outputStream().use { out ->
                 // Lossless for PNG (screenshots); high quality for photos.
-                check(picture.compress(f.compress, if (png) 100 else quality.coerceIn(30, 100), out))
+                // JPEG has no transparency: a transparent picture goes on white (not black).
+                val flat = if (f == Format.JPEG) onWhite(picture) else picture
+                try {
+                    check(flat.compress(f.compress, if (png) 100 else quality.coerceIn(30, 100), out))
+                } finally {
+                    if (flat !== picture) flat.recycle()
+                }
             }
             copyMetadata(context, original, temp)
 
@@ -99,6 +105,14 @@ object SaveCopy {
         context.contentResolver.query(item.uri, arrayOf(MediaStore.MediaColumns.RELATIVE_PATH), null, null, null)
             ?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
     }.getOrNull()
+
+    /** The picture on white, if it has transparency (otherwise itself). */
+    fun onWhite(picture: Bitmap): Bitmap {
+        if (!picture.hasAlpha()) return picture
+        val b = Bitmap.createBitmap(picture.width, picture.height, Bitmap.Config.ARGB_8888)
+        android.graphics.Canvas(b).apply { drawColor(android.graphics.Color.WHITE); drawBitmap(picture, 0f, 0f, null) }
+        return b
+    }
 
     /** "Screenshot_2026.png" + "no-bars" → "Screenshot_2026_no-bars.png". */
     fun copyName(name: String, suffix: String, ext: String): String {

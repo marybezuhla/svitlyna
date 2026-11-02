@@ -14,18 +14,44 @@ import kotlin.math.roundToInt
  */
 object DocScan {
     /** Corners in picture pixels: top-left, top-right, bottom-right, bottom-left (x, y pairs). */
-    fun straighten(src: Bitmap, corners: FloatArray): Bitmap {
-        require(corners.size == 8)
+    fun straighten(src: Bitmap, given: FloatArray): Bitmap {
+        require(given.size == 8)
+        val corners = ordered(given)
         fun d(a: Int, b: Int) = hypot(corners[2 * a] - corners[2 * b], corners[2 * a + 1] - corners[2 * b + 1])
-        val w = ((d(0, 1) + d(3, 2)) / 2).roundToInt().coerceIn(16, 6000)
-        val h = ((d(0, 3) + d(1, 2)) / 2).roundToInt().coerceIn(16, 6000)
-        val target = floatArrayOf(0f, 0f, w.toFloat(), 0f, w.toFloat(), h.toFloat(), 0f, h.toFloat())
+        var w = ((d(0, 1) + d(3, 2)) / 2).toDouble()
+        var h = ((d(0, 3) + d(1, 2)) / 2).toDouble()
+        // At most 12 MP: enough for any page, and it fits in memory with the cleaning.
+        val k = kotlin.math.sqrt(MAX_PIXELS / (w * h)).coerceAtMost(1.0)
+        w *= k; h *= k
+        val wi = w.roundToInt().coerceIn(16, 6000)
+        val hi = h.roundToInt().coerceIn(16, 6000)
+        val target = floatArrayOf(0f, 0f, wi.toFloat(), 0f, wi.toFloat(), hi.toFloat(), 0f, hi.toFloat())
         val m = Matrix()
         check(m.setPolyToPoly(corners, 0, target, 0, 4))
-        val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val out = Bitmap.createBitmap(wi, hi, Bitmap.Config.ARGB_8888)
         Canvas(out).apply {
             drawColor(android.graphics.Color.WHITE)
             drawBitmap(src, m, Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
+        }
+        return out
+    }
+
+    private const val MAX_PIXELS = 12_000_000.0
+
+    /**
+     * The corners in order (top-left, top-right, bottom-right, bottom-left), whatever order they were
+     * dragged into: sorted by angle around their centre, starting from the one nearest the top-left.
+     */
+    fun ordered(c: FloatArray): FloatArray {
+        val cx = (c[0] + c[2] + c[4] + c[6]) / 4
+        val cy = (c[1] + c[3] + c[5] + c[7]) / 4
+        val idx = (0 until 4).sortedBy { kotlin.math.atan2((c[2 * it + 1] - cy).toDouble(), (c[2 * it] - cx).toDouble()) }
+        // atan2 order goes clockwise on screen (y down) starting near the left; begin at top-left.
+        val start = idx.indices.minBy { c[2 * idx[it]] + c[2 * idx[it] + 1] }
+        val out = FloatArray(8)
+        for (k in 0 until 4) {
+            val j = idx[(start + k) % 4]
+            out[2 * k] = c[2 * j]; out[2 * k + 1] = c[2 * j + 1]
         }
         return out
     }
@@ -58,7 +84,7 @@ object DocScan {
             v = when {
                 v > 210 -> 255
                 v < 110 -> (v * 0.6).toInt()
-                else -> ((v - 110) * 255 / 100).coerceIn(0, 255)
+                else -> (66 + (v - 110) * 189 / 100).coerceIn(0, 255)
             }
             out[i] = (0xFF shl 24) or (v shl 16) or (v shl 8) or v
         }

@@ -184,7 +184,7 @@
     </plurals>
     <string name="sv_pdf_title">Зробити PDF</string>
     <plurals name="sv_pdf_explain">
-        <item quantity="one">%1$d фото на сторінці A4, у папці Documents/Svitlyna. У PDF не потрапляють дані фото (місце, дата, камера).</item>
+        <item quantity="one">%1$d фото, по одному на сторінку A4, у порядку зйомки, у папці Documents/Svitlyna. У PDF не потрапляють дані фото (місце, дата, камера).</item>
         <item quantity="few">%1$d фото, по одному на сторінку A4, у порядку зйомки, у папці Documents/Svitlyna. У PDF не потрапляють дані фото (місце, дата, камера).</item>
         <item quantity="many">%1$d фото, по одному на сторінку A4, у порядку зйомки, у папці Documents/Svitlyna. У PDF не потрапляють дані фото (місце, дата, камера).</item>
         <item quantity="other">%1$d фото, по одному на сторінку A4, у порядку зйомки, у папці Documents/Svitlyna. У PDF не потрапляють дані фото (місце, дата, камера).</item>
@@ -204,8 +204,12 @@
     <string name="sv_codes_copied">Скопійовано</string>
     <string name="sv_scan_title">Сканувати документ</string>
     <string name="sv_scan_hint">Перетягніть чотири кути на кути сторінки.</string>
-    <string name="sv_scan_clean">Чисто чорно-біле (без тіней)</string>
+    <string name="sv_scan_clean">Чорно-біле, без тіней</string>
     <string name="sv_scan_save">Зберегти</string>
     <string name="sv_scan_saved">Скан збережено поруч із фото</string>
     <string name="sv_scan_failed">Не вдалося відсканувати це фото</string>
+    <string name="sv_convert_skipped">Не вдалося відкрити й пропущено: %1$d.</string>
+    <string name="sv_pdf_stopped">Зупинено. PDF не створено.</string>
+    <string name="sv_codes_reading">Шукаю коди…</string>
+    <string name="sv_scan_whole">Увесь кадр</string>
 </resources>
