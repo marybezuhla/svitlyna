@@ -220,11 +220,18 @@ internal fun GalleryApp(
             val (request, callback) = reqAndCb
             coroutineScope.launch {
                 val uri = canonicalMediaUri(context, media)
-                withContext(Dispatchers.IO) {
-                    saveExifToMedia(context, uri, media.path, request)
-                    if (media.id > 0 && uri.toString().startsWith("content://media/")) {
+                val saved = withContext(Dispatchers.IO) {
+                    // Svitlyna: the date and place go into the file itself; the list is only updated after it.
+                    val ok = runCatching { saveExifToMedia(context, uri, media.path, request) }.getOrDefault(false)
+                    if (ok && media.id > 0 && uri.toString().startsWith("content://media/")) {
                         runCatching { context.contentResolver.update(uri, values, null, null) }
                     }
+                    ok
+                }
+                if (!saved) {
+                    callback?.invoke(null)
+                    Toast.makeText(context, R.string.toast_metadata_failed, Toast.LENGTH_LONG).show()
+                    return@launch
                 }
                 if (media.path.isNotBlank()) {
                     android.media.MediaScannerConnection.scanFile(context, arrayOf(media.path), null, null)

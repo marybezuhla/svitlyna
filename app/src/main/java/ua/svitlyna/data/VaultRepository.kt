@@ -249,7 +249,7 @@ class VaultRepository(private val context: Context) {
 
             val copySuccess = runCatching {
                 // Svitlyna: the vault keeps files only encrypted (VaultCrypto).
-                val copiedBytes = (runCatching { context.contentResolver.openInputStream(android.provider.MediaStore.setRequireOriginal(item.uri)) }.getOrNull() ?: context.contentResolver.openInputStream(item.uri))?.use { input ->
+                val copiedBytes = context.contentResolver.openInputStream(android.provider.MediaStore.setRequireOriginal(item.uri))?.use { input ->
                     VaultCrypto.encrypt(context, input, partFile, vaultFileName)
                 } ?: 0L
                 // A truncated copy is worse than no copy: the original is only
@@ -581,6 +581,11 @@ class VaultRepository(private val context: Context) {
                     context.contentResolver.delete(newUri, null, null)
                     return null
                 }
+                // Svitlyna: the date taken again after Android's own scan (a PNG has none inside), so
+                // the photo stays in its place on the timeline.
+                if (item.dateTaken > 0) runCatching {
+                    context.contentResolver.update(newUri, ContentValues().apply { put(MediaStore.MediaColumns.DATE_TAKEN, item.dateTaken) }, null, null)
+                }
                 VaultRestoreTarget(newUri, mediaStorePath(newUri))
             } else {
                 @Suppress("DEPRECATION")
@@ -640,7 +645,7 @@ class VaultRepository(private val context: Context) {
                 }
             }
         }
-        return "$defaultDir/Iris/"
+        return "$defaultDir/Svitlyna/"
     }
 
     private fun generateUniqueId(existing: List<VaultItem>): Long {

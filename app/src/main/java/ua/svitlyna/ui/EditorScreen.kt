@@ -702,7 +702,10 @@ fun EditorScreen(image: MediaImage, onClose: () -> Unit, onSaved: (saved: Boolea
                 val crop = RectF(session.crop)
                 val strokes = session.strokes.map { it.copy(points = it.points.toMutableList()) }
                 val textOverlays = session.textOverlays.map { it.copy() }
-                val shouldOverwrite = overwriteOriginal
+                // Svitlyna: only JPEG, PNG and WebP are written over; anything else is saved as a copy.
+                val overwritable = image.mimeType.lowercase() in setOf("image/jpeg", "image/png", "image/webp") ||
+                    image.name.lowercase().substringAfterLast('.', "") in setOf("jpg", "jpeg", "png", "webp")
+                val shouldOverwrite = overwriteOriginal && overwritable
                 val format = if (shouldOverwrite) originalExportFormat else selectedExportFormat
                 saving = true
                 scope.launch {
@@ -2496,6 +2499,15 @@ private suspend fun performOverwriteWrite(
     // Svitlyna: only the person's own photo in the phone's media list is ever written over (never a
     // file another app handed over, never the vault).
     if (image.id <= 0 || image.uri.authority != MediaStore.AUTHORITY) return@withContext false
+    // Only a picture of the same kind is written over: a HEIC, GIF, AVIF or RAW file would lose its
+    // animation, video, gain map or raw data if JPEG bytes went into it (then a copy is saved).
+    val sameKind = when (format) {
+        ExportFormat.JPEG -> image.mimeType.equals("image/jpeg", true) || image.name.lowercase().let { it.endsWith(".jpg") || it.endsWith(".jpeg") }
+        ExportFormat.PNG -> image.mimeType.equals("image/png", true) || image.name.lowercase().endsWith(".png")
+        ExportFormat.WEBP -> image.mimeType.equals("image/webp", true) || image.name.lowercase().endsWith(".webp")
+        else -> false
+    }
+    if (!sameKind) return@withContext false
     val isFile = false
     if (isFile) {
         val targetFile = File(image.path)
@@ -2535,11 +2547,14 @@ private suspend fun performOverwriteWrite(
             }.getOrDefault(false)
             if (!read) return@withContext false
             fresh.writeBytes(bytes)
-            runCatching {
+            // Without all of its metadata the new picture is not written over the original.
+            val tagged = runCatching {
                 val dst = ExifInterface(fresh)
                 ua.svitlyna.media.Metadata.copy(ExifInterface(backup), dst, image.dateTaken)
                 dst.saveAttributes()
-            }
+                true
+            }.getOrDefault(false)
+            if (!tagged) return@withContext false
             // Opened outside the safety net: a missing permission goes up to the editor, which asks
             // Android for it (nothing has been cut yet at this point).
             val out = context.contentResolver.openOutputStream(targetUri, "wt") ?: return@withContext false
@@ -2564,6 +2579,8 @@ private suspend fun performOverwriteWrite(
                 }
                 return@withContext false
             }
+            // Written: the untouched original is kept aside (30 days, up to 2 GB in all).
+            ua.svitlyna.media.Originals.keep(context, image.id, image.name.substringAfterLast('.', "jpg"), backup)
         } finally {
             backup.delete()
             fresh.delete()

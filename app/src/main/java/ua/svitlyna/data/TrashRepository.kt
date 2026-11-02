@@ -76,7 +76,8 @@ class TrashRepository(private val context: Context) {
     }
 
     init {
-        loadTrashItems()
+        // Svitlyna: reading the list (and clearing old items) must not hold up the screen.
+        kotlin.concurrent.thread(name = "trash-load") { runCatching { loadTrashItems() } }
     }
 
     fun hasAllFilesAccess(): Boolean {
@@ -237,7 +238,9 @@ class TrashRepository(private val context: Context) {
             if (!copied) {
                 runCatching { targetFile.delete() }
                 copied = runCatching {
-                    (runCatching { context.contentResolver.openInputStream(android.provider.MediaStore.setRequireOriginal(item.uri)) }.getOrNull() ?: context.contentResolver.openInputStream(item.uri))?.use { input ->
+                    // Svitlyna: read as the original only; without "media location" access the copy
+                    // would lose the place, so the photo is not moved at all.
+                    context.contentResolver.openInputStream(android.provider.MediaStore.setRequireOriginal(item.uri))?.use { input ->
                         FileOutputStream(targetFile).use { output ->
                             input.copyTo(output)
                         }
@@ -312,7 +315,12 @@ class TrashRepository(private val context: Context) {
 
         // Persist the new entries before touching the originals, so a process kill
         // mid-delete can never hide the trash copies from the index.
-        writeIndex(currentItems)
+        // Svitlyna: and only if the list was really saved; otherwise nothing moves at all.
+        if (!writeIndex(currentItems) || readIndex().size != currentItems.size) {
+            trashedList.forEach { runCatching { File(it.path).delete() } }
+            loadTrashItems()
+            return@indexLocked TrashMoveResult(trashedMedia = emptyList(), originalMedia = emptyList(), silentSuccess = false)
+        }
 
         var silentSuccess = false
         if (hasManagerAccess && trashedList.isNotEmpty()) {
@@ -394,13 +402,13 @@ class TrashRepository(private val context: Context) {
     suspend fun deletePermanently(mediaList: List<MediaImage>) = indexLocked {
         val currentItems = readIndex().toMutableList()
         val idsToRemove = mediaList.map { abs(it.id) }.toSet()
-        // Empty paths (vault items) match nothing.
-        val pathsToRemove = mediaList.map { it.path }.filter { it.isNotBlank() }.toSet()
+        // Svitlyna: matched by the trash entry and its own file only, never by the original's path
+        // (an older entry for the same path would be wiped with it). Empty names match nothing.
         val fileNamesToRemove = mediaList.map { File(it.path).name }.filter { it.isNotBlank() }.toSet()
         val hasManagerAccess = hasAllFilesAccess()
 
         currentItems.removeAll { item ->
-            if (item.id in idsToRemove || item.originalPath in pathsToRemove || item.trashFileName in fileNamesToRemove) {
+            if (item.id in idsToRemove || item.trashFileName in fileNamesToRemove) {
                 val trashFile = File(trashDir, item.trashFileName)
                 runCatching { trashFile.delete() }
                 true
@@ -572,7 +580,7 @@ class TrashRepository(private val context: Context) {
                 }
             }
         }
-        return "$defaultDir/Iris/"
+        return "$defaultDir/Svitlyna/"
     }
 
     private fun generateUniqueId(existing: List<TrashItem>): Long {
@@ -658,7 +666,9 @@ class TrashRepository(private val context: Context) {
                     originalBucketName = "",
                     originalBucketId = -2L,
                     dateTaken = lastModified,
-                    dateTrashed = lastModified,
+                    // Svitlyna: counted from now, never from the file's date (that is the photo's own
+                    // date, and old photos would be purged at once).
+                    dateTrashed = System.currentTimeMillis(),
                     width = 0,
                     height = 0,
                     isVideo = isVideo,
@@ -677,9 +687,9 @@ class TrashRepository(private val context: Context) {
         return recovered
     }
 
-    private fun writeIndex(items: List<TrashItem>) {
+    private fun writeIndex(items: List<TrashItem>): Boolean {
         var stream: FileOutputStream? = null
-        try {
+        return try {
             val array = JSONArray()
             for (item in items) {
                 val obj = JSONObject().apply {
@@ -708,8 +718,10 @@ class TrashRepository(private val context: Context) {
             stream = indexFile.startWrite()
             stream.write(array.toString(2).toByteArray(Charsets.UTF_8))
             indexFile.finishWrite(stream)
+            true
         } catch (e: Exception) {
-            indexFile.failWrite(stream)
+            stream?.let { indexFile.failWrite(it) }
+            false
         }
     }
 }

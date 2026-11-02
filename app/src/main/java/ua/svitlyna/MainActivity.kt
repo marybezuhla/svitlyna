@@ -52,6 +52,24 @@ class MainActivity : FragmentActivity() {
             if (!old.getBoolean("remove_location", true)) settingsPreferences.setSecureSharingMode(ua.svitlyna.data.SecureSharingMode.OFF)
             old.edit().putBoolean("migrated_to_iris_base", true).apply()
         }
+        // Svitlyna: favourites of 0.4 were the phone's own marks (IS_FAVORITE); they join the app's
+        // favourites once, so nothing marked is lost and "Free up space" keeps protecting them.
+        val gallery = getSharedPreferences("gallery", MODE_PRIVATE)
+        if (!gallery.getBoolean("favorites_from_system", false)) {
+            val ids = runCatching {
+                val found = HashSet<String>()
+                for (table in listOf(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI)) {
+                    contentResolver.query(table, arrayOf(android.provider.MediaStore.MediaColumns._ID), "${android.provider.MediaStore.MediaColumns.IS_FAVORITE} = 1", null, null)?.use { c ->
+                        while (c.moveToNext()) found += c.getLong(0).toString()
+                    }
+                }
+                found
+            }.getOrNull()
+            if (ids != null) {
+                val merged = gallery.getStringSet("favorites", emptySet()).orEmpty() + ids
+                gallery.edit().putStringSet("favorites", merged).putBoolean("favorites_from_system", true).apply()
+            }
+        }
         val initialSettings = settingsPreferences.state.value
         val isDark = when (initialSettings.themeMode) {
             ua.svitlyna.data.ThemeMode.LIGHT -> false

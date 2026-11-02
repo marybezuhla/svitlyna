@@ -34,16 +34,25 @@ object InPlace {
             resolver.openInputStream(original)!!.use { input -> before.outputStream().use { input.copyTo(it) } }
             before.copyTo(after, overwrite = true)
             ExifInterface(after).also(change).saveAttributes()
-            if (!same(before, after, changed)) return Result.REFUSED
+            if (!same(before, after, changed)) {
+                before.delete()
+                after.delete()
+                return Result.REFUSED
+            }
         } catch (e: Exception) {
             before.delete()
             after.delete()
             return Result.REFUSED
         }
         try {
-            if (write(context, original, after)) return Result.DONE
+            when (write(context, original, after)) {
+                Written.OK -> return Result.DONE
+                // Not even opened (no permission yet): nothing was touched, no copy is needed.
+                Written.NOT_OPENED -> return Result.REFUSED
+                Written.FAILED -> Unit
+            }
             // Half written: the photo goes back to exactly what it was.
-            if (write(context, original, before)) return Result.REFUSED
+            if (write(context, original, before) == Written.OK) return Result.REFUSED
             saveAside(context, uri, before)
             return Result.BROKEN_SAVED
         } finally {
@@ -152,11 +161,16 @@ object InPlace {
         md.digest()
     }
 
-    private fun write(context: Context, uri: Uri, from: File): Boolean = runCatching {
+    private enum class Written { OK, NOT_OPENED, FAILED }
+
+    private fun write(context: Context, uri: Uri, from: File): Written {
         // "wt": the old content is cut off, so no stale bytes stay at the end.
-        context.contentResolver.openOutputStream(uri, "wt")!!.use { out -> from.inputStream().use { it.copyTo(out) } }
-        true
-    }.getOrDefault(false)
+        val out = runCatching { context.contentResolver.openOutputStream(uri, "wt") }.getOrNull() ?: return Written.NOT_OPENED
+        return runCatching {
+            out.use { o -> from.inputStream().use { it.copyTo(o) } }
+            Written.OK
+        }.getOrDefault(Written.FAILED)
+    }
 
     /** The untouched original, saved as a new photo in Pictures/Svitlyna when writing it back failed. */
     private fun saveAside(context: Context, uri: Uri, original: File) {
