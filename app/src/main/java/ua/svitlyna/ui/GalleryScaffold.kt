@@ -586,8 +586,10 @@ internal fun GalleryScaffold(
     }
     // Svitlyna: "Free up space" — the chosen group, shared by the grid and the selection.
     var cleanupKind by remember { mutableStateOf(CleanupKind.BIG_VIDEOS) }
-    val cleanupBlurScores = BlurScan.scores
-    val cleanupShown = remember(images, favorites, cleanupKind, cleanupBlurScores, TempShots.kept, TempShots.days, TempShots.enabled) {
+    var duplicatesFromCleanup by remember { mutableStateOf(false) }
+    val cleanupOpen = destination == 3 && librarySection == "cleanup"
+    val cleanupBlurScores = if (cleanupOpen && cleanupKind == CleanupKind.BLURRY) BlurScan.scores else emptyMap()
+    val cleanupShown = if (!cleanupOpen) emptyList() else remember(images, favorites, cleanupKind, cleanupBlurScores, TempShots.kept, TempShots.days, TempShots.enabled) {
         Cleanup.group(cleanupKind, images, favorites, if (cleanupKind == CleanupKind.BLURRY) BlurScan.blurry(images) else emptySet())
     }
     val activeMedia = when {
@@ -824,7 +826,8 @@ internal fun GalleryScaffold(
                         IconButton(onClick = { selectedLockedAlbum = null }) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.section_locked)) }
                     } else if (destination == 3 && librarySection != null) {
                         IconButton(onClick = {
-                            librarySection = null
+                            librarySection = if (librarySection == "duplicates" && duplicatesFromCleanup) "cleanup" else null
+                            duplicatesFromCleanup = false
                             selectedLockedAlbum = null
                             if (isFileSearching) { isFileSearching = false; fileSearchQuery = "" }
                         }) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, libraryTabLabel) }
@@ -1683,8 +1686,12 @@ internal fun GalleryScaffold(
                                     favorites = favorites,
                                     kind = cleanupKind,
                                     shown = cleanupShown,
-                                    onKind = { cleanupKind = it; clearSelection() },
-                                    onDuplicates = { clearSelection(); librarySection = "duplicates" },
+                                    onKind = {
+                                        cleanupKind = it
+                                        clearSelection()
+                                        tabScope.launch { libraryGridState.scrollToItem(0) }
+                                    },
+                                    onDuplicates = { clearSelection(); duplicatesFromCleanup = true; librarySection = "duplicates" },
                                     onSelectAll = { selectedIds = cleanupShown.mapTo(HashSet()) { it.id } },
                                 )
                                 if (cleanupShown.isEmpty()) {
@@ -2176,7 +2183,9 @@ internal fun GalleryScaffold(
         selectedLockedAlbum = null
     }
     BackHandler(enabled = selectedIds.isEmpty() && destination == 3 && librarySection != null && (librarySection != "locked" || selectedLockedAlbum == null) && !isFileSearching) {
-        librarySection = null
+        // Svitlyna: Duplicates opened from "Free up space" go back there.
+        librarySection = if (librarySection == "duplicates" && duplicatesFromCleanup) "cleanup" else null
+        duplicatesFromCleanup = false
         selectedLockedAlbum = null
         if (isFileSearching) { isFileSearching = false; fileSearchQuery = "" }
     }

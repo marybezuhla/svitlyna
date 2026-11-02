@@ -139,13 +139,18 @@
     <string name="sv_cleanup_big_videos">Великі відео · %1$d · %2$s</string>
     <string name="sv_cleanup_old_shots">Старі скріншоти · %1$d · %2$s</string>
     <string name="sv_cleanup_messengers">З месенджерів · %1$d · %2$s</string>
-    <string name="sv_cleanup_blurry">Можливо розмиті · %1$d · %2$s</string>
+    <string name="sv_cleanup_blurry">Можливо, розмиті · %1$d · %2$s</string>
     <string name="sv_cleanup_duplicates">Дублікати й схожі</string>
-    <string name="sv_cleanup_blurry_scan">Перевірити на розмитість: %1$d фото</string>
+    <plurals name="sv_cleanup_blurry_scan">
+        <item quantity="one">Перевірити на розмитість: %1$d фото (≈ %2$d хв)</item>
+        <item quantity="few">Перевірити на розмитість: %1$d фото (≈ %2$d хв)</item>
+        <item quantity="many">Перевірити на розмитість: %1$d фото (≈ %2$d хв)</item>
+        <item quantity="other">Перевірити на розмитість: %1$d фото (≈ %2$d хв)</item>
+    </plurals>
     <string name="sv_cleanup_blurry_progress_start">Перевіряю %1$d з %2$d…</string>
     <string name="sv_cleanup_blurry_progress">Перевіряю %1$d з %2$d · ще ≈ %3$d хв</string>
-    <string name="sv_cleanup_blurry_note">Знайдено за різкістю: перевір перед видаленням, сюди може потрапити й рівне небо чи стіна. Результати зберігаються, тож наступного разу перевіряються лише нові фото.</string>
-    <string name="sv_cleanup_hint">Вибери й видали через меню: усе піде в кошик, і його можна відновити. Улюблені ніколи не пропонуються.</string>
+    <string name="sv_cleanup_blurry_note">Знайдено за різкістю: перевір перед видаленням, сюди може потрапити й однотонне небо чи гладка стіна. Результати зберігаються, тож наступного разу перевіряються лише нові фото.</string>
+    <string name="sv_cleanup_hint">Вибери й видали через меню, як деінде в галереї. Улюблені й сейф ніколи не пропонуються.</string>
     <string name="sv_cleanup_select_all">Вибрати всі</string>
     <string name="sv_cleanup_empty">Тут нічого немає</string>
 </resources>

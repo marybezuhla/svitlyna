@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -43,9 +44,10 @@ import kotlin.coroutines.coroutineContext
 enum class CleanupKind { BIG_VIDEOS, OLD_SHOTS, MESSENGERS, BLURRY }
 
 object Cleanup {
-    const val BIG_VIDEO = 100L * 1024 * 1024
+    /** 100 MB as the phone shows sizes (decimal). */
+    const val BIG_VIDEO = 100_000_000L
     private const val OLD_SHOT_DAYS = 30
-    private val MESSENGER = Regex("(^|/)(telegram|whatsapp|viber|signal)( images| video| documents)?(/|$)", RegexOption.IGNORE_CASE)
+    private val MESSENGER = Regex("(^|/)(telegram( x)?|whatsapp( business)?|viber|signal)( images| video| documents)?(/|$)", RegexOption.IGNORE_CASE)
 
     /** Favourites are never offered. */
     fun group(kind: CleanupKind, images: List<MediaImage>, favorites: Set<Long>, blurry: Set<Long>): List<MediaImage> {
@@ -63,8 +65,13 @@ object Cleanup {
         }
     }
 
-    fun fromMessenger(item: MediaImage): Boolean =
-        MESSENGER.containsMatchIn(item.path) || MESSENGER.containsMatchIn("/" + item.bucketName + "/")
+    fun fromMessenger(item: MediaImage): Boolean = fromMessenger(item.path, item.bucketName)
+
+    fun fromMessenger(path: String, bucket: String): Boolean =
+        MESSENGER.containsMatchIn(path) || MESSENGER.containsMatchIn("/$bucket/")
+
+    /** Before starting: about 30 ms per photo on a mid-range phone, in whole minutes. */
+    fun estimateMinutes(count: Int): Int = ((count * 30L + 59_999) / 60_000).toInt().coerceAtLeast(1)
 
     /** Photos worth checking for blur: not videos, GIFs or screenshots. */
     fun blurCandidates(images: List<MediaImage>, favorites: Set<Long>): List<MediaImage> =
@@ -80,6 +87,7 @@ object Cleanup {
 object BlurScan {
     var scores by mutableStateOf<Map<Long, Pair<Long, Double>>>(emptyMap())
         private set
+    @Volatile
     var loaded = false
         private set
     var running by mutableStateOf(false)
@@ -91,13 +99,13 @@ object BlurScan {
     var leftMinutes by mutableStateOf(-1)
         private set
 
-    private fun file(context: Context) = File(context.filesDir, "blur_scores")
+    private fun file(context: Context) = android.util.AtomicFile(File(context.filesDir, "blur_scores"))
 
     suspend fun load(context: Context) = withContext(Dispatchers.IO) {
         if (loaded) return@withContext
         val map = HashMap<Long, Pair<Long, Double>>()
         runCatching {
-            file(context).forEachLine { line ->
+            file(context).openRead().bufferedReader().forEachLine { line ->
                 val p = line.split(',')
                 if (p.size == 3) {
                     val id = p[0].toLongOrNull(); val mod = p[1].toLongOrNull(); val s = p[2].toDoubleOrNull()
@@ -109,10 +117,17 @@ object BlurScan {
         loaded = true
     }
 
-    private fun save(context: Context, map: Map<Long, Pair<Long, Double>>) = runCatching {
-        val tmp = File(context.filesDir, "blur_scores.tmp")
-        tmp.bufferedWriter().use { w -> for ((id, v) in map) w.write("$id,${v.first},${v.second}\n") }
-        tmp.renameTo(file(context))
+    @Synchronized
+    private fun save(context: Context, map: Map<Long, Pair<Long, Double>>) {
+        val f = file(context)
+        var out: java.io.FileOutputStream? = null
+        runCatching {
+            out = f.startWrite()
+            val w = out!!.bufferedWriter()
+            for ((id, v) in map) w.write("$id,${v.first},${v.second}\n")
+            w.flush()
+            f.finishWrite(out)
+        }.onFailure { out?.let { f.failWrite(it) } }
     }
 
     fun blurry(images: List<MediaImage>): Set<Long> {
@@ -130,10 +145,14 @@ object BlurScan {
         done = 0
         total = todo.size
         leftMinutes = -1
+        var count = 0
         // Results for photos that are gone are dropped.
         val map = HashMap(scores.filterKeys { it in keep })
         val signal = CancellationSignal()
+        // "Stop" also cancels the thumbnail being loaded.
+        coroutineContext[kotlinx.coroutines.Job]?.invokeOnCompletion { signal.cancel() }
         val started = System.nanoTime()
+        var savedAt = started
         try {
             for (item in todo) {
                 coroutineContext.ensureActive()
@@ -147,12 +166,15 @@ object BlurScan {
                 }.getOrNull()
                 // Unreadable: marked sharp, so it is not offered and not measured again until it changes.
                 map[item.id] = item.dateModified to (score ?: Double.MAX_VALUE)
-                done++
-                if (done == 20 || done % 50 == 0) {
-                    val perItem = (System.nanoTime() - started) / done
-                    leftMinutes = (((total - done) * perItem) / 60_000_000_000L).toInt() + 1
+                count++
+                if (count % 10 == 0 || count == total) done = count
+                if (count == 20 || count % 50 == 0) {
+                    val perItem = (System.nanoTime() - started) / count
+                    leftMinutes = (((total - count) * perItem) / 60_000_000_000L).toInt() + 1
                 }
-                if (done % 200 == 0) {
+                // Saved and shown every 15 s, not after every photo (big galleries).
+                if (System.nanoTime() - savedAt > 15_000_000_000L) {
+                    savedAt = System.nanoTime()
                     scores = HashMap(map)
                     save(context, map)
                 }
@@ -178,7 +200,6 @@ fun CleanupHeader(
     onSelectAll: () -> Unit,
 ) {
     val context = LocalContext.current
-    remember { TempShots.load(context); true }
     LaunchedEffect(Unit) { BlurScan.load(context) }
     val scores = BlurScan.scores
     val blurry = remember(images, scores) { BlurScan.blurry(images) }
@@ -236,7 +257,9 @@ fun CleanupHeader(
             } else {
                 val left = remember(images, favorites, scores) { BlurScan.unmeasured(Cleanup.blurCandidates(images, favorites)).size }
                 if (left > 0) {
-                    OutlinedButton(onClick = { scanNow = true }) { Text(stringResource(R.string.sv_cleanup_blurry_scan, left)) }
+                    OutlinedButton(onClick = { scanNow = true }) {
+                        Text(pluralStringResource(R.plurals.sv_cleanup_blurry_scan, left, left, Cleanup.estimateMinutes(left)))
+                    }
                 }
             }
             Text(stringResource(R.string.sv_cleanup_blurry_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
