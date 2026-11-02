@@ -42,7 +42,7 @@ internal fun RenameFileDialog(
                     label = { Text(stringResource(R.string.rename_file_hint)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    suffix = if (ext.isNotEmpty()) { { Text(".$ext", color = MaterialTheme.colorScheme.outline) } } else null
+                    suffix = if (ext.isNotEmpty()) { { Text(".$ext", color = MaterialTheme.colorScheme.onSurfaceVariant) } } else null
                 )
             }
         },

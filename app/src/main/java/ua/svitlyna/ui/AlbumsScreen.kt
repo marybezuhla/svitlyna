@@ -611,7 +611,7 @@ fun AlbumsGrid(
                                     Text(
                                         text = androidx.compose.ui.res.stringResource(ua.svitlyna.R.string.storage_sd_card),
                                         style = MaterialTheme.typography.labelSmall,
-                                        fontSize = 9.sp,
+                                        fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)

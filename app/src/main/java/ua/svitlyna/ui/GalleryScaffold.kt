@@ -1029,8 +1029,8 @@ internal fun GalleryScaffold(
                                                 else -> stringResource(R.string.tab_media)
                                             },
                                             style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 6.sp,
-                                                lineHeight = 7.sp,
+                                                fontSize = 8.sp,
+                                                lineHeight = 9.sp,
                                                 fontWeight = FontWeight.Bold
                                             ),
                                             maxLines = 1,

@@ -9,17 +9,49 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import ua.svitlyna.data.AccentColor
 import ua.svitlyna.data.ThemeMode
 
-private fun createLightPalette(primary: Color, secondary: Color, tertiary: Color) = lightColorScheme(
+// Svitlyna: every accent stays readable (WCAG AA, 4.5:1): the accent is darkened on light
+// backgrounds and lightened on dark ones until it is, and the text on it is chosen by contrast.
+private fun contrast(a: Color, b: Color): Double {
+    val la = a.luminance() + 0.05
+    val lb = b.luminance() + 0.05
+    return if (la > lb) la / lb.toDouble() else lb / la.toDouble()
+}
+
+private fun readable(color: Color, on: Color, toward: Color): Color {
+    var t = 0f
+    var c = color
+    while (contrast(c, on) < 4.6 && t < 1f) {
+        t += 0.05f
+        c = lerp(color, toward, t)
+    }
+    return c
+}
+
+private fun textOn(c: Color, dark: Color = Color(0xFF1D1B20)): Color =
+    if (contrast(Color.White, c) >= contrast(dark, c)) Color.White else dark
+
+private val LIGHT_BG = Color(0xFFFBF8FE)
+private val DARK_BG = Color(0xFF141218)
+
+private fun createLightPalette(accent: Color, accent2: Color, tertiary: Color): androidx.compose.material3.ColorScheme {
+    val primary = readable(accent, LIGHT_BG, Color.Black)
+    val secondary = readable(accent2, LIGHT_BG, Color.Black)
+    return createLightPaletteOf(primary, secondary, tertiary)
+}
+
+private fun createLightPaletteOf(primary: Color, secondary: Color, tertiary: Color) = lightColorScheme(
     primary = primary,
-    onPrimary = Color.White,
+    onPrimary = textOn(primary),
     primaryContainer = primary.copy(alpha = 0.15f),
     onPrimaryContainer = primary,
     secondary = secondary,
-    onSecondary = Color.White,
+    onSecondary = textOn(secondary),
     secondaryContainer = secondary.copy(alpha = 0.15f),
     onSecondaryContainer = secondary,
     tertiary = tertiary,
@@ -30,13 +62,20 @@ private fun createLightPalette(primary: Color, secondary: Color, tertiary: Color
     onSurfaceVariant = Color(0xFF49454E),
 )
 
-private fun createDarkPalette(primary: Color, secondary: Color, tertiary: Color, amoled: Boolean) = darkColorScheme(
+private fun createDarkPalette(accent: Color, accent2: Color, tertiary: Color, amoled: Boolean): androidx.compose.material3.ColorScheme {
+    // The container is the accent at 25 % over the background: the accent must read on that too.
+    val primary = readable(readable(accent, DARK_BG, Color.White), lerp(DARK_BG, accent, 0.25f), Color.White)
+    val secondary = readable(readable(accent2, DARK_BG, Color.White), lerp(DARK_BG, accent2, 0.25f), Color.White)
+    return createDarkPaletteOf(primary, secondary, tertiary, amoled)
+}
+
+private fun createDarkPaletteOf(primary: Color, secondary: Color, tertiary: Color, amoled: Boolean) = darkColorScheme(
     primary = primary,
-    onPrimary = Color(0xFF381E72),
+    onPrimary = textOn(primary),
     primaryContainer = primary.copy(alpha = 0.25f),
     onPrimaryContainer = primary,
     secondary = secondary,
-    onSecondary = Color(0xFF332D41),
+    onSecondary = textOn(secondary),
     secondaryContainer = secondary.copy(alpha = 0.25f),
     onSecondaryContainer = secondary,
     tertiary = tertiary,

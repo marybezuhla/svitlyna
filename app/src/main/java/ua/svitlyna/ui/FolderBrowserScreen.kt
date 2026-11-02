@@ -244,7 +244,7 @@ fun FolderBrowserScreen(
                             Text(
                                 text = "/",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -429,7 +429,7 @@ fun FolderBrowserScreen(
                                                 Text(
                                                     text = "•",
                                                     style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.outline
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                             }
                                             Text(
@@ -441,7 +441,7 @@ fun FolderBrowserScreen(
                                                 Text(
                                                     text = "•",
                                                     style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.outline
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                                 Text(
                                                     text = formatDuration(image.durationMs),
