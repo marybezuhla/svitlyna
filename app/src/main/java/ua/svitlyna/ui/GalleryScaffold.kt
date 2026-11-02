@@ -584,7 +584,14 @@ internal fun GalleryScaffold(
             }
         } ?: emptyList()
     }
+    // Svitlyna: "Free up space" — the chosen group, shared by the grid and the selection.
+    var cleanupKind by remember { mutableStateOf(CleanupKind.BIG_VIDEOS) }
+    val cleanupBlurScores = BlurScan.scores
+    val cleanupShown = remember(images, favorites, cleanupKind, cleanupBlurScores, TempShots.kept, TempShots.days, TempShots.enabled) {
+        Cleanup.group(cleanupKind, images, favorites, if (cleanupKind == CleanupKind.BLURRY) BlurScan.blurry(images) else emptySet())
+    }
     val activeMedia = when {
+        destination == 3 && librarySection == "cleanup" -> cleanupShown
         destination == 3 && librarySection == "trash" -> trashed
         destination == 3 && librarySection == "locked" -> lockedMedia
         destination == 1 && selectedAlbum != null -> displayedAlbumPhotos
@@ -783,6 +790,7 @@ internal fun GalleryScaffold(
                                 destination == 3 && librarySection == "duplicates" -> stringResource(R.string.section_duplicates)
                                 destination == 3 && librarySection == "memories" -> stringResource(R.string.section_memories)
                                 destination == 3 && librarySection == "formats" -> stringResource(R.string.library_formats_title)
+                                destination == 3 && librarySection == "cleanup" -> stringResource(R.string.sv_cleanup_title)
                                 destination == 3 && librarySection == "editor" -> stringResource(R.string.library_editor_title)
                                 destination == 3 && librarySection == "folder_view" -> stringResource(R.string.section_folder_view)
                                 destination == 3 && librarySection != null -> librarySection!!.replaceFirstChar { it.uppercase() }
@@ -1665,6 +1673,42 @@ internal fun GalleryScaffold(
                                 ) {
                                     if (selectedIds.isNotEmpty()) toggleSelection(it.id)
                                     else { viewerImages = memories; selectedId = it.id }
+                                }
+                            }
+                        }
+                        "cleanup" -> {
+                            Column(Modifier.fillMaxSize().padding(padding)) {
+                                CleanupHeader(
+                                    images = images,
+                                    favorites = favorites,
+                                    kind = cleanupKind,
+                                    shown = cleanupShown,
+                                    onKind = { cleanupKind = it; clearSelection() },
+                                    onDuplicates = { clearSelection(); librarySection = "duplicates" },
+                                    onSelectAll = { selectedIds = cleanupShown.mapTo(HashSet()) { it.id } },
+                                )
+                                if (cleanupShown.isEmpty()) {
+                                    EmptyState(stringResource(R.string.sv_cleanup_empty), PaddingValues(0.dp))
+                                } else {
+                                    PhotoGrid(
+                                        images = cleanupShown,
+                                        padding = PaddingValues(0.dp),
+                                        gridState = libraryGridState,
+                                        cellSize = photoCellSize,
+                                        onCellSizeChange = onCellSizeChange,
+                                        cornerStyle = settings.cornerStyle,
+                                        gridSpacing = settings.gridSpacing,
+                                        showVideoDuration = settings.showVideoDurationBadge,
+                                        showFormatBadge = settings.showMediaFormatBadge,
+                                        selectedIds = selectedIds,
+                                        favorites = favorites,
+                                        onToggleSelection = if (onPick == null) ::toggleSelection else null,
+                                        onSetSelection = if (onPick == null) ::setSelection else null,
+                                    ) {
+                                        if (selectedIds.isNotEmpty()) toggleSelection(it.id)
+                                        else if (onPick != null) onPick(it)
+                                        else { viewerImages = cleanupShown; selectedId = it.id }
+                                    }
                                 }
                             }
                         }
