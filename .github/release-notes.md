@@ -1,12 +1,11 @@
-**Світлина 0.6.1** — приватна галерея для Android: без інтернету, акаунтів і реклами. Українська та англійська. Тестова версія.
+**Світлина 0.7.0** — приватна галерея для Android: без інтернету, акаунтів і реклами. Українська та англійська. Тестова версія.
 
-**Нове в 0.6.1: перевірка перед поширенням**
-- 🎨 **Нова іконка** — точно за задумом, і в одноколірному варіанті для тематичних іконок Android.
-- 🛡️ **Приватність:** копії для надсилання й буфера обміну втрачають усе зайве (XMP, IPTC, коментарі, текст у PNG, вшите відео «живих фото»); те, що не вдалося очистити, не надсилається, і Світлина каже, скільки. Відео «живих фото» з Прихованого не лишається на диску.
-- 💾 **Надійність:** кошик видаляє оригінали лише після перевіреного запису; переміщення не губить місце зйомки; «Зберегти поверх» — лише для JPEG, PNG і WebP, оригінал зберігається 30 днів; «Обране» з 0.4 повертається.
-- ♿ **Доступність:** TalkBack читає назви перемикачів і фото («Фото, 12 травня 2024»), дає вибирати фото; після видалення — «Скасувати»; контраст кольорів за WCAG AA.
-- 📜 **Ліцензії** всіх бібліотек і моделей — у застосунку, без інтернету.
-- 🔒 Приховане: попередження, що воно зашифроване ключем саме цього телефона; захист не вимикається без PIN.
+**Нове в 0.7.0: інструменти для фото**
+- 📐 **Змінити розмір чи формат:** виберіть фото → меню → копії в JPEG, WebP чи PNG потрібного розміру, поруч з оригіналами, з їхньою датою й даними.
+- 📄 **Зробити PDF** з кількох фото: по фото на сторінку A4, без жодних даних фото (місця, дати, камери). Зберігається в Documents/Svitlyna.
+- 🔳 **Прочитати QR-код** чи штрихкод на фото: текст видно повністю, посилання відкривається лише дотиком.
+- 🧾 **Сканувати документ:** поставте чотири кути на кути сторінки — вона вирівняється, а «чисто чорно-біле» прибере тіні.
+- Усе працює на телефоні, з оцінкою часу й «Зупинити»; оригінали не змінюються.
 
 Інтерфейс і більшість функцій — з [Iris Gallery](https://github.com/MohamadOday/iris-gallery) (Mohamad Oday, Apache 2.0). Потрібен Android 11 або новіший (64-бітний). Помилки й побажання — в Issues.
 
@@ -14,15 +13,14 @@
 
 ---
 
-**Svitlyna 0.6.1** — a private gallery for Android: no internet, no accounts, no ads. Ukrainian and English. Test version.
+**Svitlyna 0.7.0** — a private gallery for Android: no internet, no accounts, no ads. Ukrainian and English. Test version.
 
-**New in 0.6.1: checked before sharing with people**
-- 🎨 **New icon**, exactly as designed, with a one-colour version for themed icons.
-- 🛡️ **Privacy:** copies for sending and the clipboard lose everything else (XMP, IPTC, comments, PNG text, the video inside live photos); what can't be cleaned is not sent, and Svitlyna says how many. Live photo videos from Locked never stay on disk.
-- 💾 **Reliability:** the trash removes originals only after a verified save; moves keep the place; "Save over" only for JPEG, PNG and WebP, the original kept 30 days; Favorites from 0.4 come back.
-- ♿ **Accessibility:** TalkBack reads switch names and photos ("Photo, 12 May 2024") and can select photos; Undo after deleting; colour contrast to WCAG AA.
-- 📜 **Licenses** of all libraries and models inside the app, offline.
-- 🔒 Locked: a warning that it is encrypted with this phone's key; protection can't be switched off without the PIN.
+**New in 0.7.0: photo tools**
+- 📐 **Resize or convert:** select photos → menu → copies in JPEG, WebP or PNG at the size you choose, next to the originals, with their date and details.
+- 📄 **Make a PDF** from several photos: one per A4 page, without any of the photos' details (place, date, camera). Saved in Documents/Svitlyna.
+- 🔳 **Read a QR code** or bar code on a photo: the text is shown in full, a link opens only on a tap.
+- 🧾 **Scan a document:** put four corners on the page's corners — it is made straight, and "clean black and white" removes shadows.
+- Everything runs on the phone, with a time estimate and Stop; originals are never changed.
 
 The interface and most features come from [Iris Gallery](https://github.com/MohamadOday/iris-gallery) (Mohamad Oday, Apache 2.0). Requires Android 11 or newer (64-bit). Bugs and wishes: Issues.
 
