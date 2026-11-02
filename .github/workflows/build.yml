@@ -164,15 +164,17 @@ jobs:
         run: |
           set -e
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
-          # The key lives only in the release environment's secrets (base64), never in the repository.
-          # Until that secret is set, the old encrypted copy in the repository is used.
+          # The key lives only in the release environment's secrets: the encrypted key as base64
+          # (SVITLYNA_KEYSTORE), opened with SVITLYNA_SIGNING_PASS. Until that secret is set, the old
+          # encrypted copy in the repository is used.
           if [ -n "$KEYSTORE" ]; then
-            printf %s "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/svitlyna.jks"
+            printf %s "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/svitlyna.jks.enc"
           else
-            printf %s "$PASS" > "$RUNNER_TEMP/p"
-            openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -in signing/svitlyna.jks.enc -out "$RUNNER_TEMP/svitlyna.jks" -pass file:"$RUNNER_TEMP/p"
-            rm "$RUNNER_TEMP/p"
+            cp signing/svitlyna.jks.enc "$RUNNER_TEMP/svitlyna.jks.enc"
           fi
+          printf %s "$PASS" > "$RUNNER_TEMP/p"
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -in "$RUNNER_TEMP/svitlyna.jks.enc" -out "$RUNNER_TEMP/svitlyna.jks" -pass file:"$RUNNER_TEMP/p"
+          rm "$RUNNER_TEMP/p" "$RUNNER_TEMP/svitlyna.jks.enc"
           mkdir -p out
           "$BT/zipalign" -P 16 -f 4 unsigned/app-release-unsigned.apk "$RUNNER_TEMP/aligned.apk"
           OUT="out/svitlyna-$(tr -d '[:space:]' < version.txt).apk"
@@ -188,7 +190,7 @@ jobs:
 
       - name: Remove the decrypted key
         if: always()
-        run: rm -f "$RUNNER_TEMP/svitlyna.jks" "$RUNNER_TEMP/p"
+        run: rm -f "$RUNNER_TEMP/svitlyna.jks" "$RUNNER_TEMP/svitlyna.jks.enc" "$RUNNER_TEMP/p"
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: steps.secrets.outputs.ready == 'true'
