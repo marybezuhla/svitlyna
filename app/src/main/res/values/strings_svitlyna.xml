@@ -180,4 +180,10 @@
     <string name="sv_codes_copy">Copy</string>
     <string name="sv_codes_open">Open link</string>
     <string name="sv_codes_copied">Copied</string>
+    <string name="sv_scan_title">Scan document</string>
+    <string name="sv_scan_hint">Move the four corners onto the corners of the page.</string>
+    <string name="sv_scan_clean">Clean black and white (shadows removed)</string>
+    <string name="sv_scan_save">Save</string>
+    <string name="sv_scan_saved">Scan saved next to the photo</string>
+    <string name="sv_scan_failed">Could not scan this photo</string>
 </resources>

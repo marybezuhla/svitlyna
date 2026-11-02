@@ -2,6 +2,7 @@
 
 package ua.svitlyna.ui
 
+import androidx.compose.material.icons.outlined.DocumentScanner
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import android.app.Activity
 import android.content.ContextWrapper
@@ -257,6 +258,7 @@ internal fun PhotoViewer(
     var prepareFor by remember { mutableStateOf<MediaImage?>(null) }
     // Svitlyna: codes read from the photo (null: not asked; empty: none found).
     var codesFound by remember { mutableStateOf<List<String>?>(null) }
+    var scanFor by remember { mutableStateOf<MediaImage?>(null) }
     val activity = remember(context) {
         generateSequence(context) { (it as? ContextWrapper)?.baseContext }
             .filterIsInstance<Activity>().firstOrNull()
@@ -911,6 +913,15 @@ internal fun PhotoViewer(
                                     prepareFor = current
                                 }
                             )
+                            // Svitlyna: a document photographed at an angle, made straight and clean.
+                            if (current.id > 0) DropdownMenuItem(
+                                text = { Text(stringResource(R.string.sv_scan_title)) },
+                                leadingIcon = { Icon(Icons.Outlined.DocumentScanner, null) },
+                                onClick = {
+                                    viewerMenuExpanded = false
+                                    scanFor = current
+                                }
+                            )
                             // Svitlyna: QR and bar codes on the photo, read on the phone.
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.sv_codes_read)) },
@@ -1472,6 +1483,7 @@ internal fun PhotoViewer(
         }
 
         textFor?.let { image -> PhotoTextScreen(image, highlight = textHighlight) { textFor = null } }
+        scanFor?.let { image -> ScanScreen(image.asItem()) { scanFor = null } }
         codesFound?.let { codes ->
             CodesDialog(codes) { codesFound = null }
         }

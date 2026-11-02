@@ -23,6 +23,7 @@ Svitlyna's own code is licensed under GPL-3.0 (see `LICENSE`).
   `media/Similar.kt` follows Iris Gallery's way of grouping similar photos (difference hash, six bands);
   `media/VideoClean.kt` follows the idea of its MP4 metadata stripper (boxes are emptied in place here).
 - ONNX Runtime (Microsoft, MIT) runs the text models.
+- ZXing core (Apache License 2.0) reads QR and bar codes on photos.
 - Coil (Apache License 2.0), libavif for Android (BSD), Tink (Google, Apache License 2.0) for the
   vault's encryption.
 - SQLCipher for Android (Zetetic LLC, BSD-style licence) encrypts the search database; it includes

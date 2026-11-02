@@ -202,4 +202,10 @@
     <string name="sv_codes_copy">Копіювати</string>
     <string name="sv_codes_open">Відкрити посилання</string>
     <string name="sv_codes_copied">Скопійовано</string>
+    <string name="sv_scan_title">Сканувати документ</string>
+    <string name="sv_scan_hint">Перетягніть чотири кути на кути сторінки.</string>
+    <string name="sv_scan_clean">Чисто чорно-біле (без тіней)</string>
+    <string name="sv_scan_save">Зберегти</string>
+    <string name="sv_scan_saved">Скан збережено поруч із фото</string>
+    <string name="sv_scan_failed">Не вдалося відсканувати це фото</string>
 </resources>
