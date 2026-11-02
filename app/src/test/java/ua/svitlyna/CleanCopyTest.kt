@@ -44,7 +44,8 @@ class CleanCopyTest {
         assertTrue(has(out, "JFIF") && has(out, "Exif"))
         assertEquals(0xFF.toByte(), out[out.size - 2]); assertEquals(0xD9.toByte(), out[out.size - 1])
         // The picture data with its stuffing and restart marker is untouched.
-        assertTrue(has(out, String(byteArrayOf(0x12, 0xFF.toByte(), 0x00, 0x34, 0xFF.toByte(), 0xD0.toByte(), 0x56), Charsets.ISO_8859_1)))
+        val data = String(byteArrayOf(0x12, 0xFF.toByte(), 0x00, 0x34, 0xFF.toByte(), 0xD0.toByte(), 0x56), Charsets.ISO_8859_1)
+        assertTrue(String(out, Charsets.ISO_8859_1).contains(data))
     }
 
     @Test
