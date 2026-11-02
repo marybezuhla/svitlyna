@@ -2,7 +2,7 @@
 
 Приватна галерея для Android: усе на телефоні, без інтернету, акаунтів і реклами. Текст на фото, пошук українською, обличчя, місця й локальний ШІ — лише на телефоні. Українська та англійська. Безкоштовно.
 
-> **Статус: тестова версія 0.5.1** — інтерфейс на основі Iris Gallery. Працюють пошук за текстом на фото українською, назвами й датами, шкала й папки, перегляд, текст на фото, редактор, «перед надсиланням», скріншоти, дублікати й схожі фото, зміна дати й місця, віджет «Цього дня» й блокування. Світлину можна зробити основною галереєю: вона відкриває фото з інших застосунків і є вибором фото для них. Далі — пошук за змістом, обличчя, карти. Завантажити: [Releases](../../releases). Що будуємо — [SPEC.md](SPEC.md), чому саме так — [DECISIONS.md](DECISIONS.md). Ідеї й побажання: [Issues](../../issues).
+> **Статус: тестова версія 0.6.0** — інтерфейс на основі Iris Gallery. Працюють пошук за текстом на фото українською, назвами й датами, шкала й папки, перегляд, текст на фото, редактор, «перед надсиланням», скріншоти, дублікати й схожі фото, зміна дати й місця, віджет «Цього дня», блокування, зашифрований сейф і прибирання пам'яті. Світлину можна зробити основною галереєю: вона відкриває фото з інших застосунків і є вибором фото для них. Далі — пошук за змістом, обличчя, карти. Завантажити: [Releases](../../releases). Що будуємо — [SPEC.md](SPEC.md), чому саме так — [DECISIONS.md](DECISIONS.md). Ідеї й побажання: [Issues](../../issues).
 
 ## Що буде
 
@@ -32,7 +32,7 @@ Kotlin · Jetpack Compose. Ліцензія GPL-3.0.
 
 A private gallery for Android: everything on the phone, no internet, no accounts, no ads. Text in photos, search in Ukrainian, faces, places and an on-device AI — all on the phone. Ukrainian and English. Free.
 
-> **Status: test version 0.5.1** — interface based on Iris Gallery. Search by text in photos (Ukrainian word forms, Latin letters), names and dates, timeline and folders, viewer, text in photos, editor, before-sending check, screenshots, duplicates and similar photos, changing date and place, the "This day" widget and lock work. Svitlyna can be your main gallery: it opens photos from other apps and is their photo chooser. Next: search by meaning, faces, maps. Download: [Releases](../../releases). What we are building is in [SPEC.md](SPEC.md) and why in [DECISIONS.md](DECISIONS.md) (both in Ukrainian). Ideas and wishes: [Issues](../../issues).
+> **Status: test version 0.6.0** — interface based on Iris Gallery. Search by text in photos (Ukrainian word forms, Latin letters), names and dates, timeline and folders, viewer, text in photos, editor, before-sending check, screenshots, duplicates and similar photos, changing date and place, the "This day" widget, lock, encrypted vault and freeing up space work. Svitlyna can be your main gallery: it opens photos from other apps and is their photo chooser. Next: search by meaning, faces, maps. Download: [Releases](../../releases). What we are building is in [SPEC.md](SPEC.md) and why in [DECISIONS.md](DECISIONS.md) (both in Ukrainian). Ideas and wishes: [Issues](../../issues).
 
 ## Planned
 
