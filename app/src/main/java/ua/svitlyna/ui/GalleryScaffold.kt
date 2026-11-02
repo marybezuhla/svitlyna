@@ -633,6 +633,10 @@ internal fun GalleryScaffold(
                 android.widget.Toast.makeText(context, context.getString(R.string.toast_share_failed), android.widget.Toast.LENGTH_SHORT).show()
                 return@launch
             }
+            // Svitlyna: files that couldn't be cleaned are not sent: say how many.
+            if (uris.size < selected.size) {
+                android.widget.Toast.makeText(context, context.getString(R.string.sv_share_skipped, selected.size - uris.size), android.widget.Toast.LENGTH_LONG).show()
+            }
             val mimeType = selected.map { it.mimeType.ifBlank { if (it.isVideo) "video/*" else "image/*" } }
                 .distinct()
                 .let { mimeTypes ->

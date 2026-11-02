@@ -180,6 +180,15 @@ internal fun GalleryApp(
         permitted = hasMediaPermission(context)
     }
     val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    // Svitlyna: "media location" keeps the place of photos that are moved or edited (without it,
+    // Android hands out copies with the place removed and such moves are refused). Android grants it
+    // without a window once photos are allowed; asked for once if it's missing.
+    val locationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    LaunchedEffect(permitted) {
+        if (permitted && ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_MEDIA_LOCATION) != PermissionChecker.PERMISSION_GRANTED) {
+            runCatching { locationLauncher.launch(Manifest.permission.ACCESS_MEDIA_LOCATION) }
+        }
+    }
     var trashFeedback by remember { mutableStateOf<TrashFeedback?>(null) }
     var pendingPermanentDeleteMedia by remember { mutableStateOf<List<MediaImage>?>(null) }
     var pendingPermanentDeleteCallback by remember { mutableStateOf<(() -> Unit)?>(null) }

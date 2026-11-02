@@ -29,3 +29,6 @@ Svitlyna's own code is licensed under GPL-3.0 (see `LICENSE`).
   OpenSSL's libcrypto (Apache License 2.0). androidx.sqlite (Google, Apache License 2.0).
 - AndroidX, Jetpack Compose, Media3 and ExifInterface (Google, Apache License 2.0); Kotlin and kotlinx
   coroutines (JetBrains, Apache License 2.0) are used as dependencies under their own licences.
+
+Full licence texts: `LICENSE` (GPL-3.0), `LICENSES/` (Apache 2.0, MIT for ONNX Runtime, BSD for libavif and
+SQLCipher). All are also shown in the app: About → Licences and credits.

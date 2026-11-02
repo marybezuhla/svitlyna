@@ -37,8 +37,13 @@ object VaultCrypto {
             .build()
         // Svitlyna: never a vault key kept in the clear (Tink falls back to that when the Keystore
         // fails): then the vault doesn't work rather than work unprotected.
-        @Suppress("DEPRECATION")
-        check(manager.isUsingKeystore) { "Android Keystore unavailable" }
+        if (!manager.isUsingKeystore) {
+            // The key written in the clear is dropped while the vault is still empty, so the next
+            // start makes a new one wrapped by the Keystore (otherwise this would fail forever).
+            val empty = java.io.File(context.filesDir, "vault").listFiles()?.none { it.isFile && !it.name.startsWith(".") } ?: true
+            if (empty) context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(KEYSET).commit()
+            error("Android Keystore unavailable")
+        }
         val handle = manager.keysetHandle
         @Suppress("DEPRECATION")
         val made = handle.getPrimitive(StreamingAead::class.java)

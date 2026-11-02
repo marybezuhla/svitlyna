@@ -1403,8 +1403,8 @@ fun SettingsScreen(
                             // Svitlyna: switching the vault's protection off needs the phone's PIN or
                             // fingerprint first (otherwise anyone holding the phone could open it).
                             val activity = context as? androidx.fragment.app.FragmentActivity
-                            if (on || activity == null) preferences.setBiometricLockEnabled(on)
-                            else ua.svitlyna.core.AppLock.ask(activity, onNoScreenLock = { preferences.setBiometricLockEnabled(false) }) {
+                            if (on) preferences.setBiometricLockEnabled(true)
+                            else if (activity != null) ua.svitlyna.core.AppLock.ask(activity, onNoScreenLock = { preferences.setBiometricLockEnabled(false) }) {
                                 preferences.setBiometricLockEnabled(false)
                             }
                         }

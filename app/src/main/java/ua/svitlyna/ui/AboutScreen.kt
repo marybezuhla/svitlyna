@@ -268,8 +268,11 @@ fun AboutScreen(
     if (showLicences) {
         // Svitlyna: the notices and full licence texts, inside the app (no internet needed).
         val text = remember {
-            listOf("licences/NOTICE.md", "licences/LICENSE", "licences/Apache-2.0-Iris-Gallery.txt").joinToString("\n\n────────\n\n") { name ->
-                runCatching { context.assets.open(name).bufferedReader().use { it.readText() } }.getOrDefault("")
+            val names = runCatching { context.assets.list("licences")?.sorted() }.getOrNull().orEmpty()
+            // The notice first, then GPL-3.0, then each library's licence.
+            val ordered = listOf("NOTICE.md", "LICENSE").filter { it in names } + names.filter { it != "NOTICE.md" && it != "LICENSE" }
+            ordered.joinToString("\n\n────────\n\n") { name ->
+                runCatching { context.assets.open("licences/$name").bufferedReader().use { it.readText() } }.getOrDefault("")
             }
         }
         androidx.compose.material3.AlertDialog(

@@ -163,4 +163,5 @@
     <string name="sv_a11y_deselect">Зняти вибір</string>
     <string name="sv_licences">Ліцензії та подяки</string>
     <string name="sv_licence_line">GPL-3.0, без жодних гарантій · ліцензії бібліотек і моделей</string>
+    <string name="sv_share_skipped">Не надіслано: %1$d — з них не вдалося прибрати дані.</string>
 </resources>

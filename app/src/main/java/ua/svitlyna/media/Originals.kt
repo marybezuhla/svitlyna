@@ -23,7 +23,20 @@ object Originals {
     }
 
     fun cleanup(context: Context) {
-        val files = dir(context).listFiles()?.filter { it.isFile }?.sortedBy { it.lastModified() } ?: return
+        var files = dir(context).listFiles()?.filter { it.isFile }?.sortedBy { it.lastModified() } ?: return
+        // A photo that left the gallery (locked, deleted) takes its kept original with it.
+        val present = runCatching {
+            val ids = HashSet<Long>()
+            context.contentResolver.query(android.provider.MediaStore.Files.getContentUri("external"),
+                arrayOf(android.provider.MediaStore.MediaColumns._ID), null, null, null)?.use { c -> while (c.moveToNext()) ids += c.getLong(0) }
+            ids
+        }.getOrNull()
+        if (present != null && present.isNotEmpty()) {
+            files = files.filter { f ->
+                val id = f.name.substringBefore('_').toLongOrNull()
+                if (id != null && id !in present) { f.delete(); false } else true
+            }
+        }
         val old = System.currentTimeMillis() - DAYS * 86_400_000L
         var total = files.sumOf { it.length() }
         for (f in files) {

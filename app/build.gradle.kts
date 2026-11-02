@@ -125,7 +125,7 @@ dependencies {
 }
 
 // The notices and licence texts go into the app, so they can be read without internet (GPL, Apache).
-val copyLicences by tasks.registering(Copy::class) {
+val copyLicences by tasks.registering(Sync::class) {
     from(rootProject.file("NOTICE.md"), rootProject.file("LICENSE"), rootProject.file("LICENSES"))
     into(layout.buildDirectory.dir("generated/licences/licences"))
 }
