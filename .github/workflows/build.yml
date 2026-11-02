@@ -125,8 +125,9 @@ jobs:
         env:
           PASS: ${{ secrets.SVITLYNA_SIGNING_PASS }}
           STORE: ${{ secrets.SVITLYNA_STORE_PASS }}
+          KEYSTORE: ${{ secrets.SVITLYNA_KEYSTORE }}
         run: |
-          if [ -n "$PASS" ] && [ -n "$STORE" ]; then
+          if [ -n "$PASS" ] && [ -n "$STORE" ] && [ -n "$KEYSTORE" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "::error::Signing secrets are not set in the release environment; nothing is published."
@@ -165,13 +166,8 @@ jobs:
           set -e
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           # The key lives only in the release environment's secrets: the encrypted key as base64
-          # (SVITLYNA_KEYSTORE), opened with SVITLYNA_SIGNING_PASS. Until that secret is set, the old
-          # encrypted copy in the repository is used.
-          if [ -n "$KEYSTORE" ]; then
-            printf %s "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/svitlyna.jks.enc"
-          else
-            cp signing/svitlyna.jks.enc "$RUNNER_TEMP/svitlyna.jks.enc"
-          fi
+          # (SVITLYNA_KEYSTORE), opened with SVITLYNA_SIGNING_PASS. Never in the repository.
+          printf %s "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/svitlyna.jks.enc"
           printf %s "$PASS" > "$RUNNER_TEMP/p"
           openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -in "$RUNNER_TEMP/svitlyna.jks.enc" -out "$RUNNER_TEMP/svitlyna.jks" -pass file:"$RUNNER_TEMP/p"
           rm "$RUNNER_TEMP/p" "$RUNNER_TEMP/svitlyna.jks.enc"
