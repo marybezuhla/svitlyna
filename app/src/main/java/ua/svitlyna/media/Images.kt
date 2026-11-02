@@ -64,7 +64,16 @@ object Images {
                 if (software) decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
                 val w = info.size.width
                 val h = info.size.height
-                val longer = maxOf(w, h)
+                var longer = maxOf(w, h)
+                // Svitlyna: for the tools, never more than 50 MP, whatever the gallery's list says.
+                if (software && w.toLong() * h > 50_000_000L) {
+                    val cap = (longer * kotlin.math.sqrt(50_000_000.0 / (w.toLong() * h))).toInt()
+                    if (cap < maxPx) {
+                        val scale = cap.toFloat() / longer
+                        decoder.setTargetSize((w * scale).toInt().coerceAtLeast(1), (h * scale).toInt().coerceAtLeast(1))
+                        return@decodeBitmap
+                    }
+                }
                 if (longer > maxPx) {
                     val scale = maxPx.toFloat() / longer
                     decoder.setTargetSize((w * scale).toInt().coerceAtLeast(1), (h * scale).toInt().coerceAtLeast(1))

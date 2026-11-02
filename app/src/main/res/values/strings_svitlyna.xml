@@ -186,7 +186,7 @@
     <string name="sv_scan_save">Save</string>
     <string name="sv_scan_saved">Scan saved next to the photo</string>
     <string name="sv_scan_failed">Could not scan this photo</string>
-    <string name="sv_convert_skipped">%1$d could not be opened and were skipped.</string>
+    <string name="sv_convert_skipped">Skipped (could not be opened): %1$d.</string>
     <string name="sv_pdf_stopped">Stopped. No PDF was made.</string>
     <string name="sv_codes_reading">Looking for codes…</string>
     <string name="sv_scan_whole">Whole picture</string>

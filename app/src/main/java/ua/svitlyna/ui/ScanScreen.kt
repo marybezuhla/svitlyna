@@ -125,9 +125,12 @@ fun ScanScreen(item: MediaItem, onClose: () -> Unit) {
                             }
                         },
                     ) {
+                        // The outline of the page that will be saved (corners in order).
+                        val pts = (0 until 4).map { toScreen(it) }
+                        val o = DocScan.ordered(FloatArray(8) { k -> if (k % 2 == 0) pts[k / 2].x else pts[k / 2].y })
                         val p = Path().apply {
-                            moveTo(toScreen(0).x, toScreen(0).y)
-                            for (i in 1..3) lineTo(toScreen(i).x, toScreen(i).y)
+                            moveTo(o[0], o[1])
+                            for (i in 1..3) lineTo(o[2 * i], o[2 * i + 1])
                             close()
                         }
                         drawPath(p, Color(0x5533B5E5))

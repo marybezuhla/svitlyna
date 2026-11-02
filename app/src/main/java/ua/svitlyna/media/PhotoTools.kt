@@ -91,10 +91,12 @@ object PhotoTools {
                 pdf.begin()
                 for ((i, item) in items.withIndex()) {
                     coroutineContext.ensureActive()
-                    val page = runCatching { page(context, item, maxSide) }.getOrNull()
+                    val page = runCatching { page(context, item, maxSide) }
+                        .getOrElse { if (it is kotlinx.coroutines.CancellationException) throw it else null }
                     if (page != null) pdf.add(page)
                     progress(i + 1)
                 }
+                coroutineContext.ensureActive()
                 if (pdf.pages > 0) pdf.finish()
                 pdf.pages
             }
