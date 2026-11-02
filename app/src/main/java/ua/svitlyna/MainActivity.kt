@@ -73,6 +73,8 @@ class MainActivity : FragmentActivity() {
         if (initialSettings.language.isNotEmpty()) {
             ua.svitlyna.ui.setAppLanguage(this, initialSettings.language)
         }
+        // Loaded before the first frame, so nothing reads it half-loaded.
+        ua.svitlyna.ui.TempShots.load(this)
         setContent {
             val activeIntent = currentIntentState.value ?: intent
             val pickerMode = activeIntent.action == Intent.ACTION_PICK || activeIntent.action == Intent.ACTION_GET_CONTENT

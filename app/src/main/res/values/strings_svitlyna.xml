@@ -127,11 +127,14 @@
     <string name="sv_cleanup_messengers">From messengers · %1$d · %2$s</string>
     <string name="sv_cleanup_blurry">Possibly blurred · %1$d · %2$s</string>
     <string name="sv_cleanup_duplicates">Duplicates and similar</string>
-    <string name="sv_cleanup_blurry_scan">Check %1$d photos for blur</string>
+    <plurals name="sv_cleanup_blurry_scan">
+        <item quantity="one">Check %1$d photo for blur (about %2$d min)</item>
+        <item quantity="other">Check %1$d photos for blur (about %2$d min)</item>
+    </plurals>
     <string name="sv_cleanup_blurry_progress_start">Checking %1$d of %2$d…</string>
     <string name="sv_cleanup_blurry_progress">Checking %1$d of %2$d · about %3$d min left</string>
-    <string name="sv_cleanup_blurry_note">Found by sharpness: check before deleting, a plain sky or wall can end up here too. Results are kept, so next time only new photos are checked.</string>
-    <string name="sv_cleanup_hint">Select and delete from the menu: it goes to the trash and can be restored. Favourites are never offered.</string>
+    <string name="sv_cleanup_blurry_note">Found by sharpness: check before deleting, a plain sky or a smooth wall can end up here too. Results are kept, so next time only new photos are checked.</string>
+    <string name="sv_cleanup_hint">Select and delete from the menu, as anywhere in the gallery. Favourites and the vault are never offered.</string>
     <string name="sv_cleanup_select_all">Select all</string>
     <string name="sv_cleanup_empty">Nothing here</string>
 </resources>
