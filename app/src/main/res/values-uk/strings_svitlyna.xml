@@ -153,4 +153,6 @@
     <string name="sv_cleanup_hint">Вибери й видали через меню, як деінде в галереї. Улюблені й сейф ніколи не пропонуються.</string>
     <string name="sv_cleanup_select_all">Вибрати всі</string>
     <string name="sv_cleanup_empty">Тут нічого немає</string>
+    <string name="sv_error_scan">Не вдалося завершити пошук. Спробуй ще раз.</string>
+    <string name="sv_error_load">Не вдалося завантажити фото. Потягни вниз, щоб спробувати ще раз.</string>
 </resources>

@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -124,14 +125,15 @@ fun AboutScreen(
                 Box(
                     modifier = Modifier
                         .size(92.dp)
-                        .clip(RoundedCornerShape(22.dp))
-                        .background(Color(0xFF17406F)),
+                        .clip(androidx.compose.foundation.shape.CircleShape)
+                        .background(Color(0xFF113F6B)),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_launcher_foreground),
                         contentDescription = null,
-                        modifier = Modifier.size(76.dp)
+                        // The icon's circle is 72 of its 108 units: drawn at 1.5× so it fills the circle.
+                        modifier = Modifier.requiredSize(138.dp)
                     )
                 }
 

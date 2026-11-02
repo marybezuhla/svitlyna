@@ -3,6 +3,7 @@ package ua.svitlyna.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import ua.svitlyna.R
 import ua.svitlyna.data.MediaImage
 import ua.svitlyna.data.MediaRepository
 import ua.svitlyna.data.LibraryPreferences
@@ -104,7 +105,7 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
             }.onFailure { error ->
                 if (error is kotlinx.coroutines.CancellationException) {
                     _duplicateState.value = DuplicateScanState()
-                } else _duplicateState.value = DuplicateScanState(hasScanned = true, error = error.message ?: "Scan failed")
+                } else _duplicateState.value = DuplicateScanState(hasScanned = true, error = getApplication<Application>().getString(R.string.sv_error_scan))
             }
         }
     }
@@ -539,7 +540,7 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
                         if (e is kotlinx.coroutines.CancellationException) throw e
                         android.util.Log.e("GalleryViewModel", "refresh loadImages failed", e)
                         if (_uiState.value.images.isEmpty()) {
-                            _uiState.update { state -> state.copy(loading = false, error = e.message ?: "Could not load photos") }
+                            _uiState.update { state -> state.copy(loading = false, error = getApplication<Application>().getString(R.string.sv_error_load)) }
                         } else {
                             _uiState.update { it.copy(loading = false) }
                         }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -49,8 +50,9 @@ fun DeviceLockScreen(onUnlocked: () -> Unit, onNoScreenLock: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Box(Modifier.size(96.dp).clip(CircleShape).background(Color(0xFF17406F)), contentAlignment = Alignment.Center) {
-                Image(painterResource(R.drawable.ic_launcher_foreground), null, Modifier.size(96.dp))
+            Box(Modifier.size(96.dp).clip(CircleShape).background(Color(0xFF113F6B)), contentAlignment = Alignment.Center) {
+                // The icon's circle is 72 of its 108 units: drawn at 1.5× so it fills the circle.
+                Image(painterResource(R.drawable.ic_launcher_foreground), null, Modifier.requiredSize(144.dp))
             }
             Spacer(Modifier.height(24.dp))
             Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmall)

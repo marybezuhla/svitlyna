@@ -45,8 +45,6 @@ jobs:
           gradle-version: "8.14.3"
 
       - name: Test and build (unsigned)
-        env:
-          VERSION_CODE: ${{ github.run_number }}
         shell: bash
         run: |
           set -o pipefail
@@ -77,11 +75,13 @@ jobs:
         if: always()
         with:
           name: build-log
+          retention-days: 7
           path: log/
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: svitlyna-unsigned
+          retention-days: 7
           path: app/build/outputs/apk/release/app-release-unsigned.apk
 
   # Saves the build log to the ci-logs branch. Runs no project code.
@@ -187,6 +187,7 @@ jobs:
         if: steps.secrets.outputs.ready == 'true'
         with:
           name: svitlyna-signed
+          retention-days: 7
           path: out/*.apk
 
   # Publishes the signed APK. Never sees the signing key; uses only GitHub's own gh tool.

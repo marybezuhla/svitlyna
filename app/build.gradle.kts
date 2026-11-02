@@ -6,9 +6,10 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-val ciVersionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 1
 // The version people see (major.minor.patch), set by hand before each release in version.txt.
 val appVersion = rootProject.file("version.txt").readText().trim()
+// The version Android compares, from the same file: 1.2.4 -> 10204 (always above the old run numbers).
+val appVersionCode = appVersion.split('.').map { it.toInt() }.let { (a, b, c) -> a * 10000 + b * 100 + c }
 
 android {
     namespace = "ua.svitlyna"
@@ -19,13 +20,18 @@ android {
         // Android 11: the system trash and write requests for photos exist from here on.
         minSdk = 30
         targetSdk = 36
-        versionCode = ciVersionCode
+        versionCode = appVersionCode
         versionName = appVersion
         ndk {
             abiFilters += "arm64-v8a"
         }
     }
 
+    // No Google-encrypted dependency list in the APK (it can't be checked by anyone else).
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
     buildTypes {
         release {
             // Unused code and resources are left out (the icon set alone is large), but names are
