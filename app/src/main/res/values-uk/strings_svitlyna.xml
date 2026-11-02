@@ -155,4 +155,5 @@
     <string name="sv_cleanup_empty">Тут нічого немає</string>
     <string name="sv_error_scan">Не вдалося завершити пошук. Спробуй ще раз.</string>
     <string name="sv_error_load">Не вдалося завантажити фото. Потягни вниз, щоб спробувати ще раз.</string>
+    <string name="sv_vault_no_screen_lock">На телефоні немає блокування екрана, тож сховище відкривається будь-кому, хто тримає телефон. Встановіть PIN у налаштуваннях телефона.</string>
 </resources>

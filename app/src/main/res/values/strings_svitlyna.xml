@@ -139,4 +139,5 @@
     <string name="sv_cleanup_empty">Nothing here</string>
     <string name="sv_error_scan">Could not finish the search. Try again.</string>
     <string name="sv_error_load">Could not load the photos. Pull down to try again.</string>
+    <string name="sv_vault_no_screen_lock">The phone has no screen lock, so the vault opens for anyone holding it. Set a PIN in the phone\'s settings.</string>
 </resources>

@@ -41,7 +41,7 @@ class SensitiveTest {
 
     @Test
     fun emailIbanPlateAddress() {
-        assertEquals(listOf("olena.k@ukr.net"), found("пишіть olena.k@ukr.net"))
+        assertEquals(listOf("olena.k@example.org"), found("пишіть olena.k@example.org"))
         assertEquals(listOf(Kind.IBAN), kinds("IBAN UA213223130000026007233566001"))
         assertEquals(listOf("UA213223130000026007233566001"), found("UA213223130000026007233566001 UAH"))
         assertFalse(Sensitive.ibanValid("UA213223130000026007233566002"))

@@ -645,7 +645,6 @@ internal fun GalleryScaffold(
                 type = mimeType
                 if (uris.size == 1) {
                     putExtra(Intent.EXTRA_STREAM, uris.first())
-                    putExtra(Intent.EXTRA_TITLE, selected.first().name)
                 } else {
                     putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
                 }

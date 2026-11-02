@@ -30,12 +30,16 @@ object VaultCrypto {
     private fun aead(context: Context): StreamingAead {
         aead?.let { return it }
         StreamingAeadConfig.register()
-        val handle = AndroidKeysetManager.Builder()
+        val manager = AndroidKeysetManager.Builder()
             .withSharedPref(context.applicationContext, KEYSET, PREFS)
             .withKeyTemplate(KeyTemplates.get("AES256_GCM_HKDF_1MB"))
             .withMasterKeyUri(MASTER)
             .build()
-            .keysetHandle
+        // Svitlyna: never a vault key kept in the clear (Tink falls back to that when the Keystore
+        // fails): then the vault doesn't work rather than work unprotected.
+        @Suppress("DEPRECATION")
+        check(manager.isUsingKeystore) { "Android Keystore unavailable" }
+        val handle = manager.keysetHandle
         @Suppress("DEPRECATION")
         val made = handle.getPrimitive(StreamingAead::class.java)
         aead = made

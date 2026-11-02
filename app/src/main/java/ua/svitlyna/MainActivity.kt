@@ -44,6 +44,9 @@ class MainActivity : FragmentActivity() {
             listOf("shared_media", "share").forEach { d ->
                 java.io.File(cacheDir, d).listFiles()?.forEach { if (it.lastModified() < old) it.deleteRecursively() }
             }
+            // Video parts of live photos, cut out for playing: only while the app is open.
+            cacheDir.listFiles()?.forEach { if (it.name.startsWith("motion_") || it.name.startsWith("livp_")) it.delete() }
+            ua.svitlyna.media.Originals.cleanup(this)
         }.start()
         // Svitlyna 0.4 → 0.5: the app lock and "send without location" carry over (once).
         val old = getSharedPreferences("settings", MODE_PRIVATE)
@@ -103,7 +106,11 @@ class MainActivity : FragmentActivity() {
                 isCameraReviewAction
             val requestedType = activeIntent.type
             val rawViewUri = activeIntent.data ?: activeIntent.clipData?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.uri
-            val viewUri = rawViewUri.takeIf { isViewAction }
+            // Svitlyna: only content:// from other apps; never the app's own providers (trash, vault,
+            // shared copies) handed back to it, and never plain file paths.
+            val viewUri = rawViewUri.takeIf {
+                isViewAction && it.scheme == "content" && it.authority?.startsWith(packageName) != true
+            }
             val isEditAction = activeIntent.action == Intent.ACTION_EDIT
             val shouldOpenLatest = isCameraReviewAction && rawViewUri == null
             val intentGeneration = intentGenerationState.value
@@ -136,7 +143,7 @@ class MainActivity : FragmentActivity() {
                             }
                             val result = Intent().apply {
                                 data = uri
-                                clipData = ClipData.newUri(contentResolver, media.name, uri)
+                                clipData = ClipData.newUri(contentResolver, "photo", uri)
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
                             setResult(Activity.RESULT_OK, result)

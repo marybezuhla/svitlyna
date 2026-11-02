@@ -345,7 +345,6 @@ internal fun PhotoViewer(
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = mimeType
                 putExtra(Intent.EXTRA_STREAM, shareUri)
-                putExtra(Intent.EXTRA_TITLE, media.name)
                 clipData = ClipData.newUri(context.contentResolver, mimeType, shareUri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
@@ -423,7 +422,9 @@ internal fun PhotoViewer(
 
     // ---- Motion Photo (Samsung / Google / Nokia) detection & in-place playback ----
     val motionVideo by produceState<MotionVideo?>(initialValue = null, current.id, current.uri, current.isVideo) {
-        if (!current.isVideo) {
+        // Svitlyna: never for a vault photo — its video part would be written decrypted to the cache.
+        val inVault = current.uri.authority?.endsWith(".vault") == true
+        if (!current.isVideo && !inVault) {
             // Only images can be motion photos. Cheap filename hint or on-demand content parse.
             value = withContext(Dispatchers.IO) {
                 MotionPhotoExtractor.detectMotionPhoto(context, current)
@@ -914,7 +915,7 @@ internal fun PhotoViewer(
                                 leadingIcon = { Icon(Icons.Outlined.ContentCopy, null) },
                                 onClick = {
                                     viewerMenuExpanded = false
-                                    copyImageToClipboard(context, current)
+                                    coroutineScope.launch { copyImageToClipboard(context, current, secureSharingMode) }
                                 }
                             )
                             DropdownMenuItem(
@@ -1936,11 +1937,16 @@ internal fun PhotoViewer(
     }
 }
 
-private fun copyImageToClipboard(context: android.content.Context, image: MediaImage) {
-    val uri = if (image.uri.scheme == "file" || image.path.startsWith(context.filesDir.absolutePath)) {
-        getShareUri(context, image)
+private suspend fun copyImageToClipboard(context: android.content.Context, image: MediaImage, mode: SecureSharingMode) {
+    // Svitlyna: the clipboard gets the same cleaned copy as sending (whatever is pasted, wherever).
+    val uri = if (mode != SecureSharingMode.OFF || image.uri.scheme == "file" || image.path.startsWith(context.filesDir.absolutePath) || image.uri.authority?.endsWith(".vault") == true) {
+        prepareShareUris(context, listOf(image), mode).firstOrNull()
     } else {
         image.uri
+    }
+    if (uri == null) {
+        Toast.makeText(context, R.string.toast_copy_image_failed, Toast.LENGTH_SHORT).show()
+        return
     }
     runCatching {
         val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager

@@ -761,7 +761,13 @@ internal fun GalleryApp(
                             } else {
                                 val keyguard = context.getSystemService(KeyguardManager::class.java)
                                 val intent = keyguard?.createConfirmDeviceCredentialIntent(context.getString(R.string.sv_lock_title), context.getString(R.string.sv_vault_unlock))
-                                if (intent == null) lockedAuthorized = true else unlockLauncher.launch(intent)
+                                if (intent == null) {
+                                    // No screen lock on the phone: the vault can't ask for anything; say so.
+                                    lockedAuthorized = true
+                                    Toast.makeText(context, R.string.sv_vault_no_screen_lock, Toast.LENGTH_LONG).show()
+                                } else {
+                                    unlockLauncher.launch(intent)
+                                }
                             }
                         },
                         onPick = onPick,

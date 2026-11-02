@@ -265,7 +265,9 @@ internal suspend fun prepareShareUris(
                     // The location is also written in XMP by many phones and programs: that goes too.
                     ua.svitlyna.media.Metadata.removeLocation(exif)
                     exif.saveAttributes()
-                    true
+                    // Then everything ExifInterface doesn't touch: XMP, IPTC, comments, PNG text, and a
+                    // live photo's video after the picture.
+                    ua.svitlyna.media.CleanCopy.clean(tempFile)
                 }.getOrDefault(false)
 
                 if (stripSuccess) {
@@ -302,7 +304,8 @@ private fun shareVideo(
     val isMp4 = item.mimeType.contains("mp4", ignoreCase = true) ||
         item.mimeType.contains("quicktime", ignoreCase = true) ||
         extension in setOf("mp4", "m4v", "mov", "3gp", "3g2")
-    if (!isMp4) return getShareUri(context, item)
+    // Svitlyna: a video that can't be cleaned is not sent at all (never with its metadata).
+    if (!isMp4) return null
 
     val tempFile = runCatching {
         File.createTempFile("share_${item.id}_", ".$extension", cacheDir)
