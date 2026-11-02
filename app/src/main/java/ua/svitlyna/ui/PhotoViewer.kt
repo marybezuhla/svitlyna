@@ -2,6 +2,7 @@
 
 package ua.svitlyna.ui
 
+import androidx.compose.material.icons.outlined.QrCodeScanner
 import android.app.Activity
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
@@ -254,6 +255,8 @@ internal fun PhotoViewer(
     val context = LocalContext.current
     var textFor by remember { mutableStateOf<MediaImage?>(images.getOrNull(initialPage)?.takeIf { openTextAtStart && !it.isVideo }) }
     var prepareFor by remember { mutableStateOf<MediaImage?>(null) }
+    // Svitlyna: codes read from the photo (null: not asked; empty: none found).
+    var codesFound by remember { mutableStateOf<List<String>?>(null) }
     val activity = remember(context) {
         generateSequence(context) { (it as? ContextWrapper)?.baseContext }
             .filterIsInstance<Activity>().firstOrNull()
@@ -908,6 +911,21 @@ internal fun PhotoViewer(
                                     prepareFor = current
                                 }
                             )
+                            // Svitlyna: QR and bar codes on the photo, read on the phone.
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.sv_codes_read)) },
+                                leadingIcon = { Icon(Icons.Outlined.QrCodeScanner, null) },
+                                onClick = {
+                                    viewerMenuExpanded = false
+                                    val shot = current
+                                    coroutineScope.launch {
+                                        codesFound = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                                            val pic = ua.svitlyna.media.Images.full(context.contentResolver, shot.asItem(), 2400)
+                                            pic?.let { ua.svitlyna.media.Codes.read(it).also { _ -> it.recycle() } }.orEmpty()
+                                        }
+                                    }
+                                }
+                            )
                         }
                         if (!current.isVideo) {
                             DropdownMenuItem(
@@ -1454,6 +1472,9 @@ internal fun PhotoViewer(
         }
 
         textFor?.let { image -> PhotoTextScreen(image, highlight = textHighlight) { textFor = null } }
+        codesFound?.let { codes ->
+            CodesDialog(codes) { codesFound = null }
+        }
         prepareFor?.let { image ->
             PrepareScreen(
                 image.asItem(),

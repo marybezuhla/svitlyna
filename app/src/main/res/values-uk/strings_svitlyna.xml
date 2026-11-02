@@ -196,4 +196,10 @@
     <string name="sv_tools_progress_start">%1$d з %2$d…</string>
     <string name="sv_tools_progress">%1$d з %2$d · ще ≈ %3$d с</string>
     <string name="sv_tools_stopped">Зупинено. Уже зроблене збережено.</string>
+    <string name="sv_codes_read">Прочитати QR-код</string>
+    <string name="sv_codes_title">Коди на фото</string>
+    <string name="sv_codes_none">На цьому фото не знайдено QR- чи штрихкоду.</string>
+    <string name="sv_codes_copy">Копіювати</string>
+    <string name="sv_codes_open">Відкрити посилання</string>
+    <string name="sv_codes_copied">Скопійовано</string>
 </resources>

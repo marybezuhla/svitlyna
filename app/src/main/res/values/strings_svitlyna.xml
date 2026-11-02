@@ -174,4 +174,10 @@
     <string name="sv_tools_progress_start">%1$d of %2$d…</string>
     <string name="sv_tools_progress">%1$d of %2$d · about %3$d s left</string>
     <string name="sv_tools_stopped">Stopped. What was already made is kept.</string>
+    <string name="sv_codes_read">Read QR code</string>
+    <string name="sv_codes_title">Codes on the photo</string>
+    <string name="sv_codes_none">No QR or bar code found on this photo.</string>
+    <string name="sv_codes_copy">Copy</string>
+    <string name="sv_codes_open">Open link</string>
+    <string name="sv_codes_copied">Copied</string>
 </resources>

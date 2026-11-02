@@ -89,6 +89,8 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-gif:3.1.0")
     implementation("io.coil-kt.coil3:coil-svg:3.1.0")
     implementation("org.aomedia.avif.android:avif:1.1.1.14d8e3c4")
+    // Reading QR and bar codes from photos, on the phone (Apache 2.0, plain Java, no network).
+    implementation("com.google.zxing:core:3.5.3")
     implementation("androidx.appcompat:appcompat:1.7.0")
 
     // The vault is encrypted with Tink (Google, Apache 2.0): streaming AES-256-GCM, key in Keystore
