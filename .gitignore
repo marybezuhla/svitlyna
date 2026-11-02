@@ -10,3 +10,7 @@ captures/
 .kotlin/
 __pycache__/
 app/schemas/
+
+# Working notes kept by the owner, not published
+CLAUDE.md
+DECISIONS.md
