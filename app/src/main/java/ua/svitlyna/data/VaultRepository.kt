@@ -39,6 +39,8 @@ data class VaultItem(
     val orientation: Int = 0,
     val title: String = "",
     val description: String = "",
+    /** Svitlyna: the old file name while a renaming (sealNames) is being finished; else empty. */
+    val previousName: String = "",
 )
 
 data class VaultMoveResult(
@@ -85,7 +87,8 @@ class VaultRepository(private val context: Context) {
     val vaultMedia: StateFlow<List<MediaImage>> = _vaultMedia.asStateFlow()
 
     init {
-        loadVaultItems()
+        // Svitlyna: decrypting the list must not hold up the screen.
+        kotlin.concurrent.thread(name = "vault-load") { runCatching { loadVaultItems() } }
     }
 
     fun hasAllFilesAccess(): Boolean {
@@ -143,28 +146,27 @@ class VaultRepository(private val context: Context) {
      */
     suspend fun recoverOrphanedItems(): Int = indexLocked {
         val currentItems = (readIndexStrict() ?: return@indexLocked 0).toMutableList()
-        // Svitlyna: finish or undo a renaming that was cut off (see sealNames), then clear the rest
-        // of the unfinished copies (".part_…"); they are never adopted.
+        // Svitlyna: finish or undo a renaming that was cut off (see sealNames), by exact names
+        // kept in the list (never guessed), then clear the unfinished copies (".part_…").
         var repaired = false
-        val files = (vaultDir.listFiles() ?: emptyArray()).toList()
         for ((i, item) in currentItems.withIndex()) {
-            if (File(vaultDir, item.vaultFileName).isFile) continue
+            if (item.previousName.isEmpty()) continue
+            val now = File(vaultDir, item.vaultFileName)
             val part = File(vaultDir, PART + item.vaultFileName)
-            val old = files.firstOrNull { !it.name.startsWith(".") && !RANDOM_NAME.matches(it.name) && parseVaultFileId(it.name) == item.id }
-            if (part.isFile && part.renameTo(File(vaultDir, item.vaultFileName))) {
-                repaired = true
-            } else if (old != null) {
-                currentItems[i] = item.copy(vaultFileName = old.name)
-                repaired = true
+            val old = File(vaultDir, item.previousName)
+            if (!now.isFile && part.isFile && plainLength(part, item.vaultFileName) > 0) part.renameTo(now)
+            currentItems[i] = when {
+                now.isFile && plainLength(now, item.vaultFileName) > 0 -> {
+                    // Finished: the old copy goes.
+                    if (old.isFile) runCatching { old.delete() }
+                    item.copy(previousName = "")
+                }
+                old.isFile -> item.copy(vaultFileName = item.previousName, previousName = "") // undone
+                else -> item.copy(previousName = "")
             }
+            repaired = true
         }
         (vaultDir.listFiles() ?: emptyArray()).filter { it.name.startsWith(PART) }.forEach { runCatching { it.delete() } }
-        // An old-named copy whose item already lives under a new name is the leftover of a renaming.
-        val renamedIds = currentItems.filter { RANDOM_NAME.matches(it.vaultFileName) && File(vaultDir, it.vaultFileName).isFile }.mapTo(HashSet()) { it.id }
-        val listed = currentItems.mapTo(HashSet()) { it.vaultFileName }
-        (vaultDir.listFiles() ?: emptyArray()).filter {
-            it.isFile && !it.name.startsWith(".") && it.name !in listed && !RANDOM_NAME.matches(it.name) && parseVaultFileId(it.name) in renamedIds
-        }.forEach { runCatching { it.delete() } }
         if (repaired && !persistIndexVerified(currentItems)) return@indexLocked 0
         val knownNames = currentItems.mapTo(mutableSetOf()) { it.vaultFileName }
         val usedIds = currentItems.mapTo(mutableSetOf()) { it.id }
@@ -393,7 +395,7 @@ class VaultRepository(private val context: Context) {
         return deleted
     }
 
-    suspend fun rollbackVault(vaultedItems: List<MediaImage>) = indexLocked {
+    suspend fun rollbackVault(vaultedItems: List<MediaImage>): Unit = indexLocked {
         val currentItems = (readIndexStrict() ?: return@indexLocked).toMutableList()
         val idsToRemove = vaultedItems.map { abs(it.id) }.toSet()
 
@@ -419,7 +421,14 @@ class VaultRepository(private val context: Context) {
         loadVaultItems()
     }
 
-    private fun originalStillThere(path: String): Boolean = path.isBlank() || runCatching { File(path).exists() }.getOrDefault(true)
+    /** The old name and an unfinished copy of a renaming go with the item, so it never comes back. */
+    private fun dropLeftovers(item: VaultItem) {
+        if (item.previousName.isNotEmpty() && !item.previousName.contains('/')) runCatching { File(vaultDir, item.previousName).delete() }
+        runCatching { File(vaultDir, PART + item.vaultFileName).delete() }
+    }
+
+    /** Unknown path: not known to be there, so the vault copy stays (a duplicate beats a loss). */
+    private fun originalStillThere(path: String): Boolean = path.isNotBlank() && runCatching { File(path).exists() }.getOrDefault(false)
 
     suspend fun restoreFromVault(mediaList: List<MediaImage>): List<MediaImage> = indexLocked {
         val currentItems = (readIndexStrict() ?: return@indexLocked emptyList()).toMutableList()
@@ -429,14 +438,21 @@ class VaultRepository(private val context: Context) {
         val itemsToRestore = currentItems.filter { it.id in idsToRemove }
         for (item in itemsToRestore) {
             val vaultFile = File(vaultDir, item.vaultFileName)
-            if (!vaultFile.exists()) {
-                currentItems.remove(item)
-                continue
-            }
+            // Svitlyna: an entry whose file is missing (a renaming being finished) is left alone.
+            if (!vaultFile.exists()) continue
 
             val restored = restoreFileToStorage(item, vaultFile)
+                ?.takeIf { r ->
+                    // The restored photo must be whole before the vault copy goes.
+                    val want = plainLength(vaultFile, vaultFile.name)
+                    val got = runCatching {
+                        context.contentResolver.openInputStream(r.uri)!!.use { s -> var n = 0L; val b = ByteArray(65536); while (true) { val k = s.read(b); if (k < 0) break; n += k }; n }
+                    }.getOrDefault(-1L)
+                    want > 0 && got == want
+                }
             if (restored != null) {
                 runCatching { vaultFile.delete() }
+                dropLeftovers(item)
                 currentItems.remove(item)
                 restoredList.add(
                     MediaImage(
@@ -466,7 +482,7 @@ class VaultRepository(private val context: Context) {
         restoredList
     }
 
-    suspend fun deletePermanently(mediaList: List<MediaImage>) = indexLocked {
+    suspend fun deletePermanently(mediaList: List<MediaImage>): Unit = indexLocked {
         val currentItems = (readIndexStrict() ?: return@indexLocked).toMutableList()
         val idsToRemove = mediaList.map { abs(it.id) }.toSet()
 
@@ -474,6 +490,7 @@ class VaultRepository(private val context: Context) {
             if (item.id in idsToRemove) {
                 val vaultFile = File(vaultDir, item.vaultFileName)
                 runCatching { vaultFile.delete() }
+                dropLeftovers(item)
                 true
             } else {
                 false
@@ -673,16 +690,24 @@ class VaultRepository(private val context: Context) {
             }.getOrDefault(false)
             val ok = copied && synchronized(indexLock) {
                 val items = readIndexStrict() ?: return@synchronized false
-                // Still the same file under the same name (not deleted or restored meanwhile)?
+                // Still the same file under the same name (not deleted or restored meanwhile), and the
+                // new copy still there (another start may have cleared unfinished copies)?
                 val current = items.firstOrNull { it.id == legacy.id && it.vaultFileName == legacy.vaultFileName }
-                if (current == null || !old.isFile) return@synchronized false
-                val updated = items.map { if (it === current) it.copy(vaultFileName = newName) else it }
-                if (!persistIndexVerified(updated)) {
-                    // Saved after all, though not read back? Then the new name stays, and recovery finishes it.
-                    return@synchronized readIndexStrict()?.any { it.vaultFileName == newName } == true && part.renameTo(File(vaultDir, newName))
+                if (current == null || !old.isFile || !part.isFile) return@synchronized false
+                val target = File(vaultDir, newName)
+                // The list names the new file and remembers the old one, so a crash at any point
+                // below is finished or undone exactly at the next start.
+                val updated = items.map { if (it === current) it.copy(vaultFileName = newName, previousName = old.name) else it }
+                if (!persistIndexVerified(updated) && readIndexStrict()?.any { it.vaultFileName == newName } != true) {
+                    return@synchronized false
                 }
-                if (!part.renameTo(File(vaultDir, newName))) return@synchronized false // finished at the next start
+                if (!part.renameTo(target)) {
+                    // Back to the old name: both copies are still there.
+                    persistIndexVerified(items)
+                    return@synchronized false
+                }
                 runCatching { old.delete() }
+                persistIndexVerified(updated.map { if (it.vaultFileName == newName) it.copy(previousName = "") else it })
                 loadVaultItems()
                 true
             }
@@ -752,10 +777,9 @@ class VaultRepository(private val context: Context) {
 
     /** Returns null when the index exists but cannot be parsed. */
     private fun readIndexStrict(): List<VaultItem>? {
-        val file = indexFile.baseFile
-        if (!file.exists()) return emptyList()
         return try {
-            val raw = indexFile.openRead().use { it.readBytes() }
+            // openRead also finds a backup left by an interrupted write.
+            val raw = try { indexFile.openRead().use { it.readBytes() } } catch (_: java.io.FileNotFoundException) { return emptyList() }
             // Svitlyna: the list is encrypted; a plain one (0.5.0) is read once and then sealed.
             val json = runCatching { String(VaultCrypto.open(context, raw, INDEX_LABEL), Charsets.UTF_8) }
                 .getOrElse {
@@ -786,6 +810,7 @@ class VaultRepository(private val context: Context) {
                         orientation = obj.optInt("orientation"),
                         title = obj.optString("title"),
                         description = obj.optString("description"),
+                        previousName = obj.optString("previousName"),
                     )
                 )
             }
@@ -818,6 +843,7 @@ class VaultRepository(private val context: Context) {
                     put("orientation", item.orientation)
                     put("title", item.title)
                     put("description", item.description)
+                    if (item.previousName.isNotEmpty()) put("previousName", item.previousName)
                 }
                 array.put(obj)
             }
