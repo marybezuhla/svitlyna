@@ -178,8 +178,8 @@ fun AboutScreen(
                     AboutLinkRow(
                         icon = Icons.Outlined.Code,
                         title = androidx.compose.ui.res.stringResource(R.string.about_source_label),
-                        subtitle = "github.com/Marybezu/svitlyna"
-                    ) { openUrl("https://github.com/Marybezu/svitlyna") }
+                        subtitle = "github.com/marybezuhla/svitlyna"
+                    ) { openUrl("https://github.com/marybezuhla/svitlyna") }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 

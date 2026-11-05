@@ -9,7 +9,7 @@
 
 Інтерфейс і більшість функцій — з [Iris Gallery](https://github.com/MohamadOday/iris-gallery) (Mohamad Oday, Apache 2.0). Потрібен Android 11 або новіший (64-бітний). Помилки й побажання — в Issues.
 
-📲 Завантажте файл .apk нижче й відкрийте його на телефоні. 🔄 Для оновлень — Obtainium (є в F-Droid): «Додати застосунок» → `github.com/Marybezu/svitlyna`.
+📲 Завантажте файл .apk нижче й відкрийте його на телефоні. 🔄 Для оновлень — Obtainium (є в F-Droid): «Додати застосунок» → `github.com/marybezuhla/svitlyna`.
 
 ---
 
@@ -24,4 +24,4 @@
 
 The interface and most features come from [Iris Gallery](https://github.com/MohamadOday/iris-gallery) (Mohamad Oday, Apache 2.0). Requires Android 11 or newer (64-bit). Bugs and wishes: Issues.
 
-📲 Download the .apk below and open it on your phone. 🔄 For updates use Obtainium (in F-Droid): "Add app" → `github.com/Marybezu/svitlyna`.
+📲 Download the .apk below and open it on your phone. 🔄 For updates use Obtainium (in F-Droid): "Add app" → `github.com/marybezuhla/svitlyna`.
