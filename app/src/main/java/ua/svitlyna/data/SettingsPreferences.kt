@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import ua.svitlyna.R
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
-enum class AccentColor { MATERIAL_YOU, IRIS, LAPIS_MESOPOTAMIA, EMERALD, ISHTAR_AMBER, ROSE, MONOCHROME }
 enum class CornerStyle(val dp: Int) { SHARP(0), CLASSIC(4), ROUNDED(12), SQUIRCLE(18) }
 enum class GridSpacing(val dp: Int) { COMPACT(2), STANDARD(4), RELAXED(8) }
 enum class StartupTab(val pageIndex: Int) { MEDIA(0), ALBUMS(1), FAVORITES(2), LIBRARY(3) }
@@ -116,8 +115,9 @@ fun detectBestLanguage(): String {
 
 data class SettingsState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val amoledBlack: Boolean = false,
-    val accentColor: AccentColor = AccentColor.MATERIAL_YOU,
+    // The shared themes (ui/theme/Palettes.kt), by key: the phone's own colours unless chosen
+    val dayTheme: String = "system",
+    val nightTheme: String = "system_dark",
     val cornerStyle: CornerStyle = CornerStyle.ROUNDED,
     val gridSpacing: GridSpacing = GridSpacing.STANDARD,
     val photoGridSize: Float = 105f,
@@ -179,8 +179,8 @@ class SettingsPreferences(context: Context) {
     fun setThemeMode(mode: ThemeMode) = update { copy(themeMode = mode) }
     fun setLanguage(lang: String) = update { copy(language = lang) }
     fun setFirstLaunchLanguageSetupDone(done: Boolean) = update { copy(firstLaunchLanguageSetupDone = done) }
-    fun setAmoledBlack(enabled: Boolean) = update { copy(amoledBlack = enabled) }
-    fun setAccentColor(color: AccentColor) = update { copy(accentColor = color) }
+    /** Both at once: choosing one theme brings its pair, as in the author's other apps. */
+    fun setThemes(day: String, night: String) = update { copy(dayTheme = day, nightTheme = night) }
     fun setCornerStyle(style: CornerStyle) = update { copy(cornerStyle = style) }
     fun setGridSpacing(spacing: GridSpacing) = update { copy(gridSpacing = spacing) }
     fun setPhotoGridSize(size: Float) = update { copy(photoGridSize = size.coerceIn(36f, 340f)) }
@@ -263,7 +263,6 @@ class SettingsPreferences(context: Context) {
 
     private fun read(): SettingsState {
         val themeModeStr = prefs.getString("theme_mode", null)
-        val accentStr = prefs.getString("accent_color", null)
         val cornerStr = prefs.getString("corner_style", null)
         val spacingStr = prefs.getString("grid_spacing", null)
         val startupStr = prefs.getString("startup_tab", null)
@@ -271,8 +270,10 @@ class SettingsPreferences(context: Context) {
 
         return SettingsState(
             themeMode = runCatching { ThemeMode.valueOf(themeModeStr.orEmpty()) }.getOrDefault(ThemeMode.SYSTEM),
-            amoledBlack = prefs.getBoolean("amoled_black", false),
-            accentColor = runCatching { AccentColor.valueOf(accentStr.orEmpty()) }.getOrDefault(AccentColor.MATERIAL_YOU),
+            dayTheme = prefs.getString("day_theme", null) ?: "system",
+            // Who had pure black at night gets Black earth, the black theme
+            nightTheme = prefs.getString("night_theme", null)
+                ?: if (prefs.getBoolean("amoled_black", false)) "chornozem" else "system_dark",
             cornerStyle = runCatching { CornerStyle.valueOf(cornerStr.orEmpty()) }.getOrDefault(CornerStyle.ROUNDED),
             gridSpacing = runCatching { GridSpacing.valueOf(spacingStr.orEmpty()) }.getOrDefault(GridSpacing.STANDARD),
             photoGridSize = prefs.getFloat("photo_grid_size", 105f),
@@ -335,8 +336,10 @@ class SettingsPreferences(context: Context) {
     private fun write(state: SettingsState) {
         prefs.edit()
             .putString("theme_mode", state.themeMode.name)
-            .putBoolean("amoled_black", state.amoledBlack)
-            .putString("accent_color", state.accentColor.name)
+            .putString("day_theme", state.dayTheme)
+            .putString("night_theme", state.nightTheme)
+            .remove("amoled_black")
+            .remove("accent_color")
             .putString("corner_style", state.cornerStyle.name)
             .putString("grid_spacing", state.gridSpacing.name)
             .putFloat("photo_grid_size", state.photoGridSize)

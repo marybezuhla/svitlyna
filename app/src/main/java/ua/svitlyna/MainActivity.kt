@@ -16,6 +16,7 @@ import androidx.core.view.WindowCompat
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ua.svitlyna.R
 import ua.svitlyna.data.SettingsPreferences
@@ -74,16 +75,14 @@ class MainActivity : FragmentActivity() {
             }
         }
         val initialSettings = settingsPreferences.state.value
-        val isDark = when (initialSettings.themeMode) {
-            ua.svitlyna.data.ThemeMode.LIGHT -> false
-            ua.svitlyna.data.ThemeMode.DARK -> true
-            ua.svitlyna.data.ThemeMode.SYSTEM -> (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
-        }
-        val bgColor = when {
-            isDark && initialSettings.amoledBlack -> android.graphics.Color.BLACK
-            isDark -> 0xFF141218.toInt()
-            else -> 0xFFFFF8FF.toInt()
-        }
+        val startTheme = ua.svitlyna.ui.theme.currentTheme(
+            initialSettings.themeMode,
+            (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES,
+            initialSettings.dayTheme, initialSettings.nightTheme,
+        )
+        val isDark = startTheme.dark
+        // The theme's background from the first frame, so no other colour flashes
+        val bgColor = ua.svitlyna.ui.theme.colorScheme(startTheme, this).background.toArgb()
         window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(bgColor))
         androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).apply {
             isAppearanceLightStatusBars = !isDark
@@ -118,8 +117,8 @@ class MainActivity : FragmentActivity() {
             val settings by settingsPreferences.state.collectAsStateWithLifecycle()
             IrisTheme(
                 themeMode = settings.themeMode,
-                amoledBlack = settings.amoledBlack,
-                accentColor = settings.accentColor,
+                dayTheme = settings.dayTheme,
+                nightTheme = settings.nightTheme,
             ) {
                 GalleryApp(
                     settings = settings,
