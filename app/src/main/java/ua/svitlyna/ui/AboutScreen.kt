@@ -158,6 +158,10 @@ fun AboutScreen(
             }
         }
 
+        // The author's letter and how to support Ukraine, as in the author's other apps
+        item { AuthorLetter() }
+        item { SupportUkraine(open = { openUrl(it) }, modifier = Modifier.padding(top = 8.dp)) }
+
         item {
             Text(
                 androidx.compose.ui.res.stringResource(R.string.about_developer_project),
