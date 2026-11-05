@@ -330,15 +330,23 @@
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>
     <string name="settings_section_appearance">Appearance &amp; Theme</string>
-    <string name="settings_theme_mode">Theme Mode</string>
-    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_mode">Light or dark</string>
+    <string name="settings_theme_system">Auto</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
-    <string name="settings_amoled_black_title">AMOLED Pure Black</string>
-    <string name="settings_amoled_black_desc">Pitch-black background for OLED displays and maximum contrast</string>
-    <string name="settings_material_you_title">Material You Dynamic Colors</string>
-    <string name="settings_material_you_desc">Extract accent colors automatically from your device wallpaper</string>
-    <string name="settings_custom_accents">Custom Accent Palettes</string>
+    <string name="settings_day_theme">Theme by day</string>
+    <string name="settings_night_theme">Theme by night</string>
+    <string name="theme_system">Phone colours</string>
+    <string name="theme_linen">Linen</string>
+    <string name="theme_visk">Beeswax</string>
+    <string name="theme_nebo">Sky</string>
+    <string name="theme_glyna">Clay</string>
+    <string name="theme_kalyna">Viburnum</string>
+    <string name="theme_mak">Poppy</string>
+    <string name="theme_smereka">Spruce</string>
+    <string name="theme_chornozem">Black earth</string>
+    <string name="theme_zhar">Embers</string>
+    <string name="theme_zoriana_nich">Starry night</string>
 
     <string name="settings_section_layout">Layout &amp; Grid Styling</string>
     <string name="settings_corner_style">Thumbnail Corner Style</string>

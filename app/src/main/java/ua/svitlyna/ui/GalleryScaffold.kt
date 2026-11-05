@@ -723,7 +723,8 @@ internal fun GalleryScaffold(
         ua.svitlyna.data.ThemeMode.DARK -> true
         ua.svitlyna.data.ThemeMode.SYSTEM -> isSystemInDarkTheme()
     }
-    val isAmoled = isDarkTheme && settings.amoledBlack
+    // Black earth, the black theme: bars as black as the background
+    val isAmoled = isDarkTheme && settings.nightTheme == ua.svitlyna.ui.theme.Theme.CHORNOZEM.key
 
     val handleTabSelected: (Int) -> Unit = { index ->
         tabScope.launch {

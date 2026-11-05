@@ -330,15 +330,23 @@
     <!-- Settings Screen -->
     <string name="settings_title">Налаштування</string>
     <string name="settings_section_appearance">Вигляд і тема</string>
-    <string name="settings_theme_mode">Тема</string>
-    <string name="settings_theme_system">Як у системі</string>
+    <string name="settings_theme_mode">Світла чи темна</string>
+    <string name="settings_theme_system">Авто</string>
     <string name="settings_theme_light">Світла</string>
     <string name="settings_theme_dark">Темна</string>
-    <string name="settings_amoled_black_title">Чисто чорний AMOLED</string>
-    <string name="settings_amoled_black_desc">Глибокий чорний фон для OLED-екранів і найвищої контрастності</string>
-    <string name="settings_material_you_title">Динамічні кольори Material You</string>
-    <string name="settings_material_you_desc">Автоматично брати кольори акценту з шпалер пристрою</string>
-    <string name="settings_custom_accents">Власні палітри акценту</string>
+    <string name="settings_day_theme">Тема вдень</string>
+    <string name="settings_night_theme">Тема вночі</string>
+    <string name="theme_system">Кольори телефона</string>
+    <string name="theme_linen">Льон</string>
+    <string name="theme_visk">Віск</string>
+    <string name="theme_nebo">Небо</string>
+    <string name="theme_glyna">Глина</string>
+    <string name="theme_kalyna">Калина</string>
+    <string name="theme_mak">Мак</string>
+    <string name="theme_smereka">Смерека</string>
+    <string name="theme_chornozem">Чорнозем</string>
+    <string name="theme_zhar">Жар</string>
+    <string name="theme_zoriana_nich">Зоряна ніч</string>
 
     <string name="settings_section_layout">Макет і сітка</string>
     <string name="settings_corner_style">Кути мініатюр</string>
