@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="splash_background">#FFF8FF</color>
-    <color name="icon_bg">#FF113F6B</color>
+    <!-- The icon's background: the same deep blue as the other apps' icons, lighter at the top left -->
+    <color name="icon_background_light">#FF013E7C</color>
+    <color name="icon_background_dark">#FF01306A</color>
 </resources>

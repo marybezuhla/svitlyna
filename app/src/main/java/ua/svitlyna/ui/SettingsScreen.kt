@@ -1,5 +1,9 @@
 package ua.svitlyna.ui
 
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import android.content.Intent
 import android.net.Uri
@@ -119,7 +123,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import ua.svitlyna.R
-import ua.svitlyna.data.AccentColor
+import ua.svitlyna.ui.theme.Theme
 import ua.svitlyna.data.CornerStyle
 import ua.svitlyna.data.DeleteMode
 import ua.svitlyna.data.GridSpacing
@@ -283,67 +287,12 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    SettingsSwitchRow(
-                        title = stringResource(R.string.settings_amoled_black_title),
-                        subtitle = stringResource(R.string.settings_amoled_black_desc),
-                        checked = settings.amoledBlack,
-                        onCheckedChange = { preferences.setAmoledBlack(it) }
-                    )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    // Material You dynamic color selector
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        SettingsSwitchRow(
-                            title = stringResource(R.string.settings_material_you_title),
-                            subtitle = stringResource(R.string.settings_material_you_desc),
-                            checked = settings.accentColor == AccentColor.MATERIAL_YOU,
-                            onCheckedChange = { isChecked ->
-                                preferences.setAccentColor(if (isChecked) AccentColor.MATERIAL_YOU else AccentColor.IRIS)
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                    }
-
-                    Text(stringResource(R.string.settings_custom_accents), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        listOf(
-                            AccentColor.IRIS to Brush.linearGradient(listOf(Color(0xFF8A4AF3), Color(0xFF6C5CE7))),
-                            AccentColor.LAPIS_MESOPOTAMIA to Brush.linearGradient(listOf(Color(0xFF1976D2), Color(0xFF0288D1))),
-                            AccentColor.EMERALD to Brush.linearGradient(listOf(Color(0xFF00897B), Color(0xFF26A69A))),
-                            AccentColor.ISHTAR_AMBER to Brush.linearGradient(listOf(Color(0xFFF57C00), Color(0xFFFFA726))),
-                            AccentColor.ROSE to Brush.linearGradient(listOf(Color(0xFFD81B60), Color(0xFFEC407A))),
-                            AccentColor.MONOCHROME to Brush.linearGradient(listOf(Color(0xFF18181B), Color(0xFFA1A1AA))),
-                        ).forEach { (accent, brush) ->
-                            val isSelected = settings.accentColor == accent
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .background(brush)
-                                    .clickable { preferences.setAccentColor(accent) }
-                                    .then(
-                                        if (isSelected) Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
-                                        else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), CircleShape)
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (isSelected) {
-                                    Icon(
-                                        Icons.Outlined.Check,
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    // The themes shared by the author's apps; choosing one brings its pair (Starry night
+                    // with Sky, and so on), and the other can still be changed after
+                    Text(stringResource(R.string.settings_day_theme), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    ThemeGrid(Theme.DAY, Theme.of(settings.dayTheme, Theme.SYSTEM)) { t -> preferences.setThemes(t.key, Theme.pairOf(t).key) }
+                    Text(stringResource(R.string.settings_night_theme), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    ThemeGrid(Theme.NIGHT, Theme.of(settings.nightTheme, Theme.SYSTEM_DARK)) { t -> preferences.setThemes(Theme.pairOf(t).key, t.key) }
                 }
             }
         }
@@ -2197,4 +2146,78 @@ private fun SettingsSwitchRow(
         }
         Switch(checked = checked, onCheckedChange = null)
     }
+}
+
+/** All themes at once, in rows of three across the whole width (as in the author's other apps). */
+@Composable
+private fun ThemeGrid(themes: List<Theme>, chosen: Theme, onChoose: (Theme) -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().selectableGroup(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        for (row in themes.chunked(3)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                for (theme in row) {
+                    val selected = theme == chosen
+                    Column(
+                        Modifier.weight(1f).selectable(selected, role = Role.RadioButton) { onChoose(theme) },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        ThemeSample(theme, selected)
+                        Text(
+                            stringResource(themeName(theme)),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 6.dp),
+                        )
+                    }
+                }
+                // A short last row keeps the same sizes
+                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
+/** A tiny Svitlyna: the background and a row of three pictures, in the theme's colours. */
+@Composable
+private fun ThemeSample(theme: Theme, selected: Boolean) {
+    val context = LocalContext.current
+    val s = remember(theme) { ua.svitlyna.ui.theme.colorScheme(theme, context) }
+    val frame = if (selected) BorderStroke(3.dp, MaterialTheme.colorScheme.primary)
+    else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    // A picture only: a screen reader reads the theme's name below it
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        border = frame,
+        color = s.background,
+        modifier = Modifier.fillMaxWidth().clearAndSetSemantics { },
+    ) {
+        Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Box(Modifier.fillMaxWidth(0.6f).height(6.dp).background(s.onSurface, RoundedCornerShape(3.dp)))
+            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                repeat(3) { Box(Modifier.weight(1f).height(16.dp).background(s.surfaceVariant, RoundedCornerShape(3.dp))) }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Box(Modifier.width(30.dp).height(12.dp).background(s.primary, RoundedCornerShape(6.dp)))
+                Box(Modifier.width(12.dp).height(12.dp).background(s.secondary, RoundedCornerShape(6.dp)))
+            }
+        }
+    }
+}
+
+private fun themeName(theme: Theme): Int = when (theme) {
+    Theme.SYSTEM, Theme.SYSTEM_DARK -> R.string.theme_system
+    Theme.LINEN -> R.string.theme_linen
+    Theme.VISK -> R.string.theme_visk
+    Theme.NEBO -> R.string.theme_nebo
+    Theme.GLYNA -> R.string.theme_glyna
+    Theme.KALYNA -> R.string.theme_kalyna
+    Theme.MAK -> R.string.theme_mak
+    Theme.SMEREKA -> R.string.theme_smereka
+    Theme.CHORNOZEM -> R.string.theme_chornozem
+    Theme.ZHAR -> R.string.theme_zhar
+    Theme.ZORIANA_NICH -> R.string.theme_zoriana_nich
 }

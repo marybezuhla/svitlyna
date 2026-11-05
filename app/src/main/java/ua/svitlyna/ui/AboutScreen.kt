@@ -158,6 +158,10 @@ fun AboutScreen(
             }
         }
 
+        // The author's letter and how to support Ukraine, as in the author's other apps
+        item { AuthorLetter() }
+        item { SupportUkraine(open = { openUrl(it) }, modifier = Modifier.padding(top = 8.dp)) }
+
         item {
             Text(
                 androidx.compose.ui.res.stringResource(R.string.about_developer_project),
@@ -178,8 +182,8 @@ fun AboutScreen(
                     AboutLinkRow(
                         icon = Icons.Outlined.Code,
                         title = androidx.compose.ui.res.stringResource(R.string.about_source_label),
-                        subtitle = "github.com/Marybezu/svitlyna"
-                    ) { openUrl("https://github.com/Marybezu/svitlyna") }
+                        subtitle = "github.com/marybezuhla/svitlyna"
+                    ) { openUrl("https://github.com/marybezuhla/svitlyna") }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
