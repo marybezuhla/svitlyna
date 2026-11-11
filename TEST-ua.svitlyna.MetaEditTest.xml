@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.svitlyna.MetaEditTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-11T18:00:02.122Z" hostname="runnervmwuk1x" time="0.195">
+  <properties/>
+  <testcase name="dateAndPlaceAreWrittenAndTheRestStays" classname="ua.svitlyna.MetaEditTest" time="0.084"/>
+  <testcase name="typedTextIsUnderstood" classname="ua.svitlyna.MetaEditTest" time="0.08"/>
+  <testcase name="placeCanBeRemovedAndDateStays" classname="ua.svitlyna.MetaEditTest" time="0.03"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

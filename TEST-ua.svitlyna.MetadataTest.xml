@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.svitlyna.MetadataTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-11T18:00:02.326Z" hostname="runnervmwuk1x" time="0.283">
+  <properties/>
+  <testcase name="removingLocationRemovesItFromExifAndXmp" classname="ua.svitlyna.MetadataTest" time="0.06"/>
+  <testcase name="copyKeepsEverythingForEachFormat" classname="ua.svitlyna.MetadataTest" time="0.07"/>
+  <testcase name="barsCropOnlyFullPortraitScreenshots" classname="ua.svitlyna.MetadataTest" time="0.038"/>
+  <testcase name="copyName" classname="ua.svitlyna.MetadataTest" time="0.041"/>
+  <testcase name="copyWithoutDateInsideGetsTheOriginalsDate" classname="ua.svitlyna.MetadataTest" time="0.045"/>
+  <testcase name="copyableTagsFoundByReflectionButNotPixelOnes" classname="ua.svitlyna.MetadataTest" time="0.029"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.svitlyna.TextIndexTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-11T18:00:02.791Z" hostname="runnervmwuk1x" time="2.879">
+  <properties/>
+  <testcase name="putSearchChangeRemove" classname="ua.svitlyna.TextIndexTest" time="2.792"/>
+  <testcase name="oddInputIsSafe" classname="ua.svitlyna.TextIndexTest" time="0.087"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

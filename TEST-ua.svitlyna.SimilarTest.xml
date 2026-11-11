@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.svitlyna.SimilarTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-11T18:00:02.715Z" hostname="runnervmwuk1x" time="0.009">
+  <properties/>
+  <testcase name="plainPicturesSayNothing" classname="ua.svitlyna.SimilarTest" time="0.003"/>
+  <testcase name="aChainOfLookAlikesDoesNotGrowIntoOneGroup" classname="ua.svitlyna.SimilarTest" time="0.004"/>
+  <testcase name="sixBitsApartIsNotSimilar" classname="ua.svitlyna.SimilarTest" time="0.001"/>
+  <testcase name="brighterLeftSetsTheBit" classname="ua.svitlyna.SimilarTest" time="0.001"/>
+  <testcase name="differentShapeIsNotTheSamePhoto" classname="ua.svitlyna.SimilarTest" time="0.0"/>
+  <testcase name="nearHashesGroupFarOnesDont" classname="ua.svitlyna.SimilarTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

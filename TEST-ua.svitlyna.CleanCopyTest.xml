@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.svitlyna.CleanCopyTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-11T17:59:47.667Z" hostname="runnervmwuk1x" time="0.113">
+  <properties/>
+  <testcase name="brokenJpegIsRefused" classname="ua.svitlyna.CleanCopyTest" time="0.007"/>
+  <testcase name="pngDropsText" classname="ua.svitlyna.CleanCopyTest" time="0.09"/>
+  <testcase name="jpegKeepsPictureDropsTheRest" classname="ua.svitlyna.CleanCopyTest" time="0.012"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

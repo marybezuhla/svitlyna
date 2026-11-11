@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.svitlyna.DateWordsTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-11T17:59:47.822Z" hostname="runnervmwuk1x" time="0.054">
+  <properties/>
+  <testcase name="numbers" classname="ua.svitlyna.DateWordsTest" time="0.03"/>
+  <testcase name="relative" classname="ua.svitlyna.DateWordsTest" time="0.011"/>
+  <testcase name="monthsAndYears" classname="ua.svitlyna.DateWordsTest" time="0.0"/>
+  <testcase name="days" classname="ua.svitlyna.DateWordsTest" time="0.0"/>
+  <testcase name="otherWordsStayForTheText" classname="ua.svitlyna.DateWordsTest" time="0.011"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

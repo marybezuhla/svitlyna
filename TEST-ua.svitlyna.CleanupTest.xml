@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.svitlyna.CleanupTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-11T17:59:47.788Z" hostname="runnervmwuk1x" time="0.026">
+  <properties/>
+  <testcase name="estimate" classname="ua.svitlyna.CleanupTest" time="0.009"/>
+  <testcase name="messengerFolders" classname="ua.svitlyna.CleanupTest" time="0.016"/>
+  <testcase name="notMessengers" classname="ua.svitlyna.CleanupTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

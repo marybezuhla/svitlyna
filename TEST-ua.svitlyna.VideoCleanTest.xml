@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.svitlyna.VideoCleanTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-11T18:00:05.685Z" hostname="runnervmwuk1x" time="0.017">
+  <properties/>
+  <testcase name="anUnknownTrailerIsRefused" classname="ua.svitlyna.VideoCleanTest" time="0.002"/>
+  <testcase name="damagedBoxIsRefused" classname="ua.svitlyna.VideoCleanTest" time="0.001"/>
+  <testcase name="locationIsGoneEverythingElseInPlace" classname="ua.svitlyna.VideoCleanTest" time="0.01"/>
+  <testcase name="aVideoWithADataTrackIsRefused" classname="ua.svitlyna.VideoCleanTest" time="0.001"/>
+  <testcase name="notAVideoIsRefused" classname="ua.svitlyna.VideoCleanTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
