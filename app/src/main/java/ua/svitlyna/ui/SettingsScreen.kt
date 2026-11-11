@@ -120,6 +120,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import ua.svitlyna.R
@@ -2148,6 +2150,28 @@ private fun SettingsSwitchRow(
     }
 }
 
+/**
+ * A theme's name under its picture, as in Komora: never broken inside a word («Viburnu / m» on a narrow phone
+ * with large text). One word per line at most; a word that does not fit gets a smaller size instead.
+ */
+@Composable
+private fun ThemeName(name: String, selected: Boolean) {
+    val style = MaterialTheme.typography.bodyMedium.merge(
+        color = MaterialTheme.colorScheme.onSurface,
+        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+        textAlign = TextAlign.Center,
+    )
+    // One word per line: any other break overflows, so the text shrinks instead
+    androidx.compose.foundation.text.BasicText(
+        name.replace(' ', '\n'),
+        modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+            .semantics { contentDescription = name },
+        style = style,
+        maxLines = name.split(' ').size,
+        autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = style.fontSize, stepSize = 0.5.sp),
+    )
+}
+
 /** All themes at once, in rows of three across the whole width (as in the author's other apps). */
 @Composable
 private fun ThemeGrid(themes: List<Theme>, chosen: Theme, onChoose: (Theme) -> Unit) {
@@ -2164,14 +2188,7 @@ private fun ThemeGrid(themes: List<Theme>, chosen: Theme, onChoose: (Theme) -> U
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         ThemeSample(theme, selected)
-                        Text(
-                            stringResource(themeName(theme)),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(top = 6.dp),
-                        )
+                        ThemeName(stringResource(themeName(theme)), selected)
                     }
                 }
                 // A short last row keeps the same sizes
